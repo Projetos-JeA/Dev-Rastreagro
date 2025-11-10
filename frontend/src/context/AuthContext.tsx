@@ -1,17 +1,29 @@
 /**
- * Authentication Context
+ * Contexto global de autenticação da aplicação
  */
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { getStoredToken } from '../config/api';
-import { authService, LoginRequest, TwoFactorRequest } from '../services/authService';
+import {
+  getStoredAccessToken,
+  clearStoredTokens,
+} from '../config/api';
+import {
+  authService,
+  LoginRequest,
+  RegisterBuyerRequest,
+  RegisterSellerRequest,
+  RegisterServiceProviderRequest,
+} from '../services/authService';
+import { userService } from '../services/userService';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any | null;
   login: (credentials: LoginRequest) => Promise<void>;
-  login2FA: (data: TwoFactorRequest) => Promise<void>;
+  registerBuyer: (payload: RegisterBuyerRequest) => Promise<void>;
+  registerSeller: (payload: RegisterSellerRequest) => Promise<void>;
+  registerServiceProvider: (payload: RegisterServiceProviderRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -26,39 +38,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkAuth();
   }, []);
 
+  const loadUser = async () => {
+    const userData = await userService.me();
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
   const checkAuth = async () => {
     try {
-      const token = await getStoredToken();
+      const token = await getStoredAccessToken();
       if (token) {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
-        setIsAuthenticated(true);
+        await loadUser();
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
       }
     } catch (error) {
+      await clearStoredTokens();
       setIsAuthenticated(false);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
   const login = async (credentials: LoginRequest) => {
-    try {
-      const response = await authService.login(credentials);
-      setUser({ id: response.user_id, tipo: response.user_type, email: credentials.email });
-      setIsAuthenticated(true);
-    } catch (error: any) {
-      throw error;
-    }
+    await authService.login(credentials);
+    await loadUser();
   };
 
-  const login2FA = async (data: TwoFactorRequest) => {
-    try {
-      const response = await authService.verify2FA(data);
-      setUser({ id: response.user_id, tipo: response.user_type });
-      setIsAuthenticated(true);
-    } catch (error: any) {
-      throw error;
-    }
+  const registerBuyer = async (payload: RegisterBuyerRequest) => {
+    await authService.registerBuyer(payload);
+    await clearStoredTokens();
+  };
+
+  const registerSeller = async (payload: RegisterSellerRequest) => {
+    await authService.registerSeller(payload);
+    await clearStoredTokens();
+  };
+
+  const registerServiceProvider = async (payload: RegisterServiceProviderRequest) => {
+    await authService.registerServiceProvider(payload);
+    await clearStoredTokens();
   };
 
   const logout = async () => {
@@ -74,7 +95,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         user,
         login,
-        login2FA,
+        registerBuyer,
+        registerSeller,
+        registerServiceProvider,
         logout,
       }}
     >

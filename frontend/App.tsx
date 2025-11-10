@@ -1,5 +1,5 @@
 /**
- * Main App Component
+ * Componente raiz da aplicação Expo
  */
 
 import React from 'react';

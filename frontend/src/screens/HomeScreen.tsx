@@ -1,137 +1,142 @@
 /**
- * Home Screen
+ * Tela inicial apresentada após o login
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import api from '../config/api';
 
 export default function HomeScreen() {
-  const { user, logout } = useAuth();
-  const [healthStatus, setHealthStatus] = React.useState<any>(null);
+  const { logout, user } = useAuth();
 
-  React.useEffect(() => {
-    checkHealth();
-  }, []);
-
-  const checkHealth = async () => {
-    try {
-      const response = await api.get('/health');
-      setHealthStatus(response.data);
-    } catch (error) {
-      console.error('Health check failed:', error);
-    }
+  const roleLabel: Record<string, string> = {
+    buyer: 'Comprador',
+    seller: 'Vendedor / Empresa',
+    service_provider: 'Prestador de Serviço',
   };
 
-  const userTypeLabel = user?.tipo === 'cliente' ? 'Cliente' : 'Empresa';
-
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Bem-vindo ao RastreAgro</Text>
-        <Text style={styles.subtitle}>Perfil: {userTypeLabel}</Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Bem-vindo ao RastreAgro</Text>
+      <Text style={styles.subtitle}>Você está autenticado com sucesso.</Text>
 
-      <View style={styles.content}>
+      {user && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Status da API</Text>
-          {healthStatus ? (
-            <View>
-              <Text style={styles.cardText}>
-                Status: {healthStatus.status}
+          <Text style={styles.cardTitle}>Dados do usuário</Text>
+          <Text style={styles.cardItem}>Email: {user.email}</Text>
+          <Text style={styles.cardItem}>Perfil: {roleLabel[String(user.role)] ?? String(user.role)}</Text>
+          {user.nickname && <Text style={styles.cardItem}>Apelido: {user.nickname}</Text>}
+
+          {user.role === 'seller' && user.company && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Dados da empresa</Text>
+              <Text style={styles.cardItem}>Propriedade: {user.company.nome_propriedade}</Text>
+              <Text style={styles.cardItem}>CNPJ/CPF: {user.company.cnpj_cpf}</Text>
+              <Text style={styles.cardItem}>Cidade/UF: {user.company.cidade} - {user.company.estado}</Text>
+              <Text style={styles.cardItem}>Email comercial: {user.company.email}</Text>
+              <Text style={styles.sectionTitle}>Atividades cadastradas</Text>
+              {user.company.activities?.length ? (
+                user.company.activities.map((activity, index) => (
+                  <Text key={index} style={styles.cardItem}>
+                    {activity.category?.name}
+                    {activity.group ? ` / ${activity.group.name}` : ''}
+                    {activity.item ? ` / ${activity.item.name}` : ''}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.cardItem}>Nenhuma atividade vinculada.</Text>
+              )}
+            </View>
+          )}
+
+          {user.role === 'service_provider' && user.service_profile && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Dados do prestador</Text>
+              <Text style={styles.cardItem}>Serviço: {user.service_profile.nome_servico}</Text>
+              {user.service_profile.descricao ? (
+                <Text style={styles.cardItem}>Descrição: {user.service_profile.descricao}</Text>
+              ) : null}
+              {user.service_profile.telefone ? (
+                <Text style={styles.cardItem}>Telefone: {user.service_profile.telefone}</Text>
+              ) : null}
+              <Text style={styles.cardItem}>
+                Contato: {user.service_profile.email_contato}
               </Text>
-              <Text style={styles.cardText}>
-                Serviço: {healthStatus.service}
+              <Text style={styles.cardItem}>
+                Região: {user.service_profile.cidade} - {user.service_profile.estado}
               </Text>
             </View>
-          ) : (
-            <Text style={styles.cardText}>Carregando...</Text>
           )}
         </View>
+      )}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Funcionalidades</Text>
-          <Text style={styles.cardText}>
-            • Buscar animais{'\n'}
-            • Cadastrar animais (empresa){'\n'}
-            • Match automático{'\n'}
-            • Chat interno{'\n'}
-            • Pagamento com retenção{'\n'}
-            • NF-e
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutButtonText}>Sair</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.logoutText}>Sair</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F5F5F5',
-  },
-  header: {
-    backgroundColor: '#2E7D32',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
     padding: 20,
-    paddingTop: 60,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#E8F5E9',
-  },
-  content: {
-    padding: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#2E7D32',
     marginBottom: 10,
   },
-  cardText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'left',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1B5E20',
+    marginBottom: 12,
+  },
+  cardItem: {
+    fontSize: 16,
+    color: '#424242',
+    marginBottom: 6,
+  },
+  section: {
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2E7D32',
+    marginBottom: 8,
   },
   logoutButton: {
     backgroundColor: '#F44336',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 20,
+    alignSelf: 'center',
+    marginTop: 'auto',
   },
-  logoutButtonText: {
+  logoutText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });
 

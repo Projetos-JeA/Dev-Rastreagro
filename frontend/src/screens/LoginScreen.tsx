@@ -1,5 +1,5 @@
 /**
- * Login Screen
+ * Tela de login para acesso dos usuários
  */
 
 import React, { useState } from 'react';
@@ -16,15 +16,19 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { showApiError } from '../utils/errorMessages';
 
-type ProfileType = 'vendedor' | 'comprador';
+interface LoginScreenProps {
+  navigation: StackNavigationProp<RootStackParamList, 'Login'>;
+}
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [profile, setProfile] = useState<ProfileType>('comprador');
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
 
   const handleLogin = async () => {
@@ -33,19 +37,11 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
-    if (!profile) {
-      Alert.alert('Erro', 'Por favor, selecione um perfil');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Mapear perfil para o tipo esperado pela API
-      const emailToUse = profile === 'vendedor' ? 'empresa@test.com' : 'cliente@test.com';
-      
-      await login({ email: emailToUse, password });
+      await login({ email, password });
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro ao fazer login');
+      showApiError(error, 'Erro ao fazer login');
       setLoading(false);
     }
   };
@@ -55,48 +51,10 @@ export default function LoginScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <Text style={styles.title}>RastreAgro</Text>
           <Text style={styles.subtitle}>Faça login para continuar</Text>
-
-          <View style={styles.profileContainer}>
-            <Text style={styles.label}>Selecione seu perfil:</Text>
-            <View style={styles.profileButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.profileButton,
-                  profile === 'comprador' && styles.profileButtonActive
-                ]}
-                onPress={() => setProfile('comprador')}
-              >
-                <Text style={[
-                  styles.profileButtonText,
-                  profile === 'comprador' && styles.profileButtonTextActive
-                ]}>
-                  Comprador
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.profileButton,
-                  profile === 'vendedor' && styles.profileButtonActive
-                ]}
-                onPress={() => setProfile('vendedor')}
-              >
-                <Text style={[
-                  styles.profileButtonText,
-                  profile === 'vendedor' && styles.profileButtonTextActive
-                ]}>
-                  Vendedor
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           <TextInput
             style={styles.input}
@@ -117,16 +75,8 @@ export default function LoginScreen({ navigation }: any) {
             autoCapitalize="none"
           />
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
-            )}
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Entrar</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -135,12 +85,6 @@ export default function LoginScreen({ navigation }: any) {
           >
             <Text style={styles.registerButtonText}>Não tem uma conta? Cadastre-se</Text>
           </TouchableOpacity>
-
-          <View style={styles.helpText}>
-            <Text style={styles.helpTextLabel}>Usuários de teste:</Text>
-            <Text style={styles.helpTextValue}>Email e senha: qualquer valor</Text>
-            <Text style={styles.helpTextValue}>O login será processado com base no perfil selecionado</Text>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -173,41 +117,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
   },
-  profileContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  profileButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  profileButton: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  profileButtonActive: {
-    borderColor: '#2E7D32',
-    backgroundColor: '#E8F5E9',
-  },
-  profileButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '600',
-  },
-  profileButtonTextActive: {
-    color: '#2E7D32',
-    fontWeight: 'bold',
-  },
   input: {
     backgroundColor: '#fff',
     borderRadius: 8,
@@ -230,29 +139,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   registerButton: {
-    marginTop: 15,
+    marginTop: 20,
     alignItems: 'center',
   },
   registerButtonText: {
     color: '#2E7D32',
     fontSize: 14,
     fontWeight: '600',
-  },
-  helpText: {
-    marginTop: 30,
-    padding: 15,
-    backgroundColor: '#E8F5E9',
-    borderRadius: 8,
-  },
-  helpTextLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    marginBottom: 5,
-  },
-  helpTextValue: {
-    fontSize: 12,
-    color: '#555',
-    marginTop: 2,
   },
 });

@@ -1,5 +1,5 @@
 /**
- * Main App Navigator
+ * Navegador principal da aplicação
  */
 
 import React from 'react';
@@ -8,10 +8,16 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
-import SuccessScreen from '../screens/SuccessScreen';
+import HomeScreen from '../screens/HomeScreen';
 import { useAuth } from '../context/AuthContext';
 
-const Stack = createStackNavigator();
+export type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  Home: undefined;
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { isAuthenticated } = useAuth();
@@ -25,7 +31,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
-          <Stack.Screen name="Success" component={SuccessScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
