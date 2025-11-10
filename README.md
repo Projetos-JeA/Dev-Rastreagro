@@ -1,179 +1,146 @@
-<<<<<<< HEAD
-# Dev-Rastreagro
-=======
-# RastreAgro 🐄
+# RastreAgro
 
-Plataforma de rastreabilidade e marketplace para compra/venda de animais, conectando clientes e empresas através de um sistema de match automático entre oferta e demanda.
+Plataforma de rastreabilidade e marketplace para compra e venda de animais, conectando compradores (clientes) e vendedores (empresas) com fluxo de cadastro completo e autenticação JWT.
 
-## 📋 Visão Geral
-
-O RastreAgro é um MVP desenvolvido para facilitar a compra e venda de animais, oferecendo:
-- Match automático entre oferta e demanda
-- Chat interno para negociação
-- Pagamento com retenção (escrow)
-- Autenticação 2FA
-- Emissão de NF-e (stub)
-
-## 🏗️ Estrutura do Projeto
+## 📦 Monorepo
 
 ```
 projeto-agro/
-├── backend/          # API FastAPI
-├── frontend/         # App React Native (Expo)
-└── docs/            # Documentação
+├── backend/
+│   ├── main.py                      # Entrypoint FastAPI
+│   ├── requirements.txt
+│   ├── env.example                  # Modelo de variáveis (.env)
+│   ├── alembic/                     # Migrations + seeds de atividades
+│   │   └── versions/20251105_01_initial.py
+│   └── app/
+│       ├── core/                    # Config, security, dependências
+│       ├── database.py
+│       ├── models/                  # users, companies, activities
+│       ├── schemas/                 # Pydantic DTOs
+│       ├── services/                # Auth, user, company, activities
+│       ├── repositories/            # Regras de acesso ao banco
+│       └── routes/                  # Auth, Users, Companies, Activities
+├── frontend/
+│   ├── App.tsx
+│   ├── package.json
+│   ├── app.json
+│   └── src/
+│       ├── config/api.ts            # Base Axios + storage tokens
+│       ├── context/AuthContext.tsx
+│       ├── navigation/AppNavigator.tsx
+│       ├── screens/
+│       │   ├── LoginScreen.tsx
+│       │   ├── RegisterScreen.tsx   # Form dinâmico buyer/seller
+│       │   └── HomeScreen.tsx
+│       └── services/                # auth, activities, company, user
+├── docs/
+│   └── SPRINT_1_REQUISITOS.md
+├── start-all.ps1 / start-all.bat    # Scripts auxiliares locais
+└── COMO_TESTAR.md
 ```
 
-## 🚀 Início Rápido
+## 🚀 Como rodar
 
-### Backend
+### 1. Preparação única
 
-1. **Entrar no diretório:**
 ```bash
-cd backend
+cd C:\Users\Secad-PCJF\OneDrive\Documentos\projeto-agro
 ```
 
-2. **Criar ambiente virtual:**
-```bash
-python -m venv venv
-```
+| O que fazer | Onde ficar | Comandos |
+| --- | --- | --- |
+| Criar/atualizar venv | `backend/` | `python -m venv venv`<br>`venv\Scripts\activate`<br>`pip install -r requirements.txt` |
+| Configurar `.env` | `backend/` | `copy env.example .env` (edite DSN e chaves) |
+| Aplicar migrations + seeds | `backend/` (com venv ativa) | `alembic upgrade head` |
+| Instalar dependências do app | `frontend/` | `npm install` |
 
-3. **Ativar ambiente virtual:**
-- Windows: `venv\Scripts\activate`
-- Linux/Mac: `source venv/bin/activate`
+> Ajuste `frontend/src/config/api.ts` se for acessar o backend por outro IP (ex.: dispositivo físico).
 
-4. **Instalar dependências:**
-```bash
-pip install -r requirements.txt
-```
+### 2. Rotina diária (ao ligar o computador / abrir o Cursor)
 
-5. **Configurar variáveis de ambiente:**
-```bash
-cp env.example .env
-```
+1. **Backend** – abra um PowerShell, entre na pasta do projeto e rode:
+   ```powershell
+   cd C:\Users\Secad-PCJF\OneDrive\Documentos\projeto-agro\backend
+   .\venv\Scripts\activate
+   python -m uvicorn main:app --reload
+   ```
+   - Deixe essa janela aberta. A API fica em `http://127.0.0.1:8000` e a documentação em `http://127.0.0.1:8000/docs`.
 
-Edite o arquivo `.env` com suas configurações do SQL Server.
+2. **Frontend** – em outra janela PowerShell:
+   ```powershell
+   cd C:\Users\Secad-PCJF\OneDrive\Documentos\projeto-agro\frontend
+   npm start
+   ```
+   - Quando o Expo perguntar, pressione `w` para abrir `http://localhost:8081` (tela de login). Escaneie o QR code se quiser testar no celular.
 
-6. **Executar:**
-```bash
-python main.py
-```
+3. **Hot Reload** – ambos os servidores estão com reload automático. Salve o arquivo e veja a mudança sem reiniciar. Reinicie apenas se adicionar dependências ou alterar arquivos de configuração que o watcher não monitora.
 
-A API estará disponível em `http://localhost:8000`
-- Swagger UI: `http://localhost:8000/docs`
+## ✅ Entregas desta sprint
 
-### Frontend
+- **Autenticação completa**: registro/login com JWT (access + refresh) e refresh automático no app
+- **Cadastro de comprador**: nickname obrigatório + validação de blacklist
+- **Cadastro de vendedor/empresa**: formulário completo + persistência no SQL Server
+- **Taxonomia de atividades**: categoria → grupo → item com seed via Alembic
+- **Seletor hierárquico no app** com múltiplas seleções
+- **Swagger organizado** (Auth, Users, Companies, Activities)
+- **Home placeholder** pós-login
 
-1. **Entrar no diretório:**
-```bash
-cd frontend
-```
+## 🏁 Status por Sprint
 
-2. **Instalar dependências:**
-```bash
-npm install
-```
+- **Sprint 1 – Descoberta e MVP**
+  - Documentação base (`docs/SPRINT_1_REQUISITOS.md`), user stories, fluxos e diretrizes de design.
+  - Definição da arquitetura (FastAPI + SQL Server + Expo) e entidades principais.
 
-3. **Executar:**
-```bash
-npm start
-```
+- **Sprint 2 – Setup do ambiente**
+  - Estrutura inicial do backend (FastAPI, models/schemas/services/routes) e frontend (Expo + TypeScript) sem Docker.
+  - Scripts de inicialização (`start-all`, `start-backend`, `start-frontend`) e documentação de teste.
+  - Configuração da venv, requirements e `tsconfig` ajustado para Expo web.
 
-## 📚 Documentação
+- **Sprint 3 – Autenticação e cadastros** *(entrega atual)*
+  - Login funcional com JWT (access + refresh) e rotas autenticadas.
+  - Cadastro de comprador e empresa diretamente em uma única tela dinâmica.
+  - Persistência completa no SQL Server com Alembic + seed de atividades (categoria → grupo → item).
+  - Seleção hierárquica de atividades com múltiplas escolhas no app e validações de negócio.
+  - Swagger organizado por tags (Auth, Users, Companies, Activities).
 
-- **Sprint 1 - Requisitos**: [docs/SPRINT_1_REQUISITOS.md](docs/SPRINT_1_REQUISITOS.md)
-- **Backend README**: [backend/README.md](backend/README.md)
-- **Frontend README**: [frontend/README.md](frontend/README.md)
+## 🔐 Conexão rápida ao SQL Server (SSMS)
 
-## 🔐 Autenticação (Mock para Desenvolvimento)
+- **Servidor**: `localhost\SQLEXPRESS`
+- **Autenticação**: `SQL Server Authentication`
+- **Login**: `sa`
+- **Senha**: `rastreagro`
 
-### Usuários de Teste
+Após conectar, utilize o banco `RastreAgro`. Tabelas principais:
+- `dbo.users` – usuários (comprador, vendedor, prestador)
+- `dbo.companies` – dados da empresa (vendedor)
+- `dbo.service_providers` – cadastro de prestadores
 
-- **Cliente**: 
-  - Email: `cliente@test.com`
-  - Senha: `senha123`
+## 🔌 Endpoints principais
 
-- **Empresa**: 
-  - Email: `empresa@test.com`
-  - Senha: `senha123`
+| Endpoint | Descrição |
+| --- | --- |
+| `POST /auth/register` | Cria buyer (apelido) ou seller (dados empresa + atividades) |
+| `POST /auth/login` | Login padrão (form-urlencoded) |
+| `POST /auth/refresh` | Gera novo access token |
+| `GET /users/me` | Perfil logado + dados da empresa quando seller |
+| `POST /companies` | Cria/atualiza empresa logada |
+| `GET /activities/*` | Listas para o seletor hierárquico |
 
-- **2FA**: Código mockado `123456`
+## 📚 Documentos úteis
 
-## 🛠️ Tecnologias
+- [Requisitos e user stories](docs/SPRINT_1_REQUISITOS.md)
+- [Backend README](backend/README.md)
+- [Frontend README](frontend/README.md)
+- [Como testar (end-to-end)](COMO_TESTAR.md)
 
-### Backend
-- FastAPI
-- SQLAlchemy
-- PyODBC (SQL Server)
-- Python-JOSE (JWT)
-- Passlib (Hash de senhas)
-
-### Frontend
-- React Native
-- Expo
-- React Navigation
-- Axios
-- TypeScript
-
-## 📱 Funcionalidades
-
-### Sprint 1 (Concluída)
-- ✅ Documentação completa com User Stories
-- ✅ Fluxos de usuário definidos
-- ✅ Diagrama de entidades
-
-### Sprint 2 (Concluída)
-- ✅ Backend FastAPI estruturado
-- ✅ Conexão com SQL Server
-- ✅ Rotas de autenticação (mock)
-- ✅ Health check
-- ✅ Swagger UI automático
-- ✅ Frontend Expo configurado
-- ✅ Telas de Login e Home
-- ✅ Integração com API
-
-### Próximas Sprints
-- Gestão de animais
-- Match automático
+## 🗂️ Próximos passos (roadmap)
+EXEMPLO
+- Controle de rebanho (próxima tarefa)
+- Match automático oferta/demanda
+- Pagamento com retenção e NF-e real
 - Chat interno
-- Pagamento com retenção
-- NF-e (integração real)
-
-## 🧪 Testando a API
-
-### Health Check
-```bash
-curl http://localhost:8000/health
-```
-
-### Login
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "cliente@test.com", "password": "senha123"}'
-```
-
-## 📝 Notas Importantes
-
-- O ambiente está configurado para **desenvolvimento local sem Docker**
-- SQL Server precisa estar instalado e rodando
-- ODBC Driver 17 for SQL Server é necessário
-- Autenticação está mockada para facilitar desenvolvimento
-- Em produção, implementar autenticação real e segurança adequada
-
-## 🤝 Contribuindo
-
-1. Faça fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📄 Licença
-
-Este projeto é privado e proprietário.
+- Verificação de empresa e 2FA
 
 ---
 
-**Desenvolvido com ❤️ para o agronegócio**
-
->>>>>>> 8007789 (Implementacao inicial do projeto RastreAgro - Backend FastAPI com SQL Server, Frontend Expo React Native, telas de login e cadastro com perfis de comprador e vendedor, autenticacao e estrutura MVC completa)
+Desenvolvido para o agro com foco em rastreabilidade e transparência.

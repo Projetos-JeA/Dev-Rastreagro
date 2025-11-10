@@ -1,127 +1,98 @@
 # 🚀 Como Testar o RastreAgro
 
-## ✅ O que foi iniciado:
+## ✅ Serviços em execução
 
-1. **Backend** - Rodando em janela separada do PowerShell
-2. **Frontend** - Rodando em janela separada do PowerShell (Expo)
+1. **Backend** – FastAPI em `http://localhost:8000`
+2. **Frontend** – Expo em `http://localhost:8081` (ou Expo Go)
 
 ---
 
-## 📱 Testando o Frontend (Mobile)
+## 🔧 Backend
 
-### Opção 1: No Navegador (MAIS FÁCIL para demonstração)
-No terminal do Expo que abriu, pressione:
+1. **Swagger**: `http://localhost:8000/docs`
+   - Tags: Auth, Users, Companies, Activities
+   - Teste rapidamente `/auth/register`, `/auth/login`, `/users/me`
+
+2. **Fluxo sugerido via Swagger**
+   ```text
+   POST /auth/register (buyer)
+   POST /auth/login (form-urlencoded username/password)
+   GET /users/me (usar bearer token)
+   ```
+
+3. **Health check**
+   - `GET http://localhost:8000/health`
+   - `GET http://localhost:8000/health/db`
+
+> Lembre-se de executar `alembic upgrade head` antes da primeira vez para criar as tabelas e seed das atividades.
+
+---
+
+## 📱 Frontend (Expo)
+
+### Opção 1 – Navegador (mais simples)
+No terminal do Expo, pressione:
 ```
 w
 ```
-Isso abrirá o app no navegador! É a forma mais fácil de testar sem precisar do celular.
+Abre o app em `http://localhost:8081`.
 
-### Opção 2: No Celular (via QR Code)
-1. Abra o app **Expo Go** no celular
-2. Escaneie o QR code que aparece no terminal
-3. Se não funcionar, certifique-se que:
-   - Celular e computador estão na mesma rede WiFi
-   - Firewall do Windows permite conexões na porta 8081
+### Opção 2 – Expo Go (celular)
+1. Abra o app Expo Go
+2. Escaneie o QR code do terminal
+3. Certifique-se de que celular e PC estão na mesma rede Wi‑Fi
 
-### Opção 3: Emulador Android
-No terminal do Expo, pressione:
-```
-a
-```
-(Requer Android Studio instalado e emulador configurado)
+### Opção 3 – Emulador Android
+o no terminal do Expo, pressione `a` (requer Android Studio configurado).
 
 ---
 
-## 🔧 Testando o Backend
+## 🎯 Fluxos para demonstrar
 
-### 1. Swagger UI (Interface Interativa)
-Abra no navegador:
+### 1. Registro como comprador
+1. Abrir o app → “Não tem uma conta? Cadastre-se” → “Sou Comprador”
+2. Preencher email, senha, apelido (não pode ser nome comum da blacklist)
+3. Após envio, o app faz login automático e mostra a Home em branco
+4. Verifique no Swagger `/users/me` usando o token do app
+
+### 2. Registro como vendedor/empresa
+1. No app → “Sou Vendedor/Empresa”
+2. Preencher dados completos + selecionar atividades (categoria → grupo → item)
+   - É possível adicionar várias atividades (lista com remover)
+3. Após salvar, login automático e Home
+4. No Swagger, teste `/companies/{id}` ou `/users/me` e confira as atividades
+
+### 3. Login e refresh
+1. Faça logout no app
+2. Login novamente com o email cadastrado
+3. Opcional: invocar uma rota protegida até o token expirar (ou forçar pelo Swagger `POST /auth/refresh`)
+
+---
+
+## ⚠️ Possíveis problemas
+
+- **Erro 401 no app** → backend indisponível ou refresh inválido. Verifique se `/auth/refresh` funciona e se o SQL Server está online.
+- **Expo não abre via IP** → libere a porta 8081 no firewall (`Start > Firewall > Nova regra > TCP > 8081`).
+- **Migration não roda** → confirme o DSN no `.env` (ex.: `SQL_SERVER_DSN=mssql+pyodbc://SA:Your_password123@localhost,1433/RastreAgro?driver=ODBC+Driver+17+for+SQL+Server`).
+
+---
+
+## 🔄 Reiniciando rapidamente
+
+```powershell
+# Backend
+cd backend
+venv\Scripts\activate
+uvicorn main:app --reload
+
+# Frontend
+cd frontend
+npm start
 ```
-http://localhost:8000/docs
-```
 
-Aqui você pode:
-- Ver todas as rotas disponíveis
-- Testar o login diretamente
-- Ver a documentação da API
-
-### 2. Testar Login via Swagger
-1. Vá em `/api/v1/auth/login`
-2. Clique em "Try it out"
-3. Use os dados de teste:
-   ```json
-   {
-     "email": "cliente@test.com",
-     "password": "senha123"
-   }
-   ```
-4. Clique em "Execute"
-5. Você receberá um token JWT!
-
-### 3. Testar Health Check
-No navegador, acesse:
-```
-http://localhost:8000/health
-```
+> Use os scripts `backend/start-backend.ps1` e `frontend/start-frontend.ps1` para abrir janelas separadas já configuradas.
 
 ---
 
-## 📝 Usuários de Teste
-
-### Cliente
-- **Email**: `cliente@test.com`
-- **Senha**: `senha123`
-
-### Empresa
-- **Email**: `empresa@test.com`
-- **Senha**: `senha123`
-
-### 2FA (Mock)
-- **Código**: `123456`
-
----
-
-## 🎯 Fluxo Completo para Demonstrar
-
-1. **Abra o Swagger**: `http://localhost:8000/docs`
-2. **Teste o login** com `cliente@test.com` / `senha123`
-3. **Copie o token** retornado
-4. **No app mobile** (pressione `w` no Expo para abrir no navegador):
-   - Digite `cliente@test.com` / `senha123`
-   - Clique em "Entrar"
-   - Digite o código 2FA: `123456`
-   - Você será redirecionado para a Home!
-
----
-
-## ⚠️ Problemas Comuns
-
-### Backend não inicia
-- Verifique se a porta 8000 está livre
-- Veja a janela do PowerShell do backend para erros
-
-### Frontend não conecta ao backend
-- Certifique-se que o backend está rodando
-- Verifique `http://localhost:8000/health` no navegador
-
-### QR Code não funciona
-- Use a opção `w` para abrir no navegador (mais fácil!)
-- Ou verifique se estão na mesma rede WiFi
-
----
-
-## 🔄 Para Reiniciar
-
-Se precisar reiniciar:
-1. Feche as janelas do PowerShell (backend e frontend)
-2. Execute novamente:
-   ```powershell
-   .\backend\start-backend.ps1
-   # Aguarde 3 segundos
-   .\frontend\start-frontend.ps1
-   ```
-
----
-
-**💡 Dica de Demonstração**: Use `w` no Expo para abrir no navegador - é mais rápido e fácil para mostrar funcionando!
+**Dica:** abra o Swagger ao lado do app Expo para acompanhar requests e testar payloads complexos (ex.: registro de empresa com múltiplas atividades).
 

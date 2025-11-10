@@ -1,37 +1,30 @@
 # RastreAgro Mobile
 
-Aplicativo mobile do RastreAgro desenvolvido com React Native e Expo.
+Aplicativo mobile do RastreAgro desenvolvido com React Native (Expo).
 
 ## 🚀 Tecnologias
 
-- **React Native**: Framework para desenvolvimento mobile
-- **Expo**: Plataforma e ferramentas para React Native
-- **React Navigation**: Navegação entre telas
-- **Axios**: Cliente HTTP para chamadas à API
-- **TypeScript**: Tipagem estática
+- **Expo / React Native 0.72**
+- **React Navigation (stack)**
+- **Axios** com interceptores de refresh token
+- **AsyncStorage** / `localStorage` (web) para persistir tokens
+- **TypeScript**
 
 ## 📋 Pré-requisitos
 
-- Node.js 16+ e npm/yarn
-- Expo CLI: `npm install -g expo-cli`
-- Expo Go app no celular (iOS/Android) ou emulador
+- Node.js 18+
+- Expo CLI (`npm install -g expo-cli`)
+- App Expo Go (Android/iOS) ou emulador
+- Backend rodando em `http://localhost:8000`
 
 ## 🔧 Instalação
 
-1. **Instalar dependências:**
 ```bash
+cd frontend
 npm install
 ```
 
-ou
-
-```bash
-yarn install
-```
-
-2. **Configurar API URL:**
-
-Edite `src/config/api.ts` se necessário para ajustar a URL da API.
+> Após alterações nas dependências, rode `npm install` para atualizar `package-lock.json`.
 
 ## ▶️ Executar
 
@@ -39,74 +32,57 @@ Edite `src/config/api.ts` se necessário para ajustar a URL da API.
 npm start
 ```
 
-ou
+No terminal do Expo:
+- `w` abre no navegador (mais simples)
+- `a` abre no emulador Android
+- `i` abre no simulador iOS
+- escaneie o QR code com o Expo Go (dispositivo físico)
 
-```bash
-yarn start
-```
+## 📱 Fluxo de Telas
 
-Isso abrirá o Expo Dev Tools. Você pode:
-- Escanear o QR code com o app Expo Go (Android/iOS)
-- Pressionar `a` para abrir no Android emulador
-- Pressionar `i` para abrir no iOS simulator
-- Pressionar `w` para abrir no navegador
-
-## 📱 Telas
-
-### Login
-- Tela de login com email e senha
-- Suporte a autenticação 2FA (mock)
-- Usuários de teste exibidos na tela
-
-### Home
-- Tela inicial após login
-- Exibe status da API
-- Lista de funcionalidades
-- Botão de logout
+1. **Login**: email + senha. Em caso de sucesso, salva tokens e navega para Home.
+2. **RegisterChoice**: escolhe entre “Sou Comprador” ou “Sou Vendedor/Empresa”.
+3. **RegisterBuyer**: formulário simples (email, senha, apelido). Faz login automático após registrar.
+4. **RegisterSeller**: formulário completo com dados empresariais + seletor hierárquico de atividades (categoria → grupo → item). Permite múltiplas seleções e login automático.
+5. **Home**: placeholder “Home” com botão “Sair”.
 
 ## 🔐 Autenticação
 
-O app usa JWT tokens armazenados no AsyncStorage. Os tokens são automaticamente incluídos nas requisições via interceptors do Axios.
+- Tokens armazenados (`access_token`, `refresh_token`) via `src/config/api.ts`
+- Interceptor renova automaticamente o `access_token` ao receber 401
+- Após registrar ou logar o app consulta `/users/me` para obter o perfil
 
-### Usuários de Teste
-
-- **Cliente**: `cliente@test.com` / `senha123`
-- **Empresa**: `empresa@test.com` / `senha123`
-
-## 📁 Estrutura do Projeto
+## 📁 Estrutura resumida
 
 ```
 frontend/
 ├── src/
-│   ├── config/
-│   │   └── api.ts              # Configuração do Axios
-│   ├── context/
-│   │   └── AuthContext.tsx     # Context de autenticação
-│   ├── navigation/
-│   │   └── AppNavigator.tsx    # Navegação principal
-│   ├── screens/
-│   │   ├── LoginScreen.tsx     # Tela de login
-│   │   └── HomeScreen.tsx      # Tela inicial
-│   └── services/
-│       └── authService.ts      # Serviço de autenticação
-├── App.tsx                     # Componente principal
-├── app.json                    # Configuração do Expo
+│   ├── config/api.ts                # Axios + storage de tokens
+│   ├── context/AuthContext.tsx      # Estado global de autenticação
+│   ├── navigation/AppNavigator.tsx  # Stack de telas
+│   ├── screens/                     # Login, Register*, Home
+│   └── services/                    # auth, activities, company, user
+├── App.tsx
 ├── package.json
 └── README.md
 ```
 
-## 🔌 Conectar com Backend
+## 🔌 Conectar com o backend
 
-Certifique-se de que o backend está rodando em `http://localhost:8000`.
-
-Para dispositivos físicos:
-- Use o IP da sua máquina na rede local
-- Exemplo: `http://192.168.1.100:8000`
-- Edite `src/config/api.ts` para usar o IP correto
+- Ajuste a URL em `src/config/api.ts` caso use IP da rede local
+- Backend precisa estar acessível em `http://localhost:8000`
+- Rotas consumidas:
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `POST /auth/refresh`
+  - `GET /users/me`
+  - `GET /activities/*`
+  - `POST /companies`
 
 ## 📝 Notas
 
-- O app está configurado para desenvolvimento
-- Em produção, configure a URL da API corretamente
-- O 2FA é mockado - implementar integração real em produção
+- A tela Home é um placeholder para futuras funcionalidades
+- O seletor de atividade utiliza `@react-native-picker/picker`
+- Caso faça build web (`npm run web`), tokens usam `localStorage`
+- Próximas sprints: adicionar fluxo de controle de rebanho e dashboards
 

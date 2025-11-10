@@ -1,129 +1,126 @@
 # RastreAgro Backend
 
-Backend da aplicação RastreAgro desenvolvido com FastAPI.
+Backend da aplicação RastreAgro desenvolvido com FastAPI + SQL Server.
 
 ## 🚀 Tecnologias
 
-- **FastAPI**: Framework web moderno e rápido
-- **SQLAlchemy**: ORM para Python
-- **PyODBC**: Driver para conexão com SQL Server
-- **Python-JOSE**: JWT tokens
-- **Passlib**: Hash de senhas
+- **FastAPI** e **Pydantic**
+- **SQLAlchemy 2.0** + **Alembic**
+- **SQL Server** via **pyodbc**
+- **JWT** (access + refresh) com `python-jose`
+- **Passlib (bcrypt)** para hash de senha
 
 ## 📋 Pré-requisitos
 
-- Python 3.9+
-- SQL Server (local ou remoto)
+- Python 3.12+
+- SQL Server local (com banco `RastreAgro` ou configure via `.env`)
 - ODBC Driver 17 for SQL Server instalado
 
-## 🔧 Instalação
+## 🔧 Setup rápido
 
-1. **Criar ambiente virtual:**
 ```bash
+cd backend
 python -m venv venv
-```
-
-2. **Ativar ambiente virtual:**
-- Windows: `venv\Scripts\activate`
-- Linux/Mac: `source venv/bin/activate`
-
-3. **Instalar dependências:**
-```bash
+venv\Scripts\activate         # Windows
+# source venv/bin/activate      # Linux/MacOS
 pip install -r requirements.txt
+copy env.example .env           # ajuste o DSN e chaves JWT
+alembic upgrade head            # cria tabelas e faz seed da taxonomia
+uvicorn main:app --reload       # http://localhost:8000
 ```
 
-4. **Configurar variáveis de ambiente:**
-```bash
-cp .env.example .env
-```
+> O DSN completo pode ser configurado em `.env` usando a variável `SQL_SERVER_DSN`.
 
-Edite o arquivo `.env` com suas configurações:
-```
-DB_SERVER=localhost
-DB_NAME=rastreagro
-DB_USER=sa
-DB_PASSWORD=sua_senha
-DB_DRIVER=ODBC Driver 17 for SQL Server
-JWT_SECRET=seu-secret-jwt-aqui
-```
+## ✨ Funcionalidades entregues
 
-## 🗄️ Banco de Dados
+- Login funcional com JWT (access + refresh)
+- Registro de compradores (buyer) e vendedores/empresas (seller)
+- Persistência completa no SQL Server (users, companies, company_activities)
+- Taxonomia de atividades hierárquica (seed automático via migration)
+- Rotas documentadas no Swagger (`/docs`)
 
-O SQL Server precisa estar rodando e acessível. O sistema criará as tabelas automaticamente na primeira execução.
+## 📚 Endpoints principais
 
-## ▶️ Executar
+| Tag | Endpoint | Descrição |
+| --- | --- | --- |
+| Auth | `POST /auth/register` | Cria buyer (nickname obrigatório) ou seller (dados de empresa + atividades) |
+|      | `POST /auth/login` | Login (form-urlencoded padrão OAuth2) |
+|      | `POST /auth/refresh` | Gera novo access token a partir do refresh |
+| Users | `GET /users/me` | Retorna usuário autenticado (inclui empresa quando seller) |
+| Companies | `POST /companies` | Cria/atualiza dados da empresa logada |
+|          | `GET /companies/{id}` | Recupera empresa por ID |
+| Activities | `GET /activities/categories` | Lista categorias |
+|           | `GET /activities/groups?category_id=` | Lista grupos da categoria |
+|           | `GET /activities/items?group_id=` | Lista itens do grupo |
+| Health | `GET /health` | Ping básico |
+|        | `GET /health/db` | Verifica conexão com o banco |
 
-```bash
-python main.py
-```
+## 🧱 Modelagem criada
 
-Ou usando uvicorn diretamente:
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+- `users` (role: `buyer` | `seller`, nickname obrigatório para buyer)
+- `companies` (1:1 com user seller)
+- `activity_category`, `activity_group`, `activity_item`
+- `company_activities` (N:N entre empresas e taxonomia)
 
-A API estará disponível em: `http://localhost:8000`
+A migration `20251105_01_initial.py` cria toda a estrutura e popula a taxonomia conforme o enunciado:
+- Pecuária (Cria/Recria/Engorda com itens Macho/Fêmea)
+- Agricultura (Soja, Sorgo, …)
+- Integração Pecuária/Agricultura (Bezerro, Garrote, …)
+- Comércio, Indústria, Serviços
 
-## 📚 Documentação
-
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
-
-## 🧪 Testar
-
-### Health Check
-```bash
-curl http://localhost:8000/health
-```
-
-### Login (Mock)
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "cliente@test.com", "password": "senha123"}'
-```
-
-## 📁 Estrutura do Projeto
+## 📁 Estrutura
 
 ```
 backend/
 ├── app/
-│   ├── __init__.py
-│   ├── database.py          # Configuração do banco
-│   ├── models/              # Modelos SQLAlchemy
-│   │   ├── __init__.py
-│   │   └── user.py
-│   ├── schemas/             # Schemas Pydantic
-│   │   ├── __init__.py
-│   │   └── auth.py
-│   ├── services/            # Lógica de negócio
-│   │   ├── __init__.py
-│   │   └── auth_service.py
-│   └── routes/              # Rotas da API
-│       ├── __init__.py
-│       ├── health.py
-│       └── auth.py
-├── main.py                  # Entry point
-├── requirements.txt
-├── .env.example
-└── README.md
+│   ├── core/                # Config, segurança e dependências
+│   ├── database.py          # Engine e SessionLocal
+│   ├── models/              # ORM (users, companies, atividades)
+│   ├── schemas/             # Pydantic schemas (auth, users, companies, activities)
+│   ├── repositories/        # Acesso a dados
+│   ├── services/            # Regras de negócio (auth, company, user, activities)
+│   └── routes/              # Rotas FastAPI
+├── alembic/                 # Migrations + seed de atividades
+├── alembic.ini
+├── env.example
+├── main.py
+└── requirements.txt
 ```
 
-## 🔐 Autenticação
+## 🔐 Segurança
 
-A autenticação atual é mockada para desenvolvimento. Usuários de teste:
+- Hash de senha com bcrypt
+- JWT access (30 minutos) + refresh (7 dias)
+- Refresh automático implementado
+- Validação de nickname com blacklist (~200 nomes comuns)
+- Sellers só podem acessar rotas de empresa (`require_role('seller')`)
 
-- **Cliente**: `cliente@test.com` / `senha123`
-- **Empresa**: `empresa@test.com` / `senha123`
+## 🧪 Testes rápidos
 
-Em produção, implementar:
-- Hash de senhas real
-- Validação de 2FA real
-- Integração com banco de dados
+```bash
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "buyer@test.com",
+    "password": "senha123",
+    "role": "buyer",
+    "nickname": "cliente_demo"
+  }'
+
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=buyer@test.com&password=senha123"
+```
+
+Swagger: `http://localhost:8000/docs`
 
 ## 📝 Notas
 
-- O sistema usa estrutura MVC (Models, Views/Routes, Controllers/Services)
-- As rotas estão organizadas por funcionalidade
-- Swagger UI é gerado automaticamente a partir dos docstrings
+- Utilize `alembic revision --autogenerate -m "mensagem"` para futuras mudanças
+- O controle de rebanho será adicionado em próxima sprint (não incluso)
+- Código preparado para extensões futuras como 2FA e verificação externa de empresas
+
+---
+
+Dúvidas? Consulte `COMO_TESTAR.md` na raiz do projeto para o fluxo completo backend + frontend.
 
