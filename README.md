@@ -39,6 +39,61 @@ projeto-agro/
 └── COMO_TESTAR.md
 ```
 
+## 🔧 Pré-requisitos e configuração do ambiente
+
+1. **Instalar o SQL Server 2019 Express**
+   - Baixe o instalador oficial (versão Express) no site da Microsoft.
+   - Durante o setup escolha a opção **Custom** e selecione os componentes Database Engine Services.
+   - Quando o instalador solicitar o modo de autenticação, escolha **Mixed Mode** (SQL Server + Windows) e defina:
+     - Login `sa`
+     - Senha `rastreagro`
+
+2. **Instalar o SQL Server Configuration Manager**
+   - É instalado junto com o SQL Server (procure por "SQL Server 2019 Configuration Manager" no menu Iniciar).
+   - Abra o Configuration Manager e verifique:
+     - Em **SQL Server Services**:
+       - `SQL Server (SQLEXPRESS)` → estado **Em execução**, modo inicial **Automático**.
+       - `SQL Server Browser` → estado **Em execução**, modo inicial **Automático**.
+     - Em **Configuração de Rede do SQL Server > Protocolos para SQLEXPRESS**:
+       - Habilite **TCP/IP**.
+       - Marque com botão direito → **Propriedades** → guia **Endereços IP**:
+         - Para cada IPAtivo (IP1, IP2, IPAll...) coloque **Habilitado = Sim**.
+         - Em **IPAll** deixe `Porta TCP = 1433` e limpe o campo `Portas TCP Dinâmicas`.
+   - Após as alterações, reinicie o serviço `SQL Server (SQLEXPRESS)` e o `SQL Server Browser`.
+
+3. **Instalar o ODBC Driver 18 for SQL Server**
+   - Faça o download no site da Microsoft (pacote `msodbcsql18`).
+   - Necessário para que o SQLAlchemy se conecte via `pyodbc`.
+
+4. **Habilitar o login `sa` e criar o banco**
+   - Abra um PowerShell **como administrador**:
+     ```powershell
+     # habilita e define a senha do sa
+     & "C:\Program Files\Microsoft SQL Server\150\Tools\Binn\OSQL.EXE" -S localhost\SQLEXPRESS -E -Q "ALTER LOGIN sa ENABLE; ALTER LOGIN sa WITH PASSWORD='rastreagro';"
+
+     # cria o banco RastreAgro caso não exista
+     & "C:\Program Files\Microsoft SQL Server\150\Tools\Binn\OSQL.EXE" -S localhost\SQLEXPRESS -E -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'RastreAgro') CREATE DATABASE RastreAgro;"
+     ```
+     > Se preferir `sqlcmd`, utilize o caminho `"C:\Program Files\Microsoft SQL Server\150\Tools\Binn\sqlcmd.exe"` com os mesmos comandos.
+
+5. **(Opcional) Instalar o SQL Server Management Studio (SSMS)**
+   - Permite visualizar tabelas, rodar queries e conferir os dados. Use `localhost\SQLEXPRESS`, login `sa`, senha `rastreagro`.
+
+6. **Configurar o arquivo `.env` do backend**
+   - Copie o `backend/env.example` para `backend/.env` e ajuste:
+     ```env
+     SQL_SERVER_DSN=mssql+pyodbc://SA:rastreagro@localhost,1433/RastreAgro?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+     JWT_SECRET_KEY=...        # gere com python -c "import secrets; print(secrets.token_urlsafe(64))"
+     JWT_REFRESH_SECRET_KEY=...# idem para refresh
+     ```
+
+7. **Aplicar migrations (estrutura + seed)**
+   ```powershell
+   cd C:\Users\Secad-PCJF\OneDrive\Documentos\projeto-agro\backend
+   .\venv\Scripts\activate
+   alembic upgrade head
+   ```
+
 ## 🚀 Como rodar
 
 ### 1. Preparação única
@@ -50,7 +105,7 @@ cd C:\Users\Secad-PCJF\OneDrive\Documentos\projeto-agro
 | O que fazer | Onde ficar | Comandos |
 | --- | --- | --- |
 | Criar/atualizar venv | `backend/` | `python -m venv venv`<br>`venv\Scripts\activate`<br>`pip install -r requirements.txt` |
-| Configurar `.env` | `backend/` | `copy env.example .env` (edite DSN e chaves) |
+| Configurar `.env` | `backend/` | `copy env.example .env` (edite DSN e chaves conforme seção acima) |
 | Aplicar migrations + seeds | `backend/` (com venv ativa) | `alembic upgrade head` |
 | Instalar dependências do app | `frontend/` | `npm install` |
 
