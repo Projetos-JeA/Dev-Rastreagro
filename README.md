@@ -83,7 +83,7 @@ cd C:\Users\Secad-PCJF\OneDrive\Documentos\projeto-agro
 - **Taxonomia de atividades**: categoria → grupo → item com seed via Alembic
 - **Seletor hierárquico no app** com múltiplas seleções
 - **Swagger organizado** (Auth, Users, Companies, Activities)
-- **Home placeholder** pós-login
+- **Home placeholder** pós-login dados cadastrais
 
 ## 🏁 Status por Sprint
 
