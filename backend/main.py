@@ -1,65 +1,47 @@
-"""
-RastreAgro Backend - Main Application
-FastAPI application entry point
-"""
+"""Ponto de entrada principal da aplicação FastAPI"""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-import os
 
-from app.routes import auth, health
-from app.database import engine, Base
+from app.core.config import get_settings
+from app.routes import auth, health, users, companies, activities
 
-# Carregar variáveis de ambiente
-load_dotenv()
+settings = get_settings()
 
-# Criar tabelas no banco de dados (apenas se banco estiver disponível)
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as e:
-    print(f"⚠️  Aviso: Não foi possível conectar ao banco de dados: {e}")
-    print("   O servidor continuará rodando, mas funcionalidades que dependem do banco podem não funcionar.")
-
-# Inicializar a aplicação FastAPI
 app = FastAPI(
-    title="RastreAgro API",
-    description="API para plataforma de rastreabilidade e marketplace de animais",
-    version="1.0.0",
+    title=settings.api_title,
+    description=settings.api_description,
+    version=settings.api_version,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especificar origens permitidas
+    allow_origins=["http://localhost:8081", "http://127.0.0.1:8081", "http://localhost", "http://127.0.0.1"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Incluir routers
-app.include_router(health.router, tags=["Health"])
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(health.router)
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(companies.router)
+app.include_router(activities.router)
 
 
 @app.get("/")
-async def root():
-    """Endpoint raiz"""
+def root():
     return {
-        "message": "RastreAgro API",
-        "version": "1.0.0",
-        "docs": "/docs"
+        "message": settings.api_title,
+        "version": settings.api_version,
+        "docs": "/docs",
     }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 

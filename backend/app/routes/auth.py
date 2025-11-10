@@ -1,111 +1,35 @@
-"""
-Authentication routes
-"""
+"""Rotas responsáveis pela autenticação de usuários"""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta
 
-from app.database import get_db
-from app.schemas.auth import LoginRequest, LoginResponse, TwoFactorRequest
-from app.services.auth_service import (
-    authenticate_user,
-    create_access_token,
-    verify_token,
-    JWT_EXPIRATION_MINUTES
-)
+from app.core.dependencies import get_db
+from app.schemas import RegisterRequest, LoginRequest, TokenPair, RefreshRequest
+from app.services.auth_service import AuthService
 
-router = APIRouter()
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/login", response_model=LoginResponse)
-async def login(
-    login_data: LoginRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Login endpoint (mock)
-    Returns JWT token for authenticated user
-    """
-    user = authenticate_user(db, login_data.email, login_data.password)
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha incorretos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=JWT_EXPIRATION_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.id, "email": user.email, "tipo": user.tipo},
-        expires_delta=access_token_expires
-    )
-    
-    return LoginResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user_id=user.id,
-        user_type=user.tipo
-    )
+@router.post("/register", response_model=TokenPair, summary="Registrar usuário")
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    user = service.register(payload)
+    access_token, refresh_token, _ = service.authenticate(LoginRequest(email=user.email, password=payload.password))
+    return TokenPair(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/login/2fa")
-async def verify_two_factor(
-    two_fa_data: TwoFactorRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Two-factor authentication verification (mock)
-    """
-    # Mock 2FA verification - em produção, validar código real
-    if two_fa_data.code == "123456":
-        # Mock user for 2FA
-        user = authenticate_user(db, two_fa_data.email, "senha123")
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Usuário não encontrado"
-            )
-        
-        access_token_expires = timedelta(minutes=JWT_EXPIRATION_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.id, "email": user.email, "tipo": user.tipo},
-            expires_delta=access_token_expires
-        )
-        
-        return LoginResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user_id=user.id,
-            user_type=user.tipo
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Código 2FA inválido"
-        )
+@router.post("/login", response_model=TokenPair, summary="Login com email e senha")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    service = AuthService(db)
+    payload = LoginRequest(email=form_data.username, password=form_data.password)
+    access_token, refresh_token, _ = service.authenticate(payload)
+    return TokenPair(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.get("/me")
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """
-    Get current authenticated user
-    """
-    token_data = verify_token(token)
-    if token_data is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    return {
-        "user_id": token_data.user_id,
-        "email": token_data.email
-    }
+@router.post("/refresh", response_model=TokenPair, summary="Gerar novo access token a partir do refresh")
+def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    access_token = service.refresh(payload.refresh_token)
+    return TokenPair(access_token=access_token, refresh_token=payload.refresh_token)
 

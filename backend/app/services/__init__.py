@@ -1,2 +1,2 @@
-# Services package
+# Pacote que agrupa os serviços de domínio
 
