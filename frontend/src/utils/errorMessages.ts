@@ -19,7 +19,7 @@ const normalizeDetail = (detail: unknown): string => {
   }
   if (Array.isArray(detail)) {
     return detail
-      .map((item) => {
+      .map(item => {
         if (!item) return '';
         if (typeof item === 'string') return item;
         if (item.msg && item.loc) {

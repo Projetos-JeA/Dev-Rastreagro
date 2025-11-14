@@ -28,20 +28,53 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const { login } = useAuth();
 
   const handleLogin = async () => {
+    // Limpar mensagem de erro anterior
+    setErrorMessage('');
+
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha email e senha');
+      const msg = 'Por favor, preencha email e senha';
+      setErrorMessage(msg);
+      Alert.alert('Erro', msg);
       return;
     }
 
     setLoading(true);
     try {
       await login({ email, password });
+      // Se chegou aqui, o login foi bem-sucedido e a navegação acontece automaticamente
     } catch (error: any) {
-      showApiError(error, 'Erro ao fazer login');
+      console.error('Erro no login:', error);
+
+      // Tratamento específico para credenciais inválidas
+      let errorMsg = 'Erro ao fazer login. Tente novamente.';
+
+      if (error?.status === 401 || error?.response?.status === 401) {
+        errorMsg = 'Email ou senha incorretos. Verifique seus dados e tente novamente.';
+      } else if (error?.message) {
+        errorMsg = error.message;
+      } else if (error?.response?.data?.detail) {
+        errorMsg =
+          typeof error.response.data.detail === 'string'
+            ? error.response.data.detail
+            : 'Erro ao fazer login. Tente novamente.';
+      }
+
+      // Exibir erro visual na tela
+      setErrorMessage(errorMsg);
+
+      // Tentar exibir alert também (funciona melhor no mobile)
+      Alert.alert('Erro no login', errorMsg);
+
+      // Se for erro 401, usar showApiError também
+      if (error?.status !== 401 && error?.response?.status !== 401) {
+        showApiError(error, errorMsg);
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -60,7 +93,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             style={styles.input}
             placeholder="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={text => {
+              setEmail(text);
+              setErrorMessage(''); // Limpar erro ao digitar
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -70,13 +106,26 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             style={styles.input}
             placeholder="Senha"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={text => {
+              setPassword(text);
+              setErrorMessage(''); // Limpar erro ao digitar
+            }}
             secureTextEntry
             autoCapitalize="none"
           />
 
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
           <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Entrar</Text>}
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Entrar</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -146,5 +195,18 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     fontSize: 14,
     fontWeight: '600',
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F44336',
+    padding: 12,
+    borderRadius: 4,
+    marginBottom: 15,
+  },
+  errorText: {
+    color: '#F44336',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

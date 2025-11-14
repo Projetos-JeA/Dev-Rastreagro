@@ -3,10 +3,7 @@
  */
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import {
-  getStoredAccessToken,
-  clearStoredTokens,
-} from '../config/api';
+import { getStoredAccessToken, clearStoredTokens } from '../config/api';
 import {
   authService,
   LoginRequest,
@@ -63,8 +60,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const login = async (credentials: LoginRequest) => {
-    await authService.login(credentials);
-    await loadUser();
+    try {
+      await authService.login(credentials);
+      await loadUser();
+    } catch (error) {
+      // Re-lançar o erro para que a tela de login possa tratá-lo
+      throw error;
+    }
   };
 
   const registerBuyer = async (payload: RegisterBuyerRequest) => {
@@ -113,4 +115,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

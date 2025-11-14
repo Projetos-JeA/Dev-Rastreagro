@@ -72,6 +72,18 @@ export const authService = {
       await setStoredTokens(response.data.access_token, response.data.refresh_token);
       return response.data;
     } catch (error: any) {
+      console.error('Erro no authService.login:', error);
+
+      // Tratamento específico para credenciais inválidas
+      if (error?.response?.status === 401) {
+        // Tentar extrair mensagem do backend
+        const detail = error?.response?.data?.detail;
+        const message =
+          typeof detail === 'string'
+            ? detail
+            : 'Email ou senha incorretos. Verifique seus dados e tente novamente.';
+        throw new ApiError(message, 401);
+      }
       throw buildApiError(error, 'Erro ao fazer login');
     }
   },
@@ -86,7 +98,12 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
-      throw buildApiError(error, 'Erro ao registrar comprador');
+      const apiError = buildApiError(error, 'Erro ao registrar comprador');
+      // Garantir que mensagem de email já cadastrado seja clara
+      if (error?.response?.status === 409) {
+        throw new ApiError('Email já cadastrado', 409);
+      }
+      throw apiError;
     }
   },
 
@@ -100,11 +117,18 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
-      throw buildApiError(error, 'Erro ao registrar empresa');
+      const apiError = buildApiError(error, 'Erro ao registrar empresa');
+      // Garantir que mensagem de email já cadastrado seja clara
+      if (error?.response?.status === 409) {
+        throw new ApiError('Email já cadastrado', 409);
+      }
+      throw apiError;
     }
   },
 
-  async registerServiceProvider(payload: RegisterServiceProviderRequest): Promise<TokenPairResponse> {
+  async registerServiceProvider(
+    payload: RegisterServiceProviderRequest
+  ): Promise<TokenPairResponse> {
     try {
       const response = await api.post<TokenPairResponse>('/auth/register', {
         email: payload.email,
@@ -114,7 +138,12 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
-      throw buildApiError(error, 'Erro ao registrar prestador');
+      const apiError = buildApiError(error, 'Erro ao registrar prestador');
+      // Garantir que mensagem de email já cadastrado seja clara
+      if (error?.response?.status === 409) {
+        throw new ApiError('Email já cadastrado', 409);
+      }
+      throw apiError;
     }
   },
 
@@ -144,4 +173,3 @@ export const authService = {
     await clearStoredTokens();
   },
 };
-

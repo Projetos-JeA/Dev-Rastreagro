@@ -16,7 +16,12 @@ import { Picker } from '@react-native-picker/picker';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../context/AuthContext';
-import { activitiesService, ActivityCategory, ActivityGroup, ActivityItem } from '../services/activitiesService';
+import {
+  activitiesService,
+  ActivityCategory,
+  ActivityGroup,
+  ActivityItem,
+} from '../services/activitiesService';
 import { showApiError } from '../utils/errorMessages';
 
 type UserType = 'buyer' | 'seller' | 'service_provider';
@@ -108,6 +113,16 @@ export default function RegisterScreen({ navigation }: Props) {
   const [items, setItems] = useState<ActivityItem[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [emailError, setEmailError] = useState<string>('');
+
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    if (pwd.length < 8) {
+      errors.push('A senha deve ter pelo menos 8 caracteres');
+    }
+    return errors;
+  };
 
   const resetFormState = () => {
     setEmail('');
@@ -121,6 +136,8 @@ export default function RegisterScreen({ navigation }: Props) {
     setSelectedGroup(null);
     setSelectedItem(null);
     setUserType('buyer');
+    setPasswordErrors([]);
+    setEmailError('');
   };
 
   useEffect(() => {
@@ -145,7 +162,7 @@ export default function RegisterScreen({ navigation }: Props) {
     if (selectedCategory) {
       activitiesService
         .listGroups(selectedCategory)
-        .then((data) => {
+        .then(data => {
           setGroups(data);
           setSelectedGroup(null);
           setItems([]);
@@ -166,7 +183,7 @@ export default function RegisterScreen({ navigation }: Props) {
     if (selectedGroup) {
       activitiesService
         .listItems(selectedGroup)
-        .then((data) => {
+        .then(data => {
           setItems(data);
           setSelectedItem(data.length > 0 ? null : null);
         })
@@ -189,8 +206,16 @@ export default function RegisterScreen({ navigation }: Props) {
 
   const tabs: Tab[] = [
     { label: 'Sou comprador', value: 'buyer', description: 'Acesso básico para compradores' },
-    { label: 'Sou empresa / vendedor', value: 'seller', description: 'Cadastro completo com atividades' },
-    { label: 'Sou prestador de serviço', value: 'service_provider', description: 'Ofereço serviços para o agro' },
+    {
+      label: 'Sou empresa / vendedor',
+      value: 'seller',
+      description: 'Cadastro completo com atividades',
+    },
+    {
+      label: 'Sou prestador de serviço',
+      value: 'service_provider',
+      description: 'Ofereço serviços para o agro',
+    },
   ];
 
   const handleAddActivity = () => {
@@ -199,9 +224,9 @@ export default function RegisterScreen({ navigation }: Props) {
       return;
     }
 
-    const categoryName = categories.find((c) => c.id === selectedCategory)?.name ?? '';
-    const groupName = selectedGroup ? groups.find((g) => g.id === selectedGroup)?.name : undefined;
-    const itemName = selectedItem ? items.find((i) => i.id === selectedItem)?.name : undefined;
+    const categoryName = categories.find(c => c.id === selectedCategory)?.name ?? '';
+    const groupName = selectedGroup ? groups.find(g => g.id === selectedGroup)?.name : undefined;
+    const itemName = selectedItem ? items.find(i => i.id === selectedItem)?.name : undefined;
 
     if (items.length > 0 && !selectedItem) {
       Alert.alert('Erro', 'Selecione um item para o grupo escolhido');
@@ -216,7 +241,7 @@ export default function RegisterScreen({ navigation }: Props) {
     };
 
     const alreadyExists = selectedActivities.some(
-      (activity) =>
+      activity =>
         activity.category_id === newActivity.category_id &&
         (activity.group_id || null) === (newActivity.group_id || null) &&
         (activity.item_id || null) === (newActivity.item_id || null)
@@ -227,25 +252,42 @@ export default function RegisterScreen({ navigation }: Props) {
       return;
     }
 
-    setSelectedActivities((prev) => [...prev, newActivity]);
+    setSelectedActivities(prev => [...prev, newActivity]);
   };
 
   const handleRemoveActivity = (index: number) => {
-    setSelectedActivities((prev) => prev.filter((_, i) => i !== index));
+    setSelectedActivities(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
+    // Limpar erros anteriores
+    setPasswordErrors([]);
+    setEmailError('');
+
+    // Validação básica
     if (!email || !password || !confirmPassword) {
       Alert.alert('Erro', 'Preencha email e senhas.');
       return;
     }
 
-    if (password.length < 8) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 8 caracteres.');
+    // Validação de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Email inválido');
+      Alert.alert('Erro', 'Email inválido');
+      return;
+    }
+
+    // Validação de senha
+    const pwdErrors = validatePassword(password);
+    if (pwdErrors.length > 0) {
+      setPasswordErrors(pwdErrors);
+      Alert.alert('Senha inválida', pwdErrors.join('\n'));
       return;
     }
 
     if (password !== confirmPassword) {
+      setPasswordErrors(['As senhas não conferem']);
       Alert.alert('Erro', 'As senhas não conferem.');
       return;
     }
@@ -266,7 +308,7 @@ export default function RegisterScreen({ navigation }: Props) {
         'estado',
       ];
 
-      const missingField = requiredSellerFields.find((field) => !sellerForm[field]);
+      const missingField = requiredSellerFields.find(field => !sellerForm[field]);
       if (missingField) {
         Alert.alert('Erro', 'Preencha todos os campos obrigatórios da empresa.');
         return;
@@ -283,7 +325,7 @@ export default function RegisterScreen({ navigation }: Props) {
         'cidade',
         'estado',
       ];
-      const missing = requiredServiceFields.find((field) => !serviceForm[field]);
+      const missing = requiredServiceFields.find(field => !serviceForm[field]);
       if (missing) {
         Alert.alert('Erro', 'Preencha os dados obrigatórios do prestador.');
         return;
@@ -295,15 +337,19 @@ export default function RegisterScreen({ navigation }: Props) {
     try {
       if (userType === 'buyer') {
         await registerBuyer({ email, password, nickname });
-        Alert.alert('Sucesso', 'Cadastro de comprador realizado com sucesso! Faça login para continuar.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              resetFormState();
-              navigation.replace('Login');
+        Alert.alert(
+          'Cadastro realizado com sucesso!',
+          'Sua conta foi criada. Faça login para continuar.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                resetFormState();
+                navigation.replace('Login');
+              },
             },
-          },
-        ]);
+          ]
+        );
       } else if (userType === 'seller') {
         await registerSeller({
           email,
@@ -317,15 +363,19 @@ export default function RegisterScreen({ navigation }: Props) {
             activities: sellerActivitiesPayload,
           },
         });
-        Alert.alert('Sucesso', 'Cadastro de empresa realizado com sucesso! Faça login para continuar.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              resetFormState();
-              navigation.replace('Login');
+        Alert.alert(
+          'Cadastro realizado com sucesso!',
+          'Sua empresa foi cadastrada. Faça login para continuar.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                resetFormState();
+                navigation.replace('Login');
+              },
             },
-          },
-        ]);
+          ]
+        );
       } else {
         await registerServiceProvider({
           email,
@@ -339,18 +389,34 @@ export default function RegisterScreen({ navigation }: Props) {
             estado: serviceForm.estado,
           },
         });
-        Alert.alert('Sucesso', 'Cadastro de prestador realizado com sucesso! Faça login para continuar.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              resetFormState();
-              navigation.replace('Login');
+        Alert.alert(
+          'Cadastro realizado com sucesso!',
+          'Seu perfil de prestador foi criado. Faça login para continuar.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                resetFormState();
+                navigation.replace('Login');
+              },
             },
-          },
-        ]);
+          ]
+        );
       }
     } catch (error: any) {
-      showApiError(error, 'Não foi possível concluir o cadastro.');
+      // Tratamento específico para email já cadastrado
+      if (error instanceof Error && error.message.includes('já cadastrado')) {
+        setEmailError('Este email já está cadastrado');
+        showApiError(error, 'Email já cadastrado. Use outro email ou faça login.');
+      } else if (error?.status === 409) {
+        setEmailError('Este email já está cadastrado');
+        showApiError(error, 'Email já cadastrado. Use outro email ou faça login.');
+      } else {
+        showApiError(
+          error,
+          'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -369,7 +435,7 @@ export default function RegisterScreen({ navigation }: Props) {
   );
 
   const handleSellerChange = (field: keyof SellerForm, value: string) => {
-    setSellerForm((prev) => ({ ...prev, [field]: value }));
+    setSellerForm(prev => ({ ...prev, [field]: value }));
   };
 
   const renderSellerForm = () => (
@@ -379,7 +445,7 @@ export default function RegisterScreen({ navigation }: Props) {
         style={styles.input}
         placeholder="Email comercial"
         value={sellerForm.email}
-        onChangeText={(value) => handleSellerChange('email', value)}
+        onChangeText={value => handleSellerChange('email', value)}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -387,70 +453,74 @@ export default function RegisterScreen({ navigation }: Props) {
         style={styles.input}
         placeholder="Nome da propriedade"
         value={sellerForm.nome_propriedade}
-        onChangeText={(value) => handleSellerChange('nome_propriedade', value)}
+        onChangeText={value => handleSellerChange('nome_propriedade', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Início das atividades (AAAA-MM-DD)"
         value={sellerForm.inicio_atividades}
-        onChangeText={(value) => handleSellerChange('inicio_atividades', value)}
+        onChangeText={value => handleSellerChange('inicio_atividades', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Ramo de atividade"
         value={sellerForm.ramo_atividade}
-        onChangeText={(value) => handleSellerChange('ramo_atividade', value)}
+        onChangeText={value => handleSellerChange('ramo_atividade', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="CNAEs"
         value={sellerForm.cnaes}
-        onChangeText={(value) => handleSellerChange('cnaes', value)}
+        onChangeText={value => handleSellerChange('cnaes', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="CNPJ/CPF"
         value={sellerForm.cnpj_cpf}
-        onChangeText={(value) => handleSellerChange('cnpj_cpf', value)}
+        onChangeText={value => handleSellerChange('cnpj_cpf', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Inscrição Estadual / Identidade"
         value={sellerForm.insc_est_identidade}
-        onChangeText={(value) => handleSellerChange('insc_est_identidade', value)}
+        onChangeText={value => handleSellerChange('insc_est_identidade', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Endereço completo"
         value={sellerForm.endereco}
-        onChangeText={(value) => handleSellerChange('endereco', value)}
+        onChangeText={value => handleSellerChange('endereco', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="CEP"
         value={sellerForm.cep}
-        onChangeText={(value) => handleSellerChange('cep', value)}
+        onChangeText={value => handleSellerChange('cep', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Cidade"
         value={sellerForm.cidade}
-        onChangeText={(value) => handleSellerChange('cidade', value)}
+        onChangeText={value => handleSellerChange('cidade', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Estado (UF)"
         value={sellerForm.estado}
         maxLength={2}
-        onChangeText={(value) => handleSellerChange('estado', value)}
+        onChangeText={value => handleSellerChange('estado', value)}
       />
 
       <Text style={styles.sectionTitle}>Atividades</Text>
       <View style={styles.pickerContainer}>
         <Text style={styles.label}>Categoria</Text>
-        <Picker selectedValue={selectedCategory} onValueChange={setSelectedCategory} style={styles.picker}>
+        <Picker
+          selectedValue={selectedCategory}
+          onValueChange={setSelectedCategory}
+          style={styles.picker}
+        >
           <Picker.Item label="Selecione" value={null} />
-          {categories.map((category) => (
+          {categories.map(category => (
             <Picker.Item key={category.id} label={category.name} value={category.id} />
           ))}
         </Picker>
@@ -459,9 +529,13 @@ export default function RegisterScreen({ navigation }: Props) {
       {groups.length > 0 && (
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Grupo</Text>
-          <Picker selectedValue={selectedGroup} onValueChange={setSelectedGroup} style={styles.picker}>
+          <Picker
+            selectedValue={selectedGroup}
+            onValueChange={setSelectedGroup}
+            style={styles.picker}
+          >
             <Picker.Item label="Selecione" value={null} />
-            {groups.map((group) => (
+            {groups.map(group => (
               <Picker.Item key={group.id} label={group.name} value={group.id} />
             ))}
           </Picker>
@@ -471,9 +545,13 @@ export default function RegisterScreen({ navigation }: Props) {
       {items.length > 0 && (
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Item</Text>
-          <Picker selectedValue={selectedItem} onValueChange={setSelectedItem} style={styles.picker}>
+          <Picker
+            selectedValue={selectedItem}
+            onValueChange={setSelectedItem}
+            style={styles.picker}
+          >
             <Picker.Item label="Selecione" value={null} />
-            {items.map((item) => (
+            {items.map(item => (
               <Picker.Item key={item.id} label={item.name} value={item.id} />
             ))}
           </Picker>
@@ -495,14 +573,16 @@ export default function RegisterScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.emptyActivities}>Nenhuma atividade selecionada</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyActivities}>Nenhuma atividade selecionada</Text>
+        }
         style={{ marginBottom: 24 }}
       />
     </View>
   );
 
   const handleServiceChange = (field: keyof ServiceForm, value: string) => {
-    setServiceForm((prev) => ({ ...prev, [field]: value }));
+    setServiceForm(prev => ({ ...prev, [field]: value }));
   };
 
   const renderServiceProviderForm = () => (
@@ -512,13 +592,13 @@ export default function RegisterScreen({ navigation }: Props) {
         style={styles.input}
         placeholder="Nome do serviço"
         value={serviceForm.nome_servico}
-        onChangeText={(value) => handleServiceChange('nome_servico', value)}
+        onChangeText={value => handleServiceChange('nome_servico', value)}
       />
       <TextInput
         style={[styles.input, styles.multilineInput]}
         placeholder="Descrição"
         value={serviceForm.descricao}
-        onChangeText={(value) => handleServiceChange('descricao', value)}
+        onChangeText={value => handleServiceChange('descricao', value)}
         multiline
         numberOfLines={3}
       />
@@ -526,14 +606,14 @@ export default function RegisterScreen({ navigation }: Props) {
         style={styles.input}
         placeholder="Telefone"
         value={serviceForm.telefone}
-        onChangeText={(value) => handleServiceChange('telefone', value)}
+        onChangeText={value => handleServiceChange('telefone', value)}
         keyboardType="phone-pad"
       />
       <TextInput
         style={styles.input}
         placeholder="Email de contato"
         value={serviceForm.email_contato}
-        onChangeText={(value) => handleServiceChange('email_contato', value)}
+        onChangeText={value => handleServiceChange('email_contato', value)}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -541,26 +621,29 @@ export default function RegisterScreen({ navigation }: Props) {
         style={styles.input}
         placeholder="Cidade"
         value={serviceForm.cidade}
-        onChangeText={(value) => handleServiceChange('cidade', value)}
+        onChangeText={value => handleServiceChange('cidade', value)}
       />
       <TextInput
         style={styles.input}
         placeholder="Estado (UF)"
         value={serviceForm.estado}
-        onChangeText={(value) => handleServiceChange('estado', value.toUpperCase())}
+        onChangeText={value => handleServiceChange('estado', value.toUpperCase())}
         maxLength={2}
       />
     </View>
   );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Criar conta</Text>
         <Text style={styles.subtitle}>Escolha o perfil e informe seus dados</Text>
 
         <View style={styles.tabContainer}>
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const active = userType === tab.value;
             return (
               <TouchableOpacity
@@ -569,7 +652,9 @@ export default function RegisterScreen({ navigation }: Props) {
                 onPress={() => setUserType(tab.value)}
               >
                 <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{tab.label}</Text>
-                <Text style={[styles.tabDescription, active && styles.tabDescriptionActive]}>{tab.description}</Text>
+                <Text style={[styles.tabDescription, active && styles.tabDescriptionActive]}>
+                  {tab.description}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -577,34 +662,63 @@ export default function RegisterScreen({ navigation }: Props) {
 
         <Text style={styles.sectionTitle}>Conta de acesso</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, emailError ? styles.inputError : null]}
           placeholder="Email de acesso"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={text => {
+            setEmail(text);
+            setEmailError('');
+          }}
           keyboardType="email-address"
           autoCapitalize="none"
         />
+        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
         <TextInput
-          style={styles.input}
-          placeholder="Senha"
+          style={[styles.input, passwordErrors.length > 0 ? styles.inputError : null]}
+          placeholder="Senha (mínimo 8 caracteres)"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={text => {
+            setPassword(text);
+            setPasswordErrors([]);
+          }}
           secureTextEntry
         />
+        {passwordErrors.length > 0 && (
+          <View style={styles.errorContainer}>
+            {passwordErrors.map((err, idx) => (
+              <Text key={idx} style={styles.errorText}>
+                • {err}
+              </Text>
+            ))}
+          </View>
+        )}
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            password !== confirmPassword && confirmPassword ? styles.inputError : null,
+          ]}
           placeholder="Confirmar senha"
           value={confirmPassword}
-          onChangeText={setConfirmPassword}
+          onChangeText={text => {
+            setConfirmPassword(text);
+            setPasswordErrors([]);
+          }}
           secureTextEntry
         />
+        {password !== confirmPassword && confirmPassword ? (
+          <Text style={styles.errorText}>As senhas não conferem</Text>
+        ) : null}
 
         {userType === 'buyer' && renderBuyerForm()}
         {userType === 'seller' && renderSellerForm()}
         {userType === 'service_provider' && renderServiceProviderForm()}
 
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Cadastrar e entrar</Text>}
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.submitButtonText}>Cadastrar e entrar</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -758,5 +872,19 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     fontSize: 14,
     fontWeight: '600',
+  },
+  inputError: {
+    borderColor: '#F44336',
+    borderWidth: 2,
+  },
+  errorText: {
+    color: '#F44336',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
+    marginLeft: 5,
+  },
+  errorContainer: {
+    marginBottom: 10,
   },
 });

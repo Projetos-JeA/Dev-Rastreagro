@@ -24,7 +24,9 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Dados do usuário</Text>
           <Text style={styles.cardItem}>Email: {user.email}</Text>
-          <Text style={styles.cardItem}>Perfil: {roleLabel[String(user.role)] ?? String(user.role)}</Text>
+          <Text style={styles.cardItem}>
+            Perfil: {roleLabel[String(user.role)] ?? String(user.role)}
+          </Text>
           {user.nickname && <Text style={styles.cardItem}>Apelido: {user.nickname}</Text>}
 
           {user.role === 'seller' && user.company && (
@@ -32,7 +34,9 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Dados da empresa</Text>
               <Text style={styles.cardItem}>Propriedade: {user.company.nome_propriedade}</Text>
               <Text style={styles.cardItem}>CNPJ/CPF: {user.company.cnpj_cpf}</Text>
-              <Text style={styles.cardItem}>Cidade/UF: {user.company.cidade} - {user.company.estado}</Text>
+              <Text style={styles.cardItem}>
+                Cidade/UF: {user.company.cidade} - {user.company.estado}
+              </Text>
               <Text style={styles.cardItem}>Email comercial: {user.company.email}</Text>
               <Text style={styles.sectionTitle}>Atividades cadastradas</Text>
               {user.company.activities?.length ? (
@@ -59,9 +63,7 @@ export default function HomeScreen() {
               {user.service_profile.telefone ? (
                 <Text style={styles.cardItem}>Telefone: {user.service_profile.telefone}</Text>
               ) : null}
-              <Text style={styles.cardItem}>
-                Contato: {user.service_profile.email_contato}
-              </Text>
+              <Text style={styles.cardItem}>Contato: {user.service_profile.email_contato}</Text>
               <Text style={styles.cardItem}>
                 Região: {user.service_profile.cidade} - {user.service_profile.estado}
               </Text>
@@ -139,4 +141,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

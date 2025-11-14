@@ -4,9 +4,7 @@
 
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = __DEV__
-  ? 'http://localhost:8000'
-  : 'https://api.rastreagro.com.br';
+const API_BASE_URL = __DEV__ ? 'http://localhost:8000' : 'https://api.rastreagro.com.br';
 
 const ACCESS_TOKEN_KEY = '@rastreagro:access_token';
 const REFRESH_TOKEN_KEY = '@rastreagro:refresh_token';
@@ -30,10 +28,11 @@ const refreshClient = axios.create({
 });
 
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> = [];
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> =
+  [];
 
 const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
+  failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
     } else {
@@ -107,12 +106,12 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error)
 );
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = (error.config || {}) as RetryAxiosRequestConfig;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -126,13 +125,13 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
+          .then(token => {
             if (token && originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
             return api(originalRequest);
           })
-          .catch((err) => Promise.reject(err));
+          .catch(err => Promise.reject(err));
       }
 
       isRefreshing = true;
@@ -160,4 +159,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
