@@ -51,6 +51,8 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 def decode_refresh_token(token: str) -> dict[str, Any]:
     try:
-        return jwt.decode(token, settings.jwt_refresh_secret_key, algorithms=[settings.jwt_algorithm])
+        return jwt.decode(
+            token, settings.jwt_refresh_secret_key, algorithms=[settings.jwt_algorithm]
+        )
     except JWTError as exc:
         raise ValueError("Refresh token inválido") from exc

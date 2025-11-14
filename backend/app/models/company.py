@@ -10,7 +10,9 @@ class Company(Base):
     __tablename__ = "companies"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    user_id = Column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
 
     nome_propriedade = Column(String(255), nullable=False)
     inicio_atividades = Column(Date, nullable=True)
@@ -28,7 +30,9 @@ class Company(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="company")
-    activities = relationship("CompanyActivity", back_populates="company", cascade="all, delete-orphan")
+    activities = relationship(
+        "CompanyActivity", back_populates="company", cascade="all, delete-orphan"
+    )
 
 
 class CompanyActivity(Base):
@@ -36,8 +40,12 @@ class CompanyActivity(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     company_id = Column(BigInteger, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
-    category_id = Column(BigInteger, ForeignKey("activity_category.id", ondelete="NO ACTION"), nullable=False)
-    group_id = Column(BigInteger, ForeignKey("activity_group.id", ondelete="NO ACTION"), nullable=True)
+    category_id = Column(
+        BigInteger, ForeignKey("activity_category.id", ondelete="NO ACTION"), nullable=False
+    )
+    group_id = Column(
+        BigInteger, ForeignKey("activity_group.id", ondelete="NO ACTION"), nullable=True
+    )
     item_id = Column(BigInteger, ForeignKey("activity_item.id", ondelete="SET NULL"), nullable=True)
 
     company = relationship("Company", back_populates="activities")

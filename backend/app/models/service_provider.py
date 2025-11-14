@@ -10,7 +10,9 @@ class ServiceProvider(Base):
     __tablename__ = "service_providers"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    user_id = Column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
 
     nome_servico = Column(String(255), nullable=False)
     descricao = Column(String(500), nullable=True)

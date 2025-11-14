@@ -22,14 +22,26 @@ def upgrade() -> None:
         sa.Column("role", sa.Enum("buyer", "seller", name="user_role"), nullable=False),
         sa.Column("nickname", sa.String(length=100), nullable=True),
         sa.Column("created_at", DateTime, default=datetime.utcnow, nullable=False),
-        sa.Column("updated_at", DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False),
+        sa.Column(
+            "updated_at",
+            DateTime,
+            default=datetime.utcnow,
+            onupdate=datetime.utcnow,
+            nullable=False,
+        ),
     )
     op.create_index(op.f("ix_users_email"), "users", ["email"], unique=True)
 
     op.create_table(
         "companies",
         sa.Column("id", BigInteger, primary_key=True),
-        sa.Column("user_id", BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True),
+        sa.Column(
+            "user_id",
+            BigInteger,
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+            unique=True,
+        ),
         sa.Column("nome_propriedade", sa.String(length=255), nullable=False),
         sa.Column("inicio_atividades", Date, nullable=True),
         sa.Column("ramo_atividade", sa.String(length=255), nullable=True),
@@ -42,7 +54,13 @@ def upgrade() -> None:
         sa.Column("estado", sa.String(length=2), nullable=False),
         sa.Column("email", sa.String(length=255), nullable=False),
         sa.Column("created_at", DateTime, default=datetime.utcnow, nullable=False),
-        sa.Column("updated_at", DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False),
+        sa.Column(
+            "updated_at",
+            DateTime,
+            default=datetime.utcnow,
+            onupdate=datetime.utcnow,
+            nullable=False,
+        ),
     )
 
     op.create_table(
@@ -54,24 +72,54 @@ def upgrade() -> None:
     op.create_table(
         "activity_group",
         sa.Column("id", BigInteger, primary_key=True),
-        sa.Column("category_id", BigInteger, sa.ForeignKey("activity_category.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "category_id",
+            BigInteger,
+            sa.ForeignKey("activity_category.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("name", sa.String(length=100), nullable=False),
     )
 
     op.create_table(
         "activity_item",
         sa.Column("id", BigInteger, primary_key=True),
-        sa.Column("group_id", BigInteger, sa.ForeignKey("activity_group.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "group_id",
+            BigInteger,
+            sa.ForeignKey("activity_group.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("name", sa.String(length=100), nullable=False),
     )
 
     op.create_table(
         "company_activities",
         sa.Column("id", BigInteger, primary_key=True),
-        sa.Column("company_id", BigInteger, sa.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("category_id", BigInteger, sa.ForeignKey("activity_category.id", ondelete="NO ACTION"), nullable=False),
-        sa.Column("group_id", BigInteger, sa.ForeignKey("activity_group.id", ondelete="NO ACTION"), nullable=True),
-        sa.Column("item_id", BigInteger, sa.ForeignKey("activity_item.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "company_id",
+            BigInteger,
+            sa.ForeignKey("companies.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "category_id",
+            BigInteger,
+            sa.ForeignKey("activity_category.id", ondelete="NO ACTION"),
+            nullable=False,
+        ),
+        sa.Column(
+            "group_id",
+            BigInteger,
+            sa.ForeignKey("activity_group.id", ondelete="NO ACTION"),
+            nullable=True,
+        ),
+        sa.Column(
+            "item_id",
+            BigInteger,
+            sa.ForeignKey("activity_item.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
     )
 
     seed_activity_taxonomy()
@@ -88,8 +136,18 @@ def downgrade() -> None:
 
 def seed_activity_taxonomy() -> None:
     category_table = table("activity_category", column("id", BigInteger), column("name", String))
-    group_table = table("activity_group", column("id", BigInteger), column("category_id", BigInteger), column("name", String))
-    item_table = table("activity_item", column("id", BigInteger), column("group_id", BigInteger), column("name", String))
+    group_table = table(
+        "activity_group",
+        column("id", BigInteger),
+        column("category_id", BigInteger),
+        column("name", String),
+    )
+    item_table = table(
+        "activity_item",
+        column("id", BigInteger),
+        column("group_id", BigInteger),
+        column("name", String),
+    )
 
     categories = [
         (1, "Pecuária"),
@@ -146,9 +204,14 @@ def seed_activity_taxonomy() -> None:
     connection.execute(sa.text("SET IDENTITY_INSERT activity_category OFF"))
 
     connection.execute(sa.text("SET IDENTITY_INSERT activity_group ON"))
-    op.bulk_insert(group_table, [{"id": gid, "category_id": cat_id, "name": name} for gid, cat_id, name in groups])
+    op.bulk_insert(
+        group_table,
+        [{"id": gid, "category_id": cat_id, "name": name} for gid, cat_id, name in groups],
+    )
     connection.execute(sa.text("SET IDENTITY_INSERT activity_group OFF"))
 
     connection.execute(sa.text("SET IDENTITY_INSERT activity_item ON"))
-    op.bulk_insert(item_table, [{"id": iid, "group_id": gid, "name": name} for iid, gid, name in items])
+    op.bulk_insert(
+        item_table, [{"id": iid, "group_id": gid, "name": name} for iid, gid, name in items]
+    )
     connection.execute(sa.text("SET IDENTITY_INSERT activity_item OFF"))

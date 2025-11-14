@@ -27,18 +27,30 @@ def upgrade() -> None:
     op.create_table(
         "service_providers",
         sa.Column("id", sa.BigInteger, primary_key=True),
-        sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True),
+        sa.Column(
+            "user_id",
+            sa.BigInteger,
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+            unique=True,
+        ),
         sa.Column("nome_servico", sa.String(length=255), nullable=False),
         sa.Column("descricao", sa.String(length=500), nullable=True),
         sa.Column("telefone", sa.String(length=30), nullable=True),
         sa.Column("email_contato", sa.String(length=255), nullable=False),
         sa.Column("cidade", sa.String(length=100), nullable=False),
         sa.Column("estado", sa.String(length=2), nullable=False),
-        sa.Column("created_at", sa.DateTime, nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
-        sa.Column("updated_at", sa.DateTime, nullable=False, server_default=sa.text("SYSUTCDATETIME()")),
+        sa.Column(
+            "created_at", sa.DateTime, nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime, nullable=False, server_default=sa.text("SYSUTCDATETIME()")
+        ),
     )
 
-    op.create_index(op.f("ix_service_providers_user_id"), "service_providers", ["user_id"], unique=True)
+    op.create_index(
+        op.f("ix_service_providers_user_id"), "service_providers", ["user_id"], unique=True
+    )
 
 
 def downgrade() -> None:

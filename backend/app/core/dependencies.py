@@ -51,7 +51,11 @@ def require_role(required_role: Union[str, UserRole]):
     required_value = required_role.value if isinstance(required_role, UserRole) else required_role
 
     def _role_dependency(current_user=Depends(get_current_user)):
-        current_value = current_user.role.value if isinstance(current_user.role, UserRole) else current_user.role
+        current_value = (
+            current_user.role.value
+            if isinstance(current_user.role, UserRole)
+            else current_user.role
+        )
         if current_value != required_value:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
         return current_user

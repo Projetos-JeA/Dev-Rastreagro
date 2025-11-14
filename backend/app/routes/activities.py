@@ -8,7 +8,9 @@ from app.services.activity_service import ActivityService
 router = APIRouter(prefix="/activities", tags=["Activities"])
 
 
-@router.get("/categories", response_model=ActivityCategoryList, summary="Listar categorias de atividade")
+@router.get(
+    "/categories", response_model=ActivityCategoryList, summary="Listar categorias de atividade"
+)
 def list_categories(db: Session = Depends(get_db)):
     service = ActivityService(db)
     categories = service.list_categories()

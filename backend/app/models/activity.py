@@ -17,7 +17,9 @@ class ActivityGroup(Base):
     __tablename__ = "activity_group"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    category_id = Column(BigInteger, ForeignKey("activity_category.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(
+        BigInteger, ForeignKey("activity_category.id", ondelete="CASCADE"), nullable=False
+    )
     name = Column(String(100), nullable=False)
 
     category = relationship("ActivityCategory", back_populates="groups")
@@ -28,7 +30,9 @@ class ActivityItem(Base):
     __tablename__ = "activity_item"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    group_id = Column(BigInteger, ForeignKey("activity_group.id", ondelete="CASCADE"), nullable=False)
+    group_id = Column(
+        BigInteger, ForeignKey("activity_group.id", ondelete="CASCADE"), nullable=False
+    )
     name = Column(String(100), nullable=False)
 
     group = relationship("ActivityGroup", back_populates="items")

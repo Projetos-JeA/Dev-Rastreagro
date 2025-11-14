@@ -22,13 +22,19 @@ class CompanyService:
             if selection.group_id:
                 groups = self.activity_repo.list_groups(selection.category_id)
                 if selection.group_id not in {g.id for g in groups}:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Grupo inválido")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail="Grupo inválido"
+                    )
             if selection.item_id:
                 if not selection.group_id:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Item sem grupo")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail="Item sem grupo"
+                    )
                 items = self.activity_repo.list_items(selection.group_id)
                 if selection.item_id not in {i.id for i in items}:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Item inválido")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail="Item inválido"
+                    )
             activities.append(
                 CompanyActivity(
                     category_id=selection.category_id,
@@ -67,5 +73,7 @@ class CompanyService:
     def get_by_id(self, company_id: int) -> CompanyResponse:
         company = self.company_repo.get_by_id(company_id)
         if not company:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada"
+            )
         return CompanyResponse.model_validate(company)

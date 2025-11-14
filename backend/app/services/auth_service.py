@@ -49,26 +49,34 @@ class AuthService:
         categories = {c.id for c in self.activity_repo.list_categories()}
         for selection in company_data.activities:
             if selection.category_id not in categories:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Categoria inválida")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Categoria inválida"
+                )
 
         activities: list[CompanyActivity] = []
 
         # Valida relacionamentos entre categoria, grupo e item antes de salvar
         for selection in company_data.activities:
             if selection.item_id and not selection.group_id:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Item informado sem grupo")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Item informado sem grupo"
+                )
 
             if selection.group_id:
                 groups = self.activity_repo.list_groups(selection.category_id)
                 group_ids = {g.id for g in groups}
                 if selection.group_id not in group_ids:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Grupo inválido")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail="Grupo inválido"
+                    )
 
             if selection.item_id:
                 items = self.activity_repo.list_items(selection.group_id)
                 item_ids = {i.id for i in items}
                 if selection.item_id not in item_ids:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Item inválido")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail="Item inválido"
+                    )
 
             activities.append(
                 CompanyActivity(
@@ -117,7 +125,9 @@ class AuthService:
         nickname = payload.nickname.strip() if payload.nickname else None
         if role == UserRole.BUYER:
             if not nickname:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Apelido é obrigatório")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Apelido é obrigatório"
+                )
             self._validate_nickname(nickname)
 
         user = User(
@@ -132,7 +142,9 @@ class AuthService:
             self.db.flush()
         except IntegrityError as exc:
             self.db.rollback()
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado") from exc
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado"
+            ) from exc
 
         if role == UserRole.SELLER and payload.company:
             company, activities = self._build_company(user.id, payload.company)
@@ -141,7 +153,9 @@ class AuthService:
                 self.db.refresh(user)
             except IntegrityError as exc:
                 self.db.rollback()
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar empresa") from exc
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar empresa"
+                ) from exc
         elif role == UserRole.SERVICE_PROVIDER and payload.service_provider:
             profile = self._build_service_provider(user.id, payload.service_provider)
             try:
@@ -149,7 +163,9 @@ class AuthService:
                 self.db.refresh(user)
             except IntegrityError as exc:
                 self.db.rollback()
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar prestador") from exc
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar prestador"
+                ) from exc
         else:
             self.db.commit()
             self.db.refresh(user)
@@ -159,7 +175,9 @@ class AuthService:
     def authenticate(self, payload: LoginRequest) -> Tuple[str, str, User]:
         user = self.user_repo.get_by_email(payload.email)
         if not user or not verify_password(payload.password, user.password_hash):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas"
+            )
 
         access_token = create_access_token(str(user.id), {"role": user.role.value})
         refresh_token = create_refresh_token(str(user.id))
@@ -177,7 +195,8 @@ class AuthService:
 
         user = self.user_repo.get_by_id(int(user_id))
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
+            )
 
         return create_access_token(str(user.id), {"role": user.role.value})
-

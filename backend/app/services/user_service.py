@@ -17,7 +17,9 @@ class UserService:
     def get_me(self, user_id: int) -> UserWithCompany:
         user = self.user_repo.get_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
+            )
 
         company = None
         service_profile = None

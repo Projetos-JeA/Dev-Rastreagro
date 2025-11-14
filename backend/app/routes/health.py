@@ -40,4 +40,3 @@ async def health_check_db():
             "error": str(exc),
             "timestamp": datetime.utcnow().isoformat(),
         }
-
