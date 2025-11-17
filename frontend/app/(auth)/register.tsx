@@ -13,24 +13,17 @@ import {
   FlatList,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../src/context/AuthContext';
 import {
   activitiesService,
   ActivityCategory,
   ActivityGroup,
   ActivityItem,
-} from '../services/activitiesService';
-import { showApiError } from '../utils/errorMessages';
+} from '../../src/services/activitiesService';
+import { showApiError } from '../../src/utils/errorMessages';
 
 type UserType = 'buyer' | 'seller' | 'service_provider';
-
-type RegisterScreenNavigation = StackNavigationProp<RootStackParamList, 'Register'>;
-
-interface Props {
-  navigation: RegisterScreenNavigation;
-}
 
 interface SelectedActivity {
   category_id: number;
@@ -91,8 +84,9 @@ const SERVICE_INITIAL_FORM: ServiceForm = {
   estado: '',
 };
 
-export default function RegisterScreen({ navigation }: Props) {
+export default function RegisterScreen() {
   const { registerBuyer, registerSeller, registerServiceProvider } = useAuth();
+  const router = useRouter();
 
   const [userType, setUserType] = useState<UserType>('buyer');
 
@@ -345,7 +339,7 @@ export default function RegisterScreen({ navigation }: Props) {
               text: 'OK',
               onPress: () => {
                 resetFormState();
-                navigation.replace('Login');
+                router.replace('/(auth)/login');
               },
             },
           ]
@@ -371,7 +365,7 @@ export default function RegisterScreen({ navigation }: Props) {
               text: 'OK',
               onPress: () => {
                 resetFormState();
-                navigation.replace('Login');
+                router.replace('/(auth)/login');
               },
             },
           ]
@@ -397,7 +391,7 @@ export default function RegisterScreen({ navigation }: Props) {
               text: 'OK',
               onPress: () => {
                 resetFormState();
-                navigation.replace('Login');
+                router.replace('/(auth)/login');
               },
             },
           ]
@@ -721,7 +715,7 @@ export default function RegisterScreen({ navigation }: Props) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Voltar</Text>
         </TouchableOpacity>
       </ScrollView>

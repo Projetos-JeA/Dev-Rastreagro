@@ -4,7 +4,9 @@
 
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = __DEV__ ? 'http://localhost:8000' : 'https://api.rastreagro.com.br';
+const API_BASE_URL = __DEV__
+  ? process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+  : 'https://api.rastreagro.com.br';
 
 const ACCESS_TOKEN_KEY = '@rastreagro:access_token';
 const REFRESH_TOKEN_KEY = '@rastreagro:refresh_token';

@@ -1,10 +1,6 @@
-/**
- * Tela inicial apresentada após o login
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function HomeScreen() {
   const { logout, user } = useAuth();

@@ -2,30 +2,29 @@
   "expo": {
     "name": "RastreAgro",
     "slug": "rastreagro-mobile",
+    "scheme": "rastreagro",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2E7D32"
+      "backgroundColor": "#FFFFFF",
+      "resizeMode": "contain"
     },
-    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rastreagro.mobile"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2E7D32"
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#D32F2F"
       },
       "package": "com.rastreagro.mobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    }
+    },
+    "plugins": ["expo-router"]
   }
 }

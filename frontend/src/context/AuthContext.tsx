@@ -64,7 +64,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await authService.login(credentials);
       await loadUser();
     } catch (error) {
-      // Re-lançar o erro para que a tela de login possa tratá-lo
       throw error;
     }
   };
