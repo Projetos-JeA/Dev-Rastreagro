@@ -1,7 +1,3 @@
-/**
- * Tela de login para acesso dos usuários
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -15,25 +11,19 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { showApiError } from '../utils/errorMessages';
+import { useAuth } from '../../src/context/AuthContext';
+import { useRouter } from 'expo-router';
 
-interface LoginScreenProps {
-  navigation: StackNavigationProp<RootStackParamList, 'Login'>;
-}
-
-export default function LoginScreen({ navigation }: LoginScreenProps) {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const { login } = useAuth();
+  const router = useRouter();
 
   const handleLogin = async () => {
-    // Limpar mensagem de erro anterior
     setErrorMessage('');
 
     if (!email || !password) {
@@ -46,11 +36,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     setLoading(true);
     try {
       await login({ email, password });
-      // Se chegou aqui, o login foi bem-sucedido e a navegação acontece automaticamente
     } catch (error: any) {
       console.error('Erro no login:', error);
 
-      // Tratamento específico para credenciais inválidas
       let errorMsg = 'Erro ao fazer login. Tente novamente.';
 
       if (error?.status === 401 || error?.response?.status === 401) {
@@ -64,16 +52,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             : 'Erro ao fazer login. Tente novamente.';
       }
 
-      // Exibir erro visual na tela
       setErrorMessage(errorMsg);
-
-      // Tentar exibir alert também (funciona melhor no mobile)
       Alert.alert('Erro no login', errorMsg);
-
-      // Se for erro 401, usar showApiError também
-      if (error?.status !== 401 && error?.response?.status !== 401) {
-        showApiError(error, errorMsg);
-      }
     } finally {
       setLoading(false);
     }
@@ -95,7 +75,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             value={email}
             onChangeText={text => {
               setEmail(text);
-              setErrorMessage(''); // Limpar erro ao digitar
+              setErrorMessage('');
             }}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -108,7 +88,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             value={password}
             onChangeText={text => {
               setPassword(text);
-              setErrorMessage(''); // Limpar erro ao digitar
+              setErrorMessage('');
             }}
             secureTextEntry
             autoCapitalize="none"
@@ -130,7 +110,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
           <TouchableOpacity
             style={styles.registerButton}
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => router.push('/(auth)/register')}
           >
             <Text style={styles.registerButtonText}>Não tem uma conta? Cadastre-se</Text>
           </TouchableOpacity>
