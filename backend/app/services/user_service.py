@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.repositories.user_repository import UserRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.service_provider_repository import ServiceProviderRepository
+from app.repositories.buyer_profile_repository import BuyerProfileRepository
 from app.schemas.user import UserWithCompany
 from app.models.user import UserRole
 
@@ -13,6 +14,7 @@ class UserService:
         self.user_repo = UserRepository(db)
         self.company_repo = CompanyRepository(db)
         self.service_repo = ServiceProviderRepository(db)
+        self.buyer_profile_repo = BuyerProfileRepository(db)
 
     def get_me(self, user_id: int) -> UserWithCompany:
         user = self.user_repo.get_by_id(user_id)
@@ -23,11 +25,14 @@ class UserService:
 
         company = None
         service_profile = None
+        buyer_profile = None
 
         if user.role.value == UserRole.SELLER.value:
             company = self.company_repo.get_by_user_id(user.id)
         elif user.role.value == UserRole.SERVICE_PROVIDER.value:
             service_profile = self.service_repo.get_by_user_id(user.id)
+        elif user.role.value == UserRole.BUYER.value:
+            buyer_profile = self.buyer_profile_repo.get_by_user_id(user.id)
 
         data = {
             "id": user.id,
@@ -38,6 +43,7 @@ class UserService:
             "updated_at": user.updated_at,
             "company": company,
             "service_profile": service_profile,
+            "buyer_profile": buyer_profile,
         }
 
         return UserWithCompany.model_validate(data)
