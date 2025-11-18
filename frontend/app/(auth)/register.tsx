@@ -46,6 +46,19 @@ interface SellerForm {
   estado: string;
 }
 
+interface BuyerForm {
+  nome_completo: string;
+  data_nascimento: string;
+  cpf: string;
+  identidade: string;
+  estado_civil: string;
+  naturalidade: string;
+  endereco: string;
+  cep: string;
+  cidade: string;
+  estado: string;
+}
+
 interface ServiceForm {
   nome_servico: string;
   descricao: string;
@@ -53,6 +66,11 @@ interface ServiceForm {
   email_contato: string;
   cidade: string;
   estado: string;
+  tipo_servico: string;
+  endereco: string;
+  cep: string;
+  cnpj_cpf: string;
+  insc_est_identidade: string;
 }
 
 type Tab = {
@@ -75,6 +93,19 @@ const SELLER_INITIAL_FORM: SellerForm = {
   estado: '',
 };
 
+const BUYER_INITIAL_FORM: BuyerForm = {
+  nome_completo: '',
+  data_nascimento: '',
+  cpf: '',
+  identidade: '',
+  estado_civil: '',
+  naturalidade: '',
+  endereco: '',
+  cep: '',
+  cidade: '',
+  estado: '',
+};
+
 const SERVICE_INITIAL_FORM: ServiceForm = {
   nome_servico: '',
   descricao: '',
@@ -82,6 +113,11 @@ const SERVICE_INITIAL_FORM: ServiceForm = {
   email_contato: '',
   cidade: '',
   estado: '',
+  tipo_servico: '',
+  endereco: '',
+  cep: '',
+  cnpj_cpf: '',
+  insc_est_identidade: '',
 };
 
 export default function RegisterScreen() {
@@ -95,6 +131,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [nickname, setNickname] = useState('');
 
+  const [buyerForm, setBuyerForm] = useState<BuyerForm>(BUYER_INITIAL_FORM);
   const [sellerForm, setSellerForm] = useState<SellerForm>(SELLER_INITIAL_FORM);
   const [serviceForm, setServiceForm] = useState<ServiceForm>(SERVICE_INITIAL_FORM);
   const [selectedActivities, setSelectedActivities] = useState<SelectedActivity[]>([]);
@@ -123,6 +160,7 @@ export default function RegisterScreen() {
     setPassword('');
     setConfirmPassword('');
     setNickname('');
+    setBuyerForm(BUYER_INITIAL_FORM);
     setSellerForm(SELLER_INITIAL_FORM);
     setServiceForm(SERVICE_INITIAL_FORM);
     setSelectedActivities([]);
@@ -189,6 +227,9 @@ export default function RegisterScreen() {
   }, [selectedGroup, userType]);
 
   useEffect(() => {
+    if (userType !== 'buyer') {
+      setBuyerForm(BUYER_INITIAL_FORM);
+    }
     if (userType !== 'service_provider') {
       setServiceForm(SERVICE_INITIAL_FORM);
     }
@@ -291,6 +332,18 @@ export default function RegisterScreen() {
         Alert.alert('Erro', 'Informe o apelido.');
         return;
       }
+      const requiredBuyerFields: Array<keyof BuyerForm> = [
+        'nome_completo',
+        'endereco',
+        'cep',
+        'cidade',
+        'estado',
+      ];
+      const missingBuyerField = requiredBuyerFields.find(field => !buyerForm[field]);
+      if (missingBuyerField) {
+        Alert.alert('Erro', 'Preencha todos os campos obrigatórios do comprador.');
+        return;
+      }
     } else if (userType === 'seller') {
       const requiredSellerFields: Array<keyof SellerForm> = [
         'email',
@@ -330,7 +383,23 @@ export default function RegisterScreen() {
 
     try {
       if (userType === 'buyer') {
-        await registerBuyer({ email, password, nickname });
+        await registerBuyer({
+          email,
+          password,
+          nickname,
+          buyer_profile: {
+            nome_completo: buyerForm.nome_completo,
+            data_nascimento: buyerForm.data_nascimento || undefined,
+            cpf: buyerForm.cpf || undefined,
+            identidade: buyerForm.identidade || undefined,
+            estado_civil: buyerForm.estado_civil || undefined,
+            naturalidade: buyerForm.naturalidade || undefined,
+            endereco: buyerForm.endereco,
+            cep: buyerForm.cep,
+            cidade: buyerForm.cidade,
+            estado: buyerForm.estado,
+          },
+        });
         Alert.alert(
           'Cadastro realizado com sucesso!',
           'Sua conta foi criada. Faça login para continuar.',
@@ -381,6 +450,11 @@ export default function RegisterScreen() {
             email_contato: serviceForm.email_contato,
             cidade: serviceForm.cidade,
             estado: serviceForm.estado,
+            tipo_servico: serviceForm.tipo_servico || undefined,
+            endereco: serviceForm.endereco || undefined,
+            cep: serviceForm.cep || undefined,
+            cnpj_cpf: serviceForm.cnpj_cpf || undefined,
+            insc_est_identidade: serviceForm.insc_est_identidade || undefined,
           },
         });
         Alert.alert(
@@ -416,14 +490,81 @@ export default function RegisterScreen() {
     }
   };
 
+  const handleBuyerChange = (field: keyof BuyerForm, value: string) => {
+    setBuyerForm(prev => ({ ...prev, [field]: value }));
+  };
+
   const renderBuyerForm = () => (
     <View>
       <Text style={styles.sectionTitle}>Dados do comprador</Text>
       <TextInput
         style={styles.input}
-        placeholder="Apelido"
+        placeholder="Apelido *"
         value={nickname}
         onChangeText={setNickname}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Nome completo *"
+        value={buyerForm.nome_completo}
+        onChangeText={value => handleBuyerChange('nome_completo', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Data de nascimento (AAAA-MM-DD)"
+        value={buyerForm.data_nascimento}
+        onChangeText={value => handleBuyerChange('data_nascimento', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="CPF"
+        value={buyerForm.cpf}
+        onChangeText={value => handleBuyerChange('cpf', value)}
+        keyboardType="numeric"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="RG / Identidade"
+        value={buyerForm.identidade}
+        onChangeText={value => handleBuyerChange('identidade', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Estado Civil"
+        value={buyerForm.estado_civil}
+        onChangeText={value => handleBuyerChange('estado_civil', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Naturalidade (Cidade/Estado)"
+        value={buyerForm.naturalidade}
+        onChangeText={value => handleBuyerChange('naturalidade', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Endereço completo *"
+        value={buyerForm.endereco}
+        onChangeText={value => handleBuyerChange('endereco', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="CEP *"
+        value={buyerForm.cep}
+        onChangeText={value => handleBuyerChange('cep', value)}
+        keyboardType="numeric"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Cidade *"
+        value={buyerForm.cidade}
+        onChangeText={value => handleBuyerChange('cidade', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Estado (UF) *"
+        value={buyerForm.estado}
+        onChangeText={value => handleBuyerChange('estado', value.toUpperCase())}
+        maxLength={2}
       />
     </View>
   );
@@ -584,7 +725,7 @@ export default function RegisterScreen() {
       <Text style={styles.sectionTitle}>Dados do prestador</Text>
       <TextInput
         style={styles.input}
-        placeholder="Nome do serviço"
+        placeholder="Nome do serviço *"
         value={serviceForm.nome_servico}
         onChangeText={value => handleServiceChange('nome_servico', value)}
       />
@@ -598,6 +739,12 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
+        placeholder="Tipo de serviço"
+        value={serviceForm.tipo_servico}
+        onChangeText={value => handleServiceChange('tipo_servico', value)}
+      />
+      <TextInput
+        style={styles.input}
         placeholder="Telefone"
         value={serviceForm.telefone}
         onChangeText={value => handleServiceChange('telefone', value)}
@@ -605,7 +752,7 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Email de contato"
+        placeholder="Email de contato *"
         value={serviceForm.email_contato}
         onChangeText={value => handleServiceChange('email_contato', value)}
         keyboardType="email-address"
@@ -613,13 +760,39 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Cidade"
+        placeholder="CNPJ/CPF"
+        value={serviceForm.cnpj_cpf}
+        onChangeText={value => handleServiceChange('cnpj_cpf', value)}
+        keyboardType="numeric"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Inscrição Estadual / Identidade"
+        value={serviceForm.insc_est_identidade}
+        onChangeText={value => handleServiceChange('insc_est_identidade', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Endereço completo"
+        value={serviceForm.endereco}
+        onChangeText={value => handleServiceChange('endereco', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="CEP"
+        value={serviceForm.cep}
+        onChangeText={value => handleServiceChange('cep', value)}
+        keyboardType="numeric"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Cidade *"
         value={serviceForm.cidade}
         onChangeText={value => handleServiceChange('cidade', value)}
       />
       <TextInput
         style={styles.input}
-        placeholder="Estado (UF)"
+        placeholder="Estado (UF) *"
         value={serviceForm.estado}
         onChangeText={value => handleServiceChange('estado', value.toUpperCase())}
         maxLength={2}

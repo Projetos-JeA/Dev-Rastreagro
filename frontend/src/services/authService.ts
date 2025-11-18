@@ -16,6 +16,18 @@ export interface RegisterBuyerRequest {
   email: string;
   password: string;
   nickname: string;
+  buyer_profile: {
+    nome_completo: string;
+    data_nascimento?: string;
+    cpf?: string;
+    identidade?: string;
+    estado_civil?: string;
+    naturalidade?: string;
+    endereco: string;
+    cep: string;
+    cidade: string;
+    estado: string;
+  };
 }
 
 export interface ActivitySelection {
@@ -53,6 +65,11 @@ export interface RegisterServiceProviderRequest {
     email_contato: string;
     cidade: string;
     estado: string;
+    tipo_servico?: string;
+    endereco?: string;
+    cep?: string;
+    cnpj_cpf?: string;
+    insc_est_identidade?: string;
   };
 }
 
@@ -87,6 +104,7 @@ export const authService = {
         password: payload.password,
         role: 'buyer',
         nickname: payload.nickname,
+        buyer_profile: payload.buyer_profile,
       });
       return response.data;
     } catch (error: any) {
