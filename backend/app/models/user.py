@@ -28,3 +28,4 @@ class User(Base):
 
     company = relationship("Company", back_populates="user", uselist=False)
     service_profile = relationship("ServiceProvider", back_populates="user", uselist=False)
+    buyer_profile = relationship("BuyerProfile", back_populates="user", uselist=False)
