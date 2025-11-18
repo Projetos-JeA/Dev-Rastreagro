@@ -1,7 +1,3 @@
-/**
- * Contexto global de autenticação da aplicação
- */
-
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { getStoredAccessToken, clearStoredTokens } from '../config/api';
 import {
@@ -26,22 +22,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const loadUser = async () => {
+  async function loadUser() {
     const userData = await userService.me();
     setUser(userData);
     setIsAuthenticated(true);
-  };
+  }
 
-  const checkAuth = async () => {
+  async function checkAuth() {
     try {
       const token = await getStoredAccessToken();
       if (token) {
@@ -57,37 +49,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
-  const login = async (credentials: LoginRequest) => {
+  async function login(credentials: LoginRequest) {
     try {
       await authService.login(credentials);
       await loadUser();
     } catch (error) {
       throw error;
     }
-  };
+  }
 
-  const registerBuyer = async (payload: RegisterBuyerRequest) => {
+  async function registerBuyer(payload: RegisterBuyerRequest) {
     await authService.registerBuyer(payload);
     await clearStoredTokens();
-  };
+  }
 
-  const registerSeller = async (payload: RegisterSellerRequest) => {
+  async function registerSeller(payload: RegisterSellerRequest) {
     await authService.registerSeller(payload);
     await clearStoredTokens();
-  };
+  }
 
-  const registerServiceProvider = async (payload: RegisterServiceProviderRequest) => {
+  async function registerServiceProvider(payload: RegisterServiceProviderRequest) {
     await authService.registerServiceProvider(payload);
     await clearStoredTokens();
-  };
+  }
 
-  const logout = async () => {
+  async function logout() {
     await authService.logout();
     setIsAuthenticated(false);
     setUser(null);
-  };
+  }
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -105,12 +101,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
-};
+}

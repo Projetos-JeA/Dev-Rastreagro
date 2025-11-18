@@ -11,6 +11,11 @@ class ServiceProviderData(BaseModel):
     email_contato: EmailStr
     cidade: str
     estado: str
+    tipo_servico: Optional[str] = None
+    endereco: Optional[str] = None
+    cep: Optional[str] = None
+    cnpj_cpf: Optional[str] = None
+    insc_est_identidade: Optional[str] = None
 
 
 class ServiceProviderResponse(ServiceProviderData):

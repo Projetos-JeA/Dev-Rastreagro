@@ -14,11 +14,12 @@ from app.core.security import (
     verify_password,
     decode_refresh_token,
 )
-from app.models import User, UserRole, Company, CompanyActivity, ServiceProvider
+from app.models import User, UserRole, Company, CompanyActivity, ServiceProvider, BuyerProfile
 from app.repositories.activity_repository import ActivityRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.service_provider_repository import ServiceProviderRepository
+from app.repositories.buyer_profile_repository import BuyerProfileRepository
 from app.schemas import RegisterRequest, LoginRequest
 from app.services.nickname_blacklist import BLACKLISTED_NICKNAMES
 
@@ -30,6 +31,7 @@ class AuthService:
         self.company_repo = CompanyRepository(db)
         self.activity_repo = ActivityRepository(db)
         self.service_provider_repo = ServiceProviderRepository(db)
+        self.buyer_profile_repo = BuyerProfileRepository(db)
 
     def _validate_email(self, email: str) -> None:
         try:
@@ -112,6 +114,26 @@ class AuthService:
             email_contato=data.email_contato,
             cidade=data.cidade,
             estado=data.estado,
+            tipo_servico=data.tipo_servico,
+            endereco=data.endereco,
+            cep=data.cep,
+            cnpj_cpf=data.cnpj_cpf,
+            insc_est_identidade=data.insc_est_identidade,
+        )
+
+    def _build_buyer_profile(self, user_id: int, data) -> BuyerProfile:
+        return BuyerProfile(
+            user_id=user_id,
+            nome_completo=data.nome_completo,
+            data_nascimento=data.data_nascimento,
+            cpf=data.cpf,
+            identidade=data.identidade,
+            estado_civil=data.estado_civil,
+            naturalidade=data.naturalidade,
+            endereco=data.endereco,
+            cep=data.cep,
+            cidade=data.cidade,
+            estado=data.estado,
         )
 
     def register(self, payload: RegisterRequest) -> User:
@@ -165,6 +187,16 @@ class AuthService:
                 self.db.rollback()
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar prestador"
+                ) from exc
+        elif role == UserRole.BUYER and payload.buyer_profile:
+            profile = self._build_buyer_profile(user.id, payload.buyer_profile)
+            try:
+                self.buyer_profile_repo.create(profile)
+                self.db.refresh(user)
+            except IntegrityError as exc:
+                self.db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar perfil do comprador"
                 ) from exc
         else:
             self.db.commit()
