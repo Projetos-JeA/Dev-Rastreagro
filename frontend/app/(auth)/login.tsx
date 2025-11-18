@@ -10,26 +10,34 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ImageBackground,
+  Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
 import { useRouter } from 'expo-router';
+import { isValidEmail } from '../../src/utils/validators';
+import { showApiError } from '../../src/utils/errorMessages';
 
 export default function LoginScreen() {
+  const { login } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async () => {
-    setErrorMessage('');
-
+  async function handleLogin() {
     if (!email || !password) {
-      const msg = 'Por favor, preencha email e senha';
-      setErrorMessage(msg);
-      Alert.alert('Erro', msg);
+      showApiError('Alerta', 'Por favor, preencha email e senha.');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      showApiError('Alerta', 'Por favor, informe um email válido.');
       return;
     }
 
@@ -37,93 +45,135 @@ export default function LoginScreen() {
     try {
       await login({ email, password });
     } catch (error: any) {
-      console.error('Erro no login:', error);
-
-      let errorMsg = 'Erro ao fazer login. Tente novamente.';
-
       if (error?.status === 401 || error?.response?.status === 401) {
-        errorMsg = 'Email ou senha incorretos. Verifique seus dados e tente novamente.';
-      } else if (error?.message) {
-        errorMsg = error.message;
-      } else if (error?.response?.data?.detail) {
-        errorMsg =
-          typeof error.response.data.detail === 'string'
-            ? error.response.data.detail
-            : 'Erro ao fazer login. Tente novamente.';
+        showApiError(error, 'Email ou senha incorretos. Verifique seus dados e tente novamente.');
+      } else {
+        showApiError(error, 'Erro ao fazer login. Tente novamente.');
       }
-
-      setErrorMessage(errorMsg);
-      Alert.alert('Erro no login', errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <ImageBackground
+      source={require('../../assets/background.png')}
       style={styles.container}
+      resizeMode="cover"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.content}>
-          <Text style={styles.title}>RastreAgro</Text>
-          <Text style={styles.subtitle}>Faça login para continuar</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={text => {
-              setEmail(text);
-              setErrorMessage('');
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            value={password}
-            onChangeText={text => {
-              setPassword(text);
-              setErrorMessage('');
-            }}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-
-          {errorMessage ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{errorMessage}</Text>
+      <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
             </View>
-          ) : null}
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
-            )}
-          </TouchableOpacity>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.text }]}>E-mail</Text>
+              <TextInput
+                style={[styles.input, { color: colors.inputText, borderBottomColor: colors.inputBorder }]}
+                placeholder="Digite seu email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                placeholderTextColor={colors.textPlaceholder}
+              />
+            </View>
 
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={() => router.push('/(auth)/register')}
-          >
-            <Text style={styles.registerButtonText}>Não tem uma conta? Cadastre-se</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.text }]}>Senha</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[styles.input, { flex: 1, paddingRight: password ? 40 : 0, color: colors.inputText, borderBottomColor: colors.inputBorder }]}
+                  placeholder="Digite sua senha"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  placeholderTextColor={colors.textPlaceholder}
+                />
+                {password ? (
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={24}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.forgotPasswordButton}>
+              <Text style={[styles.forgotPasswordText, { color: colors.link }]}>Esqueceu a senha</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: colors.buttonBackground }]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.buttonText} />
+              ) : (
+                <Text style={[styles.buttonText, { color: colors.buttonText }]}>Entrar</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.buttonSocialBackground, borderColor: colors.buttonSocialBorder }]}>
+              <Image
+                source={{ uri: 'https://www.google.com/favicon.ico' }}
+                style={styles.socialIcon}
+              />
+              <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>Entrar com Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.buttonSocialBackground, borderColor: colors.buttonSocialBorder }]}>
+              <View style={[styles.facebookIconContainer, { backgroundColor: colors.facebookColor }]}>
+                <Text style={styles.facebookIcon}>f</Text>
+              </View>
+              <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>Entrar com facebook</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.registerButton}
+              onPress={() => router.push('/(auth)/register')}
+            >
+              <Text style={[styles.registerButtonText, { color: colors.link }]}>Primeiro acesso</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -131,62 +181,102 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 40,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    textAlign: 'center',
-    marginBottom: 10,
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 60,
+    marginTop: 20,
   },
-  subtitle: {
+  logo: {
+    width: 150,
+    height: 150,
+  },
+  inputContainer: {
+    marginBottom: 25,
+  },
+  label: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 30,
+    fontWeight: '600',
+    marginBottom: 5,
   },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
     fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+    borderBottomWidth: 2,
+    backgroundColor: 'transparent',
+  },
+  passwordContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 0,
+    bottom: 8,
+    padding: 8,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
   button: {
-    backgroundColor: '#2E7D32',
-    borderRadius: 8,
-    padding: 15,
+    borderRadius: 25,
+    paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 10,
+    marginBottom: 15,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
+  socialButton: {
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  socialIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  facebookIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  facebookIcon: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
   registerButton: {
-    marginTop: 20,
+    marginTop: 15,
     alignItems: 'center',
   },
   registerButtonText: {
-    color: '#2E7D32',
     fontSize: 14,
+    textDecorationLine: 'underline',
     fontWeight: '600',
-  },
-  errorContainer: {
-    backgroundColor: '#FFEBEE',
-    borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
-    padding: 12,
-    borderRadius: 4,
-    marginBottom: 15,
-  },
-  errorText: {
-    color: '#F44336',
-    fontSize: 14,
-    fontWeight: '500',
   },
 });
