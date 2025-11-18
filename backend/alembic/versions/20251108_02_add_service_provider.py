@@ -19,7 +19,7 @@ def upgrade() -> None:
         JOIN sys.columns c ON cc.parent_object_id = c.object_id AND cc.parent_column_id = c.column_id
         WHERE cc.parent_object_id = OBJECT_ID('users') AND c.name = 'role';
         IF @constraint_name IS NOT NULL
-            EXEC ('ALTER TABLE users DROP CONSTRAINT ' + QUOTENAME(@constraint_name));
+            EXEC ('ALTER TABLE users DROP CONSTRAINT [' + @constraint_name + ']');
         ALTER TABLE users ADD CONSTRAINT CK_users_role CHECK (role IN ('buyer','seller','service_provider'));
         """
     )
