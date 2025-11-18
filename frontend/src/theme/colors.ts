@@ -19,6 +19,16 @@ export interface ThemeColors {
   error: string;
   errorBackground: string;
   link: string;
+  success: string;
+  warning: string;
+  info: string;
+  iconQuotation: string;
+  iconMyQuotations: string;
+  iconCart: string;
+  iconTrackOrder: string;
+  iconSocial: string;
+  cardBackground: string;
+  shadowColor: string;
 }
 
 export const lightTheme: ThemeColors = {
@@ -42,6 +52,16 @@ export const lightTheme: ThemeColors = {
   error: '#F44336',
   errorBackground: 'rgba(255, 235, 238, 0.9)',
   link: '#000000',
+  success: '#4CAF50',
+  warning: '#FF9800',
+  info: '#2196F3',
+  iconQuotation: '#FFB300',
+  iconMyQuotations: '#0288D1',
+  iconCart: '#388E3C',
+  iconTrackOrder: '#F57C00',
+  iconSocial: '#E53935',
+  cardBackground: 'rgba(255, 255, 255, 0.9)',
+  shadowColor: '#000',
 };
 
 export const darkTheme: ThemeColors = {
@@ -65,4 +85,14 @@ export const darkTheme: ThemeColors = {
   error: '#EF5350',
   errorBackground: 'rgba(211, 47, 47, 0.2)',
   link: '#FFFFFF',
+  success: '#66BB6A',
+  warning: '#FFA726',
+  info: '#42A5F5',
+  iconQuotation: '#FFD54F',
+  iconMyQuotations: '#29B6F6',
+  iconCart: '#66BB6A',
+  iconTrackOrder: '#FF9800',
+  iconSocial: '#EF5350',
+  cardBackground: 'rgba(30, 30, 30, 0.9)',
+  shadowColor: '#000',
 };
