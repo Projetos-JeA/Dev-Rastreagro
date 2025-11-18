@@ -10,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-const normalizeDetail = (detail: unknown): string => {
+function normalizeDetail(detail: unknown): string {
   if (!detail) {
     return '';
   }
@@ -35,26 +35,25 @@ const normalizeDetail = (detail: unknown): string => {
     return String((detail as { msg: unknown }).msg);
   }
   return String(detail);
-};
+}
 
-export const buildApiError = (error: any, fallbackMessage: string): ApiError => {
+export function buildApiError(error: any, fallbackMessage: string): ApiError {
   const status = error?.response?.status as number | undefined;
   const detail = normalizeDetail(error?.response?.data?.detail);
   const message = detail || fallbackMessage;
   return new ApiError(message, status);
-};
+}
 
-export const showApiError = (error: unknown, fallbackMessage: string) => {
+export function showApiError(error: unknown, fallbackMessage: string): void {
   if (error instanceof ApiError) {
-    const statusText = error.status ? `\nCódigo: ${error.status}` : '';
-    Alert.alert('Erro', `${error.message}${statusText}`);
+    Alert.alert('Erro', error.message);
     return;
   }
 
   if (error instanceof Error) {
-    Alert.alert('Erro', `${error.message}`);
+    Alert.alert('Erro', error.message);
     return;
   }
 
   Alert.alert('Erro', fallbackMessage);
-};
+}

@@ -1,7 +1,3 @@
-/**
- * Serviço responsável por autenticação e sessões
- */
-
 import api, { setStoredTokens, clearStoredTokens, getStoredRefreshToken } from '../config/api';
 import { ApiError, buildApiError } from '../utils/errorMessages';
 
@@ -72,11 +68,7 @@ export const authService = {
       await setStoredTokens(response.data.access_token, response.data.refresh_token);
       return response.data;
     } catch (error: any) {
-      console.error('Erro no authService.login:', error);
-
-      // Tratamento específico para credenciais inválidas
       if (error?.response?.status === 401) {
-        // Tentar extrair mensagem do backend
         const detail = error?.response?.data?.detail;
         const message =
           typeof detail === 'string'
@@ -99,7 +91,6 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       const apiError = buildApiError(error, 'Erro ao registrar comprador');
-      // Garantir que mensagem de email já cadastrado seja clara
       if (error?.response?.status === 409) {
         throw new ApiError('Email já cadastrado', 409);
       }
@@ -118,7 +109,6 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       const apiError = buildApiError(error, 'Erro ao registrar empresa');
-      // Garantir que mensagem de email já cadastrado seja clara
       if (error?.response?.status === 409) {
         throw new ApiError('Email já cadastrado', 409);
       }
@@ -139,7 +129,6 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       const apiError = buildApiError(error, 'Erro ao registrar prestador');
-      // Garantir que mensagem de email já cadastrado seja clara
       if (error?.response?.status === 409) {
         throw new ApiError('Email já cadastrado', 409);
       }
