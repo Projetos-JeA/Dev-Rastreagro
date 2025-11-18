@@ -21,9 +21,11 @@ class UserBase(BaseModel):
 class UserWithCompany(UserBase):
     company: Optional["CompanyResponse"] = None
     service_profile: Optional["ServiceProviderResponse"] = None
+    buyer_profile: Optional["BuyerProfileResponse"] = None
 
 
 from app.schemas.company import CompanyResponse  # noqa: E402  # pylint: disable=wrong-import-position
 from app.schemas.service_provider import ServiceProviderResponse  # noqa: E402  # pylint: disable=wrong-import-position
+from app.schemas.buyer_profile import BuyerProfileResponse  # noqa: E402  # pylint: disable=wrong-import-position
 
 UserWithCompany.model_rebuild()

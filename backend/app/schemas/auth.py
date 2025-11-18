@@ -6,6 +6,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, EmailStr, Field, validator
 
 from app.schemas.service_provider import ServiceProviderData
+from app.schemas.buyer_profile import BuyerProfileData
 
 
 class CompanyActivitySelection(BaseModel):
@@ -42,6 +43,7 @@ class RegisterRequest(BaseModel):
     nickname: Optional[str] = None
     company: Optional[CompanyData] = None
     service_provider: Optional[ServiceProviderData] = None
+    buyer_profile: Optional[BuyerProfileData] = None
 
     @validator("nickname")
     def validate_nickname(cls, value, values):
@@ -62,6 +64,13 @@ class RegisterRequest(BaseModel):
         role = values.get("role")
         if role == "service_provider" and value is None:
             raise ValueError("Dados do prestador são obrigatórios")
+        return value
+
+    @validator("buyer_profile")
+    def validate_buyer_profile(cls, value, values):
+        role = values.get("role")
+        if role == "buyer" and value is None:
+            raise ValueError("Dados pessoais são obrigatórios para compradores")
         return value
 
 
