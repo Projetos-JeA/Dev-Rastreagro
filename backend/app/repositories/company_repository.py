@@ -15,6 +15,12 @@ class CompanyRepository:
     def get_by_user_id(self, user_id: int) -> Optional[Company]:
         return self.db.query(Company).filter(Company.user_id == user_id).first()
 
+    def get_by_cnpj_cpf(self, cnpj_cpf: str) -> Optional[Company]:
+        """Busca empresa por CNPJ/CPF"""
+        if not cnpj_cpf:
+            return None
+        return self.db.query(Company).filter(Company.cnpj_cpf == cnpj_cpf).first()
+
     def create(self, company: Company, activities: List[CompanyActivity]) -> Company:
         self.db.add(company)
         self.db.flush()

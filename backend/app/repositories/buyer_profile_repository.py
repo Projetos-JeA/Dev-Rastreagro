@@ -22,3 +22,9 @@ class BuyerProfileRepository:
         """Busca perfil de comprador por user_id"""
         return self.db.query(BuyerProfile).filter(BuyerProfile.user_id == user_id).first()
 
+    def get_by_cpf(self, cpf: str) -> BuyerProfile | None:
+        """Busca perfil de comprador por CPF"""
+        if not cpf:
+            return None
+        return self.db.query(BuyerProfile).filter(BuyerProfile.cpf == cpf).first()
+

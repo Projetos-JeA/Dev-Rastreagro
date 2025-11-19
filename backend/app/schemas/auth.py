@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, validator
 
 from app.schemas.service_provider import ServiceProviderData
 from app.schemas.buyer_profile import BuyerProfileData
+from app.utils.validators import validate_senha
 
 
 class CompanyActivitySelection(BaseModel):
@@ -29,6 +30,47 @@ class CompanyData(BaseModel):
     email: EmailStr
     activities: List[CompanyActivitySelection]
 
+    @validator("nome_propriedade")
+    def validate_nome_propriedade(cls, v):
+        from app.utils.validators import validate_nome_completo
+        is_valid, error_msg = validate_nome_completo(v)
+        if not is_valid:
+            raise ValueError(error_msg)
+        return v.strip()
+
+    @validator("cnpj_cpf")
+    def validate_cnpj_cpf(cls, v):
+        from app.utils.validators import validate_cnpj, validate_cpf, format_cnpj, format_cpf
+        # Tenta validar como CNPJ primeiro (14 dígitos), depois CPF (11 dígitos)
+        import re
+        clean = re.sub(r'[^0-9]', '', v)
+        if len(clean) == 14:
+            is_valid, error_msg = validate_cnpj(v)
+            if not is_valid:
+                raise ValueError(error_msg)
+            return format_cnpj(v)
+        elif len(clean) == 11:
+            is_valid, error_msg = validate_cpf(v)
+            if not is_valid:
+                raise ValueError(error_msg)
+            return format_cpf(v)
+        else:
+            raise ValueError("CNPJ/CPF deve conter 11 (CPF) ou 14 (CNPJ) dígitos")
+
+    @validator("cep")
+    def validate_cep(cls, v):
+        from app.utils.validators import validate_cep, format_cep
+        is_valid, error_msg = validate_cep(v)
+        if not is_valid:
+            raise ValueError(error_msg)
+        return format_cep(v)
+
+    @validator("estado")
+    def validate_estado(cls, v):
+        if v and len(v) != 2:
+            raise ValueError("Estado deve ser a sigla com 2 letras (ex: SP, RJ)")
+        return v.upper() if v else v
+
     @validator("activities")
     def validate_activities(cls, value):
         if not value:
@@ -44,6 +86,15 @@ class RegisterRequest(BaseModel):
     company: Optional[CompanyData] = None
     service_provider: Optional[ServiceProviderData] = None
     buyer_profile: Optional[BuyerProfileData] = None
+
+    @validator("password")
+    def validate_password(cls, v):
+        is_valid, errors = validate_senha(v)
+        if not is_valid:
+            # Retorna o primeiro erro para manter compatibilidade
+            # Os erros completos serão retornados pelo exception handler
+            raise ValueError(errors[0] if errors else "Senha inválida")
+        return v
 
     @validator("nickname")
     def validate_nickname(cls, value, values):

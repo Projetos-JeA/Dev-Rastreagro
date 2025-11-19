@@ -12,6 +12,16 @@ class ServiceProviderRepository:
     def get_by_user_id(self, user_id: int) -> Optional[ServiceProvider]:
         return self.db.query(ServiceProvider).filter(ServiceProvider.user_id == user_id).first()
 
+    def get_by_cnpj_cpf(self, cnpj_cpf: str) -> Optional[ServiceProvider]:
+        """Busca prestador por CNPJ/CPF"""
+        if not cnpj_cpf:
+            return None
+        return (
+            self.db.query(ServiceProvider)
+            .filter(ServiceProvider.cnpj_cpf == cnpj_cpf)
+            .first()
+        )
+
     def create(self, profile: ServiceProvider) -> ServiceProvider:
         self.db.add(profile)
         self.db.commit()
