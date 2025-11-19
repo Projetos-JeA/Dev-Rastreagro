@@ -1,19 +1,19 @@
+import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
-  ActivityIndicator,
-  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import {
   activitiesService,
@@ -21,7 +21,9 @@ import {
   ActivityGroup,
   ActivityItem,
 } from '../../src/services/activitiesService';
+import { buscarCep } from '../../src/services/viacepService';
 import { showApiError } from '../../src/utils/errorMessages';
+import { validatePassword } from '../../src/utils/validators';
 
 type UserType = 'buyer' | 'seller' | 'service_provider';
 
@@ -54,6 +56,7 @@ interface BuyerForm {
   estado_civil: string;
   naturalidade: string;
   endereco: string;
+  bairro: string;
   cep: string;
   cidade: string;
   estado: string;
@@ -101,6 +104,7 @@ const BUYER_INITIAL_FORM: BuyerForm = {
   estado_civil: '',
   naturalidade: '',
   endereco: '',
+  bairro: '',
   cep: '',
   cidade: '',
   estado: '',
@@ -146,13 +150,56 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [emailError, setEmailError] = useState<string>('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [loadingCep, setLoadingCep] = useState(false);
 
-  const validatePassword = (pwd: string): string[] => {
-    const errors: string[] = [];
-    if (pwd.length < 8) {
-      errors.push('A senha deve ter pelo menos 8 caracteres');
+  // Função para buscar CEP via ViaCEP
+  const handleBuscarCep = async (cep: string, formType: 'buyer' | 'seller' | 'service') => {
+    const digits = (cep || '').replace(/\D/g, '');
+    if (digits.length !== 8) {
+      Alert.alert('Erro', 'CEP inválido. Use 8 dígitos.');
+      return;
     }
-    return errors;
+
+    setLoadingCep(true);
+    try {
+      const data = await buscarCep(digits);
+
+      if (formType === 'buyer') {
+        setBuyerForm(prev => ({
+          ...prev,
+          endereco: data.logradouro || prev.endereco,
+          bairro: data.bairro || prev.bairro,
+          cidade: data.localidade || prev.cidade,
+          estado: data.uf || prev.estado,
+        }));
+      } else if (formType === 'seller') {
+        setSellerForm(prev => ({
+          ...prev,
+          endereco: data.logradouro || prev.endereco,
+          cidade: data.localidade || prev.cidade,
+          estado: data.uf || prev.estado,
+        }));
+      } else if (formType === 'service') {
+        setServiceForm(prev => ({
+          ...prev,
+          endereco: data.logradouro || prev.endereco || '',
+          cidade: data.localidade || prev.cidade,
+          estado: data.uf || prev.estado,
+        }));
+      }
+    } catch (error: any) {
+      console.log('ERRO BUSCAR CEP >>>', JSON.stringify(error?.response?.data || error, null, 2));
+      console.log('Status:', error?.response?.status);
+      console.log('Response data:', error?.response?.data);
+      const message =
+        error?.response?.data?.detail ||
+        error?.message ||
+        'CEP não encontrado. Verifique o número informado.';
+      Alert.alert('Erro', message);
+    } finally {
+      setLoadingCep(false);
+    }
   };
 
   const resetFormState = () => {
@@ -314,10 +361,10 @@ export default function RegisterScreen() {
     }
 
     // Validação de senha
-    const pwdErrors = validatePassword(password);
-    if (pwdErrors.length > 0) {
-      setPasswordErrors(pwdErrors);
-      Alert.alert('Senha inválida', pwdErrors.join('\n'));
+    const pwdValidation = validatePassword(password);
+    if (!pwdValidation.isValid) {
+      setPasswordErrors(pwdValidation.errors);
+      Alert.alert('Senha inválida', pwdValidation.errors.join('\n'));
       return;
     }
 
@@ -472,13 +519,35 @@ export default function RegisterScreen() {
         );
       }
     } catch (error: any) {
-      // Tratamento específico para email já cadastrado
-      if (error instanceof Error && error.message.includes('já cadastrado')) {
+      // Tratamento de erros de validação do backend (422)
+      if (error?.response?.status === 422 && error?.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        setFieldErrors(backendErrors);
+
+        // Mapeia erros para campos específicos
+        if (backendErrors.email) {
+          setEmailError(backendErrors.email);
+        }
+        if (backendErrors.password) {
+          setPasswordErrors([backendErrors.password]);
+        }
+
+        // Mostra primeiro erro encontrado
+        const firstError = Object.values(backendErrors)[0];
+        if (firstError) {
+          Alert.alert('Erro de validação', String(firstError));
+        }
+      } else if (error instanceof Error && error.message.includes('já cadastrado')) {
         setEmailError('Este email já está cadastrado');
         showApiError(error, 'Email já cadastrado. Use outro email ou faça login.');
-      } else if (error?.status === 409) {
-        setEmailError('Este email já está cadastrado');
-        showApiError(error, 'Email já cadastrado. Use outro email ou faça login.');
+      } else if (error?.status === 409 || error?.response?.status === 409) {
+        const detail = error?.response?.data?.detail || 'Email já cadastrado';
+        if (detail.includes('CPF') || detail.includes('CNPJ')) {
+          setFieldErrors({ cpf: detail, cnpj_cpf: detail });
+        } else {
+          setEmailError('Este email já está cadastrado');
+        }
+        showApiError(error, detail);
       } else {
         showApiError(
           error,
@@ -509,6 +578,9 @@ export default function RegisterScreen() {
         value={buyerForm.nome_completo}
         onChangeText={value => handleBuyerChange('nome_completo', value)}
       />
+      {fieldErrors.nome_completo && (
+        <Text style={styles.errorText}>{fieldErrors.nome_completo}</Text>
+      )}
       <TextInput
         style={styles.input}
         placeholder="Data de nascimento (AAAA-MM-DD)"
@@ -522,6 +594,7 @@ export default function RegisterScreen() {
         onChangeText={value => handleBuyerChange('cpf', value)}
         keyboardType="numeric"
       />
+      {fieldErrors.cpf && <Text style={styles.errorText}>{fieldErrors.cpf}</Text>}
       <TextInput
         style={styles.input}
         placeholder="RG / Identidade"
@@ -548,11 +621,31 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="CEP *"
-        value={buyerForm.cep}
-        onChangeText={value => handleBuyerChange('cep', value)}
-        keyboardType="numeric"
+        placeholder="Bairro *"
+        value={buyerForm.bairro}
+        onChangeText={value => handleBuyerChange('bairro', value)}
       />
+      <View style={styles.cepContainer}>
+        <TextInput
+          style={[styles.input, styles.cepInput]}
+          placeholder="CEP *"
+          value={buyerForm.cep}
+          onChangeText={value => handleBuyerChange('cep', value)}
+          keyboardType="numeric"
+        />
+        <TouchableOpacity
+          style={styles.cepButton}
+          onPress={() => handleBuscarCep(buyerForm.cep, 'buyer')}
+          disabled={loadingCep || !buyerForm.cep}
+        >
+          {loadingCep ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.cepButtonText}>Buscar</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      {fieldErrors.cep && <Text style={styles.errorText}>{fieldErrors.cep}</Text>}
       <TextInput
         style={styles.input}
         placeholder="Cidade *"
@@ -613,7 +706,9 @@ export default function RegisterScreen() {
         placeholder="CNPJ/CPF"
         value={sellerForm.cnpj_cpf}
         onChangeText={value => handleSellerChange('cnpj_cpf', value)}
+        keyboardType="numeric"
       />
+      {fieldErrors.cnpj_cpf && <Text style={styles.errorText}>{fieldErrors.cnpj_cpf}</Text>}
       <TextInput
         style={styles.input}
         placeholder="Inscrição Estadual / Identidade"
@@ -626,12 +721,27 @@ export default function RegisterScreen() {
         value={sellerForm.endereco}
         onChangeText={value => handleSellerChange('endereco', value)}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="CEP"
-        value={sellerForm.cep}
-        onChangeText={value => handleSellerChange('cep', value)}
-      />
+      <View style={styles.cepContainer}>
+        <TextInput
+          style={[styles.input, styles.cepInput]}
+          placeholder="CEP"
+          value={sellerForm.cep}
+          onChangeText={value => handleSellerChange('cep', value)}
+          keyboardType="numeric"
+        />
+        <TouchableOpacity
+          style={styles.cepButton}
+          onPress={() => handleBuscarCep(sellerForm.cep, 'seller')}
+          disabled={loadingCep || !sellerForm.cep}
+        >
+          {loadingCep ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.cepButtonText}>Buscar</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      {fieldErrors.cep && <Text style={styles.errorText}>{fieldErrors.cep}</Text>}
       <TextInput
         style={styles.input}
         placeholder="Cidade"
@@ -765,6 +875,7 @@ export default function RegisterScreen() {
         onChangeText={value => handleServiceChange('cnpj_cpf', value)}
         keyboardType="numeric"
       />
+      {fieldErrors.cnpj_cpf && <Text style={styles.errorText}>{fieldErrors.cnpj_cpf}</Text>}
       <TextInput
         style={styles.input}
         placeholder="Inscrição Estadual / Identidade"
@@ -777,13 +888,27 @@ export default function RegisterScreen() {
         value={serviceForm.endereco}
         onChangeText={value => handleServiceChange('endereco', value)}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="CEP"
-        value={serviceForm.cep}
-        onChangeText={value => handleServiceChange('cep', value)}
-        keyboardType="numeric"
-      />
+      <View style={styles.cepContainer}>
+        <TextInput
+          style={[styles.input, styles.cepInput]}
+          placeholder="CEP"
+          value={serviceForm.cep}
+          onChangeText={value => handleServiceChange('cep', value)}
+          keyboardType="numeric"
+        />
+        <TouchableOpacity
+          style={styles.cepButton}
+          onPress={() => handleBuscarCep(serviceForm.cep, 'service')}
+          disabled={loadingCep || !serviceForm.cep}
+        >
+          {loadingCep ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.cepButtonText}>Buscar</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      {fieldErrors.cep && <Text style={styles.errorText}>{fieldErrors.cep}</Text>}
       <TextInput
         style={styles.input}
         placeholder="Cidade *"
@@ -858,6 +983,19 @@ export default function RegisterScreen() {
               </Text>
             ))}
           </View>
+        )}
+        {password && passwordErrors.length === 0 && (
+          <Text
+            style={{
+              color: '#2E7D32',
+              fontSize: 12,
+              marginTop: -10,
+              marginBottom: 10,
+              marginLeft: 5,
+            }}
+          >
+            Exemplo de senha válida: Exemplo@123
+          </Text>
         )}
         <TextInput
           style={[
@@ -966,6 +1104,40 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     fontSize: 16,
   },
+  cepContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  cepInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  cepButton: {
+    backgroundColor: '#2E7D32',
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 80,
+    marginLeft: 10,
+  },
+  cepButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  errorText: {
+    color: '#F44336',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
+    marginLeft: 5,
+  },
+  inputError: {
+    borderColor: '#F44336',
+    borderWidth: 2,
+  },
   multilineInput: {
     textAlignVertical: 'top',
   },
@@ -1039,17 +1211,6 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     fontSize: 14,
     fontWeight: '600',
-  },
-  inputError: {
-    borderColor: '#F44336',
-    borderWidth: 2,
-  },
-  errorText: {
-    color: '#F44336',
-    fontSize: 12,
-    marginTop: -10,
-    marginBottom: 10,
-    marginLeft: 5,
   },
   errorContainer: {
     marginBottom: 10,
