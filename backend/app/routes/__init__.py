@@ -1,5 +1,5 @@
 # Pacote que agrupa os módulos de rotas
 
-from app.routes import auth, health, users, companies, activities
+from app.routes import activities, auth, companies, health, users, viacep
 
-__all__ = ["auth", "health", "users", "companies", "activities"]
+__all__ = ["activities", "auth", "companies", "health", "users", "viacep"]
