@@ -1,0 +1,120 @@
+"""Service para envio de emails usando Resend"""
+
+import uuid
+from datetime import datetime, timedelta
+from typing import Optional
+from fastapi import HTTPException, status
+
+from app.core.config import get_settings
+
+settings = get_settings()
+
+# Importa Resend apenas se a chave estiver configurada
+try:
+    from resend import Resend
+    RESEND_AVAILABLE = bool(settings.resend_api_key)
+except ImportError:
+    RESEND_AVAILABLE = False
+
+
+class EmailService:
+    """Service para envio de emails de verificação usando Resend"""
+
+    def __init__(self):
+        if RESEND_AVAILABLE and settings.resend_api_key:
+            self.resend = Resend(api_key=settings.resend_api_key)
+            self.from_email = settings.resend_from_email
+        else:
+            self.resend = None
+            self.from_email = None
+
+    def generate_verification_token(self) -> str:
+        """Gera um token único para verificação de email"""
+        return str(uuid.uuid4())
+
+    async def send_verification_email(
+        self, email: str, token: str, user_name: str = ""
+    ) -> bool:
+        """
+        Envia email de verificação usando Resend
+        
+        Args:
+            email: Email do destinatário
+            token: Token de verificação
+            user_name: Nome do usuário (opcional)
+            
+        Returns:
+            bool: True se enviado com sucesso, False caso contrário
+            
+        Raises:
+            HTTPException: Se Resend não estiver configurado ou houver erro
+        """
+        if not self.resend:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Serviço de email não configurado. Configure RESEND_API_KEY no .env"
+            )
+
+        verification_url = f"{settings.frontend_url}/verify-email?token={token}"
+
+        subject = "Verifique seu email - RastreAgro"
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #2E7D32; color: white; padding: 20px; text-align: center; }}
+                .content {{ padding: 20px; background-color: #f9f9f9; }}
+                .button {{ display: inline-block; padding: 12px 24px; background-color: #2E7D32; 
+                          color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ padding: 20px; text-align: center; color: #666; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>RastreAgro</h1>
+                </div>
+                <div class="content">
+                    <h2>Verificação de Email</h2>
+                    <p>Olá{f', {user_name}' if user_name else ''}!</p>
+                    <p>Obrigado por se cadastrar no RastreAgro. Para ativar sua conta, 
+                    clique no botão abaixo para verificar seu endereço de email:</p>
+                    <p style="text-align: center;">
+                        <a href="{verification_url}" class="button">Verificar Email</a>
+                    </p>
+                    <p>Ou copie e cole o link abaixo no seu navegador:</p>
+                    <p style="word-break: break-all; color: #2E7D32;">{verification_url}</p>
+                    <p><strong>Este link expira em 48 horas.</strong></p>
+                    <p>Se você não criou esta conta, ignore este email.</p>
+                </div>
+                <div class="footer">
+                    <p>© 2024 RastreAgro. Todos os direitos reservados.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        try:
+            params = {
+                "from": self.from_email,
+                "to": [email],
+                "subject": subject,
+                "html": html_content,
+            }
+            
+            self.resend.emails.send(params)
+            return True
+            
+        except Exception as e:
+            # Log do erro (em produção, usar logging adequado)
+            print(f"Erro ao enviar email: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao enviar email de verificação. Tente novamente mais tarde."
+            )
+

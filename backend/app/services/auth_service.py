@@ -14,14 +14,27 @@ from app.core.security import (
     verify_password,
     decode_refresh_token,
 )
-from app.models import User, UserRole, Company, CompanyActivity, ServiceProvider, BuyerProfile
+from datetime import datetime, timedelta
+
+from app.models import (
+    User,
+    UserRole,
+    Company,
+    CompanyActivity,
+    ServiceProvider,
+    BuyerProfile,
+    EmailVerificationToken,
+)
 from app.repositories.activity_repository import ActivityRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.service_provider_repository import ServiceProviderRepository
 from app.repositories.buyer_profile_repository import BuyerProfileRepository
+from app.repositories.email_verification_repository import EmailVerificationRepository
 from app.schemas import RegisterRequest, LoginRequest
 from app.services.nickname_blacklist import BLACKLISTED_NICKNAMES
+from app.services.email_service import EmailService
+from app.services.document_validation_service import DocumentValidationService
 
 
 class AuthService:
@@ -32,6 +45,9 @@ class AuthService:
         self.activity_repo = ActivityRepository(db)
         self.service_provider_repo = ServiceProviderRepository(db)
         self.buyer_profile_repo = BuyerProfileRepository(db)
+        self.email_verification_repo = EmailVerificationRepository(db)
+        self.email_service = EmailService()
+        self.document_validator = DocumentValidationService()
 
     def _validate_email(self, email: str) -> None:
         try:
@@ -136,12 +152,71 @@ class AuthService:
             estado=data.estado,
         )
 
-    def register(self, payload: RegisterRequest) -> User:
+    def _validate_document_duplicates(self, payload: RegisterRequest) -> None:
+        """Valida se CPF/CNPJ já está cadastrado"""
+        role = UserRole(payload.role)
+        
+        if role == UserRole.BUYER and payload.buyer_profile and payload.buyer_profile.cpf:
+            existing_buyer = self.buyer_profile_repo.get_by_cpf(payload.buyer_profile.cpf)
+            if existing_buyer:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="CPF já cadastrado"
+                )
+        
+        elif role == UserRole.SELLER and payload.company:
+            existing_company = self.company_repo.get_by_cnpj_cpf(payload.company.cnpj_cpf)
+            if existing_company:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="CNPJ/CPF já cadastrado"
+                )
+        
+        elif role == UserRole.SERVICE_PROVIDER and payload.service_provider and payload.service_provider.cnpj_cpf:
+            existing_provider = self.service_provider_repo.get_by_cnpj_cpf(payload.service_provider.cnpj_cpf)
+            if existing_provider:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="CNPJ/CPF já cadastrado"
+                )
+
+    async def _create_and_send_verification_email(self, user: User) -> None:
+        """Cria token de verificação e envia email"""
+        # Remove token anterior se existir
+        existing_token = self.email_verification_repo.get_by_user_id(user.id)
+        if existing_token:
+            self.email_verification_repo.delete(existing_token)
+        
+        # Gera novo token
+        token = self.email_service.generate_verification_token()
+        expires_at = datetime.utcnow() + timedelta(hours=48)  # Token expira em 48 horas
+        
+        verification_token = EmailVerificationToken(
+            user_id=user.id,
+            token=token,
+            expires_at=expires_at
+        )
+        
+        self.email_verification_repo.create(verification_token)
+        
+        # Envia email de verificação
+        user_name = user.nickname or user.email.split("@")[0]
+        try:
+            await self.email_service.send_verification_email(user.email, token, user_name)
+        except HTTPException:
+            # Se falhar ao enviar email, não bloqueia o cadastro
+            # O usuário pode solicitar reenvio depois
+            pass
+
+    async def register(self, payload: RegisterRequest) -> User:
         self._validate_email(payload.email)
 
         existing_user = self.user_repo.get_by_email(payload.email)
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado")
+
+        # Valida documentos duplicados
+        self._validate_document_duplicates(payload)
 
         role = UserRole(payload.role)
         nickname = payload.nickname.strip() if payload.nickname else None
@@ -157,6 +232,7 @@ class AuthService:
             password_hash=get_password_hash(payload.password),
             role=role,
             nickname=nickname,
+            email_verificado=False,  # Email não verificado inicialmente
         )
 
         try:
@@ -201,6 +277,9 @@ class AuthService:
         else:
             self.db.commit()
             self.db.refresh(user)
+
+        # Cria token e envia email de verificação
+        await self._create_and_send_verification_email(user)
 
         return user
 

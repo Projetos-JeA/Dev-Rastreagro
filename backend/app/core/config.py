@@ -29,6 +29,15 @@ class Settings(BaseSettings):
         default=60 * 24 * 7, alias="JWT_REFRESH_TOKEN_EXPIRE_MINUTES"
     )
 
+    # Configurações para Resend (verificação de email)
+    resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
+    resend_from_email: str = Field(
+        default="noreply@rastreagro.com", alias="RESEND_FROM_EMAIL"
+    )
+    frontend_url: str = Field(
+        default="http://localhost:8081", alias="FRONTEND_URL"
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

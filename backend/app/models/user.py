@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import BigInteger, Column, DateTime, Enum as SQLEnum, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Enum as SQLEnum, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -23,9 +23,13 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(SQLEnum(UserRole, name="user_role"), nullable=False)
     nickname = Column(String(100), nullable=True)
+    email_verificado = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     company = relationship("Company", back_populates="user", uselist=False)
     service_profile = relationship("ServiceProvider", back_populates="user", uselist=False)
     buyer_profile = relationship("BuyerProfile", back_populates="user", uselist=False)
+    email_verification_token = relationship(
+        "EmailVerificationToken", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
