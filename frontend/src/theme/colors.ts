@@ -27,6 +27,7 @@ export interface ThemeColors {
   iconCart: string;
   iconTrackOrder: string;
   iconSocial: string;
+  iconHerdControl: string;
   cardBackground: string;
   shadowColor: string;
 }
@@ -60,6 +61,7 @@ export const lightTheme: ThemeColors = {
   iconCart: '#388E3C',
   iconTrackOrder: '#F57C00',
   iconSocial: '#E53935',
+  iconHerdControl: '#8D6E63',
   cardBackground: 'rgba(255, 255, 255, 0.9)',
   shadowColor: '#000',
 };
@@ -93,6 +95,7 @@ export const darkTheme: ThemeColors = {
   iconCart: '#66BB6A',
   iconTrackOrder: '#FF9800',
   iconSocial: '#EF5350',
+  iconHerdControl: '#A1887F',
   cardBackground: 'rgba(30, 30, 30, 0.9)',
   shadowColor: '#000',
 };

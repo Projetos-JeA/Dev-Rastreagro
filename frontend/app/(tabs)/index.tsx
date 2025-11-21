@@ -7,6 +7,7 @@ import {
   ImageBackground,
   Image,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -47,6 +48,26 @@ export default function HomeScreen() {
     router.push('/(tabs)/social');
   }
 
+  function handleHerdControl() {
+    router.push('/(tabs)/herd-control');
+  }
+
+  function handleProfile() {
+    router.push('/(tabs)/profile');
+  }
+
+  function handleMoreOptions() {
+    Alert.alert(
+      'Em Desenvolvimento',
+      'Novas funcionalidades e configurações estarão disponíveis em breve!',
+      [{ text: 'OK' }]
+    );
+  }
+
+  const isProducer = user?.role === 'seller';
+  const isPecuarista = user?.producer_type === 'pecuarista' || user?.producer_type === 'ambos';
+  const showHerdControl = isProducer && isPecuarista;
+
   return (
     <ImageBackground
       source={require('../../assets/background.png')}
@@ -56,10 +77,15 @@ export default function HomeScreen() {
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={28} color={colors.error} />
+          <TouchableOpacity onPress={handleMoreOptions}>
+            <Ionicons name="ellipsis-horizontal" size={28} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.headerText, { color: colors.text }]}>{userRole}</Text>
+          <View style={styles.profileContainer}>
+            <Text style={[styles.headerText, { color: colors.text }]}>{userRole}</Text>
+            <TouchableOpacity onPress={handleProfile} >
+              <Ionicons name="person-circle-outline" size={32} color={colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.logoContainer}>
@@ -101,6 +127,14 @@ export default function HomeScreen() {
             onPress={handleSocial}
             iconColor={colors.iconSocial}
           />
+          {showHerdControl && (
+            <MenuCard
+              icon="stats-chart"
+              title="Controle de Rebanho"
+              onPress={handleHerdControl}
+              iconColor={colors.iconHerdControl}
+            />
+          )}
         </View>
       </ScrollView>
     </ImageBackground>
@@ -126,8 +160,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
   },
-  logoutButton: {
-    paddingTop: 8,
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   logoContainer: {
     alignItems: 'center',
@@ -141,10 +177,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   menuContainer: {
     gap: 16,
+    paddingBottom: 30,
   },
 });
