@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -13,47 +11,66 @@ import {
   ImageBackground,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useRouter } from 'expo-router';
 import { isValidEmail } from '../../src/utils/validators';
-import { showApiError } from '../../src/utils/errorMessages';
+import Input from '../../src/components/Input';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const { colors } = useTheme();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
   const router = useRouter();
 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  const updateField = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   async function handleLogin() {
-    if (!email || !password) {
-      showApiError('Alerta', 'Por favor, preencha email e senha.');
-      return;
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Email inválido';
     }
 
-    if (!isValidEmail(email)) {
-      showApiError('Alerta', 'Por favor, informe um email válido.');
+    if (!formData.password.trim()) {
+      newErrors.password = 'Senha é obrigatória';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
     setLoading(true);
     try {
-      await login({ email, password });
+      await login({ email: formData.email, password: formData.password });
     } catch (error: any) {
       if (error?.status === 401 || error?.response?.status === 401) {
-        showApiError(error, 'Email ou senha incorretos. Verifique seus dados e tente novamente.');
+        setErrors({ password: 'Email ou senha incorretos' });
       } else {
-        showApiError(error, 'Erro ao fazer login. Tente novamente.');
+        setErrors({ password: 'Erro ao fazer login. Tente novamente.' });
       }
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <ImageBackground
@@ -80,46 +97,27 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: colors.text }]}>E-mail</Text>
-              <TextInput
-                style={[styles.input, { color: colors.inputText, borderBottomColor: colors.inputBorder }]}
-                placeholder="Digite seu email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                placeholderTextColor={colors.textPlaceholder}
-              />
-            </View>
+            <Input
+              label="E-mail"
+              required
+              value={formData.email}
+              onChangeText={(text) => updateField('email', text)}
+              error={errors.email}
+              placeholder="Digite seu email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: colors.text }]}>Senha</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={[styles.input, { flex: 1, paddingRight: password ? 40 : 0, color: colors.inputText, borderBottomColor: colors.inputBorder }]}
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  placeholderTextColor={colors.textPlaceholder}
-                />
-                {password ? (
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons
-                      name={showPassword ? 'eye-off' : 'eye'}
-                      size={24}
-                      color={colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            </View>
+            <Input
+              label="Senha"
+              required
+              value={formData.password}
+              onChangeText={(text) => updateField('password', text)}
+              error={errors.password}
+              placeholder="Digite sua senha"
+              isPassword
+              autoCapitalize="none"
+            />
 
             <TouchableOpacity style={styles.forgotPasswordButton}>
               <Text style={[styles.forgotPasswordText, { color: colors.link }]}>Esqueceu a senha</Text>
@@ -154,7 +152,7 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               style={styles.registerButton}
-              onPress={() => router.push('/(auth)/register')}
+              onPress={() => router.push('/(auth)/first-access')}
             >
               <Text style={[styles.registerButtonText, { color: colors.link }]}>Primeiro acesso</Text>
             </TouchableOpacity>
@@ -186,43 +184,17 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 40,
     marginTop: 20,
   },
   logo: {
     width: 150,
     height: 150,
   },
-  inputContainer: {
-    marginBottom: 25,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  input: {
-    fontSize: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 0,
-    borderBottomWidth: 2,
-    backgroundColor: 'transparent',
-  },
-  passwordContainer: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 0,
-    bottom: 8,
-    padding: 8,
-  },
   forgotPasswordButton: {
     alignSelf: 'flex-start',
     marginBottom: 20,
+    marginTop: -10,
   },
   forgotPasswordText: {
     fontSize: 14,
