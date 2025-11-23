@@ -23,6 +23,7 @@ class BuyerProfileData(BaseModel):
     estado_civil: Optional[str] = None
     naturalidade: Optional[str] = None
     endereco: str
+    bairro: Optional[str] = None
     cep: str
     cidade: str
     estado: str

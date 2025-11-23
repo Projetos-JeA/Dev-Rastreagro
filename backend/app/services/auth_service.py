@@ -113,6 +113,7 @@ class AuthService:
             cnpj_cpf=company_data.cnpj_cpf,
             insc_est_identidade=company_data.insc_est_identidade,
             endereco=company_data.endereco,
+            bairro=company_data.bairro,
             cep=company_data.cep,
             cidade=company_data.cidade,
             estado=company_data.estado,
@@ -132,6 +133,7 @@ class AuthService:
             estado=data.estado,
             tipo_servico=data.tipo_servico,
             endereco=data.endereco,
+            bairro=data.bairro,
             cep=data.cep,
             cnpj_cpf=data.cnpj_cpf,
             insc_est_identidade=data.insc_est_identidade,
@@ -147,6 +149,7 @@ class AuthService:
             estado_civil=data.estado_civil,
             naturalidade=data.naturalidade,
             endereco=data.endereco,
+            bairro=data.bairro,
             cep=data.cep,
             cidade=data.cidade,
             estado=data.estado,
@@ -180,6 +183,93 @@ class AuthService:
                     detail="CNPJ/CPF já cadastrado"
                 )
 
+    async def _validate_document_external(self, payload: RegisterRequest) -> None:
+        """
+        Valida documentos na Receita Federal (BrasilAPI)
+        
+        - CPF: Apenas validação matemática (não há API pública gratuita)
+        - CNPJ: Validação matemática + consulta na BrasilAPI
+        """
+        role = UserRole(payload.role)
+        
+        # Valida CPF (comprador) - apenas matemática
+        if role == UserRole.BUYER and payload.buyer_profile and payload.buyer_profile.cpf:
+            is_valid, error_msg = self.document_validator.validate_cpf(payload.buyer_profile.cpf)
+            if not is_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=error_msg
+                )
+        
+        # Valida CNPJ/CPF (vendedor) - matemática + BrasilAPI (apenas se for CNPJ)
+        elif role == UserRole.SELLER and payload.company and payload.company.cnpj_cpf:
+            import re
+            clean_doc = re.sub(r'[^0-9]', '', payload.company.cnpj_cpf)
+            
+            # Se for CNPJ (14 dígitos), valida formato e consulta BrasilAPI
+            if len(clean_doc) == 14:
+                # Valida formato e dígitos verificadores
+                is_valid, error_msg = self.document_validator.validate_cnpj(payload.company.cnpj_cpf)
+                if not is_valid:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_msg
+                    )
+                
+                # Depois valida na Receita Federal via BrasilAPI
+                is_valid_external, error_msg_external = await self.document_validator.validate_with_receita_federal(
+                    payload.company.cnpj_cpf, "cnpj"
+                )
+                if is_valid_external is False:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_msg_external or "CNPJ inválido na Receita Federal"
+                    )
+            
+            # Se for CPF (11 dígitos), apenas validação matemática
+            elif len(clean_doc) == 11:
+                is_valid, error_msg = self.document_validator.validate_cpf(payload.company.cnpj_cpf)
+                if not is_valid:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_msg
+                    )
+            # Se não for nem CPF nem CNPJ, o validator do schema já vai pegar
+        
+        # Valida CNPJ/CPF (prestador) - matemática + BrasilAPI (se for CNPJ)
+        elif role == UserRole.SERVICE_PROVIDER and payload.service_provider and payload.service_provider.cnpj_cpf:
+            import re
+            clean_doc = re.sub(r'[^0-9]', '', payload.service_provider.cnpj_cpf)
+            
+            # Se for CNPJ (14 dígitos), valida formato e consulta BrasilAPI
+            if len(clean_doc) == 14:
+                # Valida formato e dígitos verificadores
+                is_valid, error_msg = self.document_validator.validate_cnpj(payload.service_provider.cnpj_cpf)
+                if not is_valid:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_msg
+                    )
+                
+                # Valida na Receita Federal via BrasilAPI
+                is_valid_external, error_msg_external = await self.document_validator.validate_with_receita_federal(
+                    payload.service_provider.cnpj_cpf, "cnpj"
+                )
+                if is_valid_external is False:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_msg_external or "CNPJ inválido na Receita Federal"
+                    )
+            
+            # Se for CPF (11 dígitos), apenas validação matemática
+            elif len(clean_doc) == 11:
+                is_valid, error_msg = self.document_validator.validate_cpf(payload.service_provider.cnpj_cpf)
+                if not is_valid:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_msg
+                    )
+
     async def _create_and_send_verification_email(self, user: User) -> None:
         """Cria token de verificação e envia email"""
         # Remove token anterior se existir
@@ -209,14 +299,33 @@ class AuthService:
             pass
 
     async def register(self, payload: RegisterRequest) -> User:
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info("=" * 60)
+        logger.info("INICIANDO CADASTRO DE USUÁRIO")
+        logger.info(f"Email: {payload.email}")
+        logger.info(f"Role: {payload.role}")
+        logger.info("=" * 60)
+        
         self._validate_email(payload.email)
+        logger.info("✅ Email validado")
 
         existing_user = self.user_repo.get_by_email(payload.email)
         if existing_user:
+            logger.error("❌ Email já cadastrado")
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado")
+        logger.info("✅ Email não existe no banco")
 
         # Valida documentos duplicados
+        logger.info("🔵 Validando documentos duplicados...")
         self._validate_document_duplicates(payload)
+        logger.info("✅ Documentos não duplicados")
+        
+        # Valida documentos na Receita Federal (BrasilAPI para CNPJ)
+        logger.info("🔵 Validando documentos na Receita Federal...")
+        await self._validate_document_external(payload)
+        logger.info("✅ Documentos validados")
 
         role = UserRole(payload.role)
         nickname = payload.nickname.strip() if payload.nickname else None
@@ -227,60 +336,85 @@ class AuthService:
                 )
             self._validate_nickname(nickname)
 
+        logger.info(f"🔵 Criando usuário no banco (role: {role})...")
         user = User(
             email=payload.email,
             password_hash=get_password_hash(payload.password),
             role=role,
             nickname=nickname,
-            email_verificado=False,  # Email não verificado inicialmente
+            email_verificado=True,  # Temporariamente verificado automaticamente
         )
 
         try:
             self.db.add(user)
             self.db.flush()
+            logger.info(f"✅ Usuário criado com ID: {user.id}")
         except IntegrityError as exc:
+            logger.error(f"❌ Erro ao criar usuário: {exc}")
             self.db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado"
             ) from exc
 
         if role == UserRole.SELLER and payload.company:
+            logger.info("🔵 Criando empresa e atividades...")
             company, activities = self._build_company(user.id, payload.company)
+            logger.info(f"   Empresa: {company.nome_propriedade}")
+            logger.info(f"   Atividades: {len(activities)}")
             try:
                 self.company_repo.create(company, activities)
                 self.db.refresh(user)
+                logger.info("✅ Empresa e atividades criadas com sucesso")
             except IntegrityError as exc:
+                logger.error(f"❌ Erro ao salvar empresa: {exc}")
                 self.db.rollback()
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar empresa"
                 ) from exc
         elif role == UserRole.SERVICE_PROVIDER and payload.service_provider:
+            logger.info("🔵 Criando perfil de prestador...")
             profile = self._build_service_provider(user.id, payload.service_provider)
+            logger.info(f"   Serviço: {profile.nome_servico}")
             try:
                 self.service_provider_repo.create(profile)
                 self.db.refresh(user)
+                logger.info("✅ Prestador criado com sucesso")
             except IntegrityError as exc:
+                logger.error(f"❌ Erro ao salvar prestador: {exc}")
                 self.db.rollback()
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar prestador"
                 ) from exc
         elif role == UserRole.BUYER and payload.buyer_profile:
+            logger.info("🔵 Criando perfil de comprador...")
             profile = self._build_buyer_profile(user.id, payload.buyer_profile)
+            logger.info(f"   Nome: {profile.nome_completo}")
             try:
                 self.buyer_profile_repo.create(profile)
                 self.db.refresh(user)
+                logger.info("✅ Comprador criado com sucesso")
             except IntegrityError as exc:
+                logger.error(f"❌ Erro ao salvar comprador: {exc}")
                 self.db.rollback()
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar perfil do comprador"
                 ) from exc
         else:
+            logger.info("🔵 Fazendo commit do usuário...")
             self.db.commit()
             self.db.refresh(user)
+            logger.info("✅ Commit realizado")
 
-        # Cria token e envia email de verificação
-        await self._create_and_send_verification_email(user)
+        # TODO: Reativar verificação de email no futuro
+        # Por enquanto, criamos o usuário com email já verificado
+        # await self._create_and_send_verification_email(user)
 
+        logger.info("=" * 60)
+        logger.info("✅ CADASTRO CONCLUÍDO COM SUCESSO")
+        logger.info(f"User ID: {user.id}")
+        logger.info(f"Email: {user.email}")
+        logger.info("=" * 60)
+        
         return user
 
     def authenticate(self, payload: LoginRequest) -> Tuple[str, str, User]:

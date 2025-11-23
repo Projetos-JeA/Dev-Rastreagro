@@ -24,6 +24,7 @@ class CompanyData(BaseModel):
     cnpj_cpf: str
     insc_est_identidade: Optional[str] = None
     endereco: str
+    bairro: Optional[str] = None
     cep: str
     cidade: str
     estado: str

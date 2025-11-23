@@ -23,6 +23,7 @@ class BuyerProfile(Base):
     estado_civil = Column(String(20), nullable=True)
     naturalidade = Column(String(100), nullable=True)
     endereco = Column(String(255), nullable=False)
+    bairro = Column(String(100), nullable=True)
     cep = Column(String(12), nullable=False)
     cidade = Column(String(100), nullable=False)
     estado = Column(String(2), nullable=False)

@@ -22,6 +22,7 @@ class ServiceProvider(Base):
     estado = Column(String(2), nullable=False)
     tipo_servico = Column(String(100), nullable=True)
     endereco = Column(String(255), nullable=True)
+    bairro = Column(String(100), nullable=True)
     cep = Column(String(12), nullable=True)
     cnpj_cpf = Column(String(20), nullable=True)
     insc_est_identidade = Column(String(50), nullable=True)
