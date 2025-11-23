@@ -9,6 +9,8 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,6 +20,7 @@ import Select from '../../src/components/Select';
 import MultiSelect from '../../src/components/MultiSelect';
 import Input from '../../src/components/Input';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../src/context/AuthContext';
 
 interface Vaccine {
   id: string;
@@ -434,6 +437,8 @@ export default function ThirdAccessScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { registerSeller, registerServiceProvider, registerBuyer } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedProfiles: ProfileType[] = params.profileTypes
     ? JSON.parse(params.profileTypes as string)
@@ -485,7 +490,7 @@ export default function ThirdAccessScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const newErrors: Record<string, string> = {};
 
     if (selectedProfiles.includes('producer') && !producerType) {
@@ -660,7 +665,292 @@ export default function ThirdAccessScreen() {
       };
     }
 
-    console.log('Complete registration data:', completeData);
+    console.log('🔵 ===== DADOS COMPLETOS DO CADASTRO =====');
+    console.log(JSON.stringify(completeData, null, 2));
+    
+    // Enviar para o backend
+    setIsSubmitting(true);
+    try {
+      console.log('🔵 Enviando dados para o backend...');
+      
+      // Mapear dados para o formato esperado pelo backend
+      if (completeData.profileTypes.includes('producer')) {
+        console.log('📤 Cadastrando como PRODUTOR (Seller)...');
+        
+        // Verificar campos obrigatórios
+        if (!completeData.email || !completeData.password) {
+          Alert.alert('Erro', 'Email e senha são obrigatórios');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (!completeData.companyName && !completeData.tradeName) {
+          Alert.alert('Erro', 'Nome da propriedade é obrigatório');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Verificar se é Produtor + Fornecedor (sempre exige CNPJ)
+        const isProducerAndSupplier = completeData.profileTypes?.includes('producer') && completeData.profileTypes?.includes('supplier');
+        
+        if (isProducerAndSupplier) {
+          // Produtor + Fornecedor: CNPJ obrigatório
+          if (!completeData.cnpj) {
+            Alert.alert('Erro', 'CNPJ é obrigatório');
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+          // Apenas Produtor: CPF obrigatório
+          if (!completeData.cpf) {
+            Alert.alert('Erro', 'CPF é obrigatório');
+            setIsSubmitting(false);
+            return;
+          }
+        }
+        
+        // Campos de endereço - agora coletados no second-access
+        const address = completeData.address || '';
+        const city = completeData.city || '';
+        const state = completeData.state || '';
+        const cep = completeData.cep || '';
+        
+        if (!address || !city || !state || !cep) {
+          Alert.alert('Erro', 'Campos de endereço são obrigatórios. Por favor, preencha todos os campos.');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Mapear dados de agricultura/pecuária para activities
+        // Por enquanto, vamos criar activities básicas baseadas no tipo de produtor
+        const activities: any[] = [];
+        
+        // Se for agricultor, adicionar atividades relacionadas
+        if (completeData.producerType === 'agricultor' || completeData.producerType === 'ambos') {
+          // Categoria: Produção (assumindo ID 1, ajustar conforme banco)
+          // TODO: Buscar IDs corretos das categorias do banco
+          if (completeData.agricultureData?.cropTypes?.length > 0) {
+            activities.push({
+              category_id: 1, // Produção
+              group_id: null,
+              item_id: null,
+            });
+          }
+        }
+        
+        // Se for pecuarista, adicionar atividades relacionadas
+        if (completeData.producerType === 'pecuarista' || completeData.producerType === 'ambos') {
+          // Categoria: Pecuária (assumindo ID 2, ajustar conforme banco)
+          activities.push({
+            category_id: 2, // Pecuária
+            group_id: null,
+            item_id: null,
+          });
+        }
+        
+        // Se não tiver activities, adicionar uma genérica
+        if (activities.length === 0) {
+          activities.push({
+            category_id: 1, // Produção genérica
+            group_id: null,
+            item_id: null,
+          });
+        }
+        
+        // Determinar documento baseado nos perfis selecionados
+        const documentNumber = isProducerAndSupplier 
+          ? (completeData.cnpj || '')
+          : (completeData.cpf || '');
+        
+        const sellerPayload = {
+          email: completeData.email,
+          password: completeData.password,
+          company: {
+            nome_propriedade: completeData.companyName || completeData.tradeName || params.fullName || 'Propriedade',
+            cnpj_cpf: documentNumber,
+            insc_est_identidade: isProducerAndSupplier ? (completeData.stateRegistration || null) : null,
+            endereco: address,
+            bairro: completeData.neighborhood || null,
+            cep: cep,
+            cidade: city,
+            estado: state,
+            email: completeData.email,
+            activities: activities,
+          },
+        };
+        
+        console.log('📤 Payload do produtor (seller):', JSON.stringify(sellerPayload, null, 2));
+        await registerSeller(sellerPayload);
+        console.log('✅ Produtor cadastrado com sucesso!');
+        
+        // Redireciona automaticamente para login após cadastro bem-sucedido
+        Alert.alert(
+          '✅ Cadastro realizado com sucesso!',
+          'Sua propriedade foi cadastrada. Redirecionando para login...',
+          [{ text: 'OK' }]
+        );
+        
+        // Aguarda um momento para o usuário ver a mensagem e redireciona
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 1500);
+      } else if (completeData.profileTypes.includes('supplier')) {
+        console.log('📤 Cadastrando como FORNECEDOR (Seller)...');
+        
+        // Mapear segmentos para activities
+        const activities: any[] = [];
+        // TODO: Mapear segmentos para activities baseado no banco de dados
+        
+        const sellerPayload = {
+          email: completeData.email,
+          password: completeData.password,
+          company: {
+            nome_propriedade: completeData.companyName || completeData.tradeName || 'Empresa',
+            cnpj_cpf: completeData.cnpj || '',
+            insc_est_identidade: completeData.stateRegistration || null,
+            endereco: completeData.address || '',
+            bairro: completeData.neighborhood || null,
+            cep: completeData.cep || '',
+            cidade: completeData.city || '',
+            estado: completeData.state || '',
+            email: completeData.email,
+            activities: activities,
+          },
+        };
+        
+        console.log('📤 Payload do vendedor:', JSON.stringify(sellerPayload, null, 2));
+        await registerSeller(sellerPayload);
+        console.log('✅ Vendedor cadastrado com sucesso!');
+        
+        // Redireciona automaticamente para login após cadastro bem-sucedido
+        Alert.alert(
+          '✅ Cadastro realizado com sucesso!',
+          'Sua empresa foi cadastrada. Redirecionando para login...',
+          [{ text: 'OK' }]
+        );
+        
+        // Aguarda um momento para o usuário ver a mensagem e redireciona
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 1500);
+      } else if (completeData.profileTypes.includes('service_provider')) {
+        console.log('📤 Cadastrando como PRESTADOR DE SERVIÇO...');
+        
+        const servicePayload = {
+          email: completeData.email,
+          password: completeData.password,
+          service_provider: {
+            nome_servico: completeData.serviceName || 'Serviço',
+            email_contato: completeData.email,
+            cidade: completeData.city || '',
+            estado: completeData.state || '',
+            telefone: completeData.phone || null,
+            endereco: completeData.address || null,
+            bairro: completeData.neighborhood || null,
+            cep: completeData.cep || null,
+            cnpj_cpf: completeData.cnpj || null,
+            insc_est_identidade: completeData.stateRegistration || null,
+          },
+        };
+        
+        console.log('📤 Payload do prestador:', JSON.stringify(servicePayload, null, 2));
+        await registerServiceProvider(servicePayload);
+        console.log('✅ Prestador cadastrado com sucesso!');
+        
+        // Redireciona automaticamente para login após cadastro bem-sucedido
+        Alert.alert(
+          '✅ Cadastro realizado com sucesso!',
+          'Seu perfil foi criado. Redirecionando para login...',
+          [{ text: 'OK' }]
+        );
+        
+        // Aguarda um momento para o usuário ver a mensagem e redireciona
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 1500);
+      } else {
+        Alert.alert('Erro', 'Tipo de perfil não suportado para cadastro automático.');
+      }
+    } catch (error: any) {
+        console.error('❌ ERRO NO CADASTRO:', error);
+        console.error('Status:', error?.response?.status);
+        console.error('Data:', error?.response?.data);
+        console.error('Error completo:', JSON.stringify(error, null, 2));
+        console.error('Error.message:', error?.message);
+        console.error('Error.name:', error?.name);
+        console.error('🔴 DETALHES DO ERRO DO BACKEND:', JSON.stringify(error?.response?.data, null, 2));
+      
+      // Extrair mensagem de erro de diferentes fontes
+      let errorMessage = 'Não foi possível concluir o cadastro.';
+      let errorTitle = '❌ Erro ao cadastrar';
+      
+      // Tratamento específico por status code
+      const status = error?.response?.status || error?.status;
+      
+      // Prioridade 1: Erros de validação do Pydantic (422)
+      if (status === 422) {
+        // Pydantic retorna errors como array ou objeto
+        if (error?.response?.data?.detail) {
+          // Se detail é um array (formato Pydantic padrão)
+          if (Array.isArray(error.response.data.detail)) {
+            const firstError = error.response.data.detail[0];
+            if (firstError?.msg) {
+              const field = firstError.loc?.slice(1).join('.') || 'campo';
+              errorMessage = `${field}: ${firstError.msg}`;
+              errorTitle = '❌ Erro de validação';
+            } else {
+              errorMessage = JSON.stringify(firstError);
+            }
+          } 
+          // Se detail é string
+          else if (typeof error.response.data.detail === 'string') {
+            errorMessage = error.response.data.detail;
+            errorTitle = '❌ Erro de validação';
+          }
+          // Se detail é objeto com errors
+          else if (error.response.data.detail.errors) {
+            const firstError = Object.values(error.response.data.detail.errors)[0];
+            errorMessage = String(firstError);
+            errorTitle = '❌ Erro de validação';
+          }
+        }
+        // Formato alternativo: errors direto
+        else if (error?.response?.data?.errors) {
+          const backendErrors = error.response.data.errors;
+          if (Array.isArray(backendErrors)) {
+            const firstError = backendErrors[0];
+            if (firstError?.msg) {
+              const field = firstError.loc?.slice(1).join('.') || 'campo';
+              errorMessage = `${field}: ${firstError.msg}`;
+            } else {
+              errorMessage = String(firstError);
+            }
+          } else {
+            const firstError = Object.values(backendErrors)[0];
+            errorMessage = String(firstError);
+          }
+          errorTitle = '❌ Erro de validação';
+        }
+      } else if (status === 400) {
+        // Erro 400 - Bad Request (validação de CNPJ, campos obrigatórios, etc)
+        errorTitle = '❌ Erro ao cadastrar';
+        if (!errorMessage || errorMessage === 'Não foi possível concluir o cadastro.') {
+          errorMessage = 'Dados inválidos. Verifique os campos preenchidos.';
+        }
+      } else if (status === 409) {
+        // Conflito - email ou documento já cadastrado
+        errorTitle = '❌ Erro';
+        if (!errorMessage || errorMessage === 'Não foi possível concluir o cadastro.') {
+          errorMessage = 'Email ou documento já cadastrado';
+        }
+      }
+      
+      // Sempre exibir o erro na tela
+      console.log('🔴 Exibindo erro na tela:', errorTitle, errorMessage);
+      Alert.alert(errorTitle, errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLoginRedirect = () => {
@@ -1827,7 +2117,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    gap: 5,
   },
   addButtonText: {
     color: '#FFFFFF',
@@ -1869,7 +2158,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
     padding: 4,
-    gap: 8,
   },
   tab: {
     flex: 1,
@@ -1879,7 +2167,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 6,
-    gap: 6,
     backgroundColor: 'transparent',
   },
   tabActive: {
@@ -1927,7 +2214,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 15,
-    gap: 4,
   },
   addVaccineButtonText: {
     color: '#FFFFFF',
@@ -1988,7 +2274,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    gap: 4,
   },
   addWeightControlButtonText: {
     color: '#FFFFFF',
@@ -2063,9 +2348,15 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
   },
   continueButtonText: {
     fontSize: 16,

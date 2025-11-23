@@ -2,30 +2,27 @@
 
 from typing import Tuple, Optional
 from app.utils.validators import validate_cpf, validate_cnpj
+from app.services.brasilapi_service import BrasilAPIService
 
 
 class DocumentValidationService:
     """
     Service para validação de documentos brasileiros (CPF/CNPJ)
     
-    NOTA: Não há uma API pública gratuita oficial da Receita Federal
-    para validação de CPF/CNPJ. Este service implementa apenas validação
-    formal (formato e dígitos verificadores).
+    - CPF: Validação matemática (formato e dígitos verificadores)
+    - CNPJ: Validação matemática + consulta na BrasilAPI (Receita Federal)
     
-    Para validação completa com dados da Receita Federal, seria necessário
-    usar serviços pagos como:
-    - ReceitaWS (pago)
-    - BrasilAPI (limitado, apenas consulta básica)
-    - Outros serviços comerciais
-    
-    A estrutura está preparada para que seja possível integrar uma API
-    externa no futuro através do método validate_with_receita_federal.
+    A BrasilAPI é uma API pública e gratuita que consulta dados da Receita Federal.
+    Documentação: https://brasilapi.com.br/docs#tag/CNPJ
     """
 
     @staticmethod
     def validate_cpf(cpf: str) -> Tuple[bool, str]:
         """
         Valida CPF (formato e dígitos verificadores)
+        
+        NOTA: Apenas validação matemática. Não há API pública gratuita
+        para validar CPF na Receita Federal.
         
         Args:
             cpf: CPF a validar
@@ -51,26 +48,36 @@ class DocumentValidationService:
     @staticmethod
     async def validate_with_receita_federal(
         document: str, document_type: str
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> Tuple[Optional[bool], Optional[str]]:
         """
-        Valida documento na Receita Federal (preparado para integração futura)
+        Valida documento na Receita Federal
         
-        NOTA: Atualmente não implementado pois não há API pública gratuita.
-        Este método está preparado para integração futura com serviços pagos.
+        - CPF: Não há API pública gratuita, retorna None (apenas validação matemática)
+        - CNPJ: Consulta na BrasilAPI para verificar se existe e está ativo
         
         Args:
             document: CPF ou CNPJ a validar
             document_type: "cpf" ou "cnpj"
             
         Returns:
-            Tuple[bool, Optional[str]]: (é_válido_na_receita, mensagem_erro)
-            
-        Exemplo de uso futuro:
-            - Integrar com ReceitaWS (pago)
-            - Integrar com BrasilAPI (limitado)
-            - Integrar com outros serviços comerciais
+            Tuple[Optional[bool], Optional[str]]: 
+                - (True, None) se válido e ativo
+                - (False, mensagem_erro) se inválido ou inativo
+                - (None, None) se validação externa não disponível (CPF)
         """
-        # Por enquanto, retorna None indicando que a validação não foi feita
-        # Isso permite que o sistema continue funcionando apenas com validação formal
-        return None, None
+        if document_type.lower() == "cpf":
+            # CPF: apenas validação matemática (não há API pública gratuita)
+            return None, None
+        
+        elif document_type.lower() == "cnpj":
+            # CNPJ: validação na BrasilAPI
+            try:
+                is_valid, error_msg = await BrasilAPIService.validar_cnpj_ativo(document)
+                return is_valid, error_msg
+            except Exception as e:
+                # Em caso de erro na API, retorna erro
+                return False, f"Erro ao validar CNPJ na Receita Federal: {str(e)}"
+        
+        else:
+            return False, f"Tipo de documento inválido: {document_type}"
 

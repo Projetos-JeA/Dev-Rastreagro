@@ -342,40 +342,56 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
+    console.log('🔵 ===== INICIANDO CADASTRO =====');
+    console.log('Tipo de usuário:', userType);
+    console.log('Email:', email);
+    console.log('Password length:', password.length);
+    
     // Limpar erros anteriores
     setPasswordErrors([]);
     setEmailError('');
 
     // Validação básica
     if (!email || !password || !confirmPassword) {
+      console.log('❌ Validação básica falhou: campos obrigatórios vazios');
       Alert.alert('Erro', 'Preencha email e senhas.');
       return;
     }
+    console.log('✅ Validação básica passou');
 
     // Validação de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log('❌ Email inválido');
       setEmailError('Email inválido');
       Alert.alert('Erro', 'Email inválido');
       return;
     }
+    console.log('✅ Email válido');
 
     // Validação de senha
     const pwdValidation = validatePassword(password);
     if (!pwdValidation.isValid) {
+      console.log('❌ Senha inválida:', pwdValidation.errors);
       setPasswordErrors(pwdValidation.errors);
       Alert.alert('Senha inválida', pwdValidation.errors.join('\n'));
       return;
     }
+    console.log('✅ Senha válida');
 
     if (password !== confirmPassword) {
+      console.log('❌ Senhas não conferem');
       setPasswordErrors(['As senhas não conferem']);
       Alert.alert('Erro', 'As senhas não conferem.');
       return;
     }
+    console.log('✅ Senhas conferem');
 
     if (userType === 'buyer') {
+      console.log('🔵 Validando dados do comprador...');
+      console.log('Buyer form:', buyerForm);
       if (!nickname) {
+        console.log('❌ Apelido não informado');
         Alert.alert('Erro', 'Informe o apelido.');
         return;
       }
@@ -388,10 +404,15 @@ export default function RegisterScreen() {
       ];
       const missingBuyerField = requiredBuyerFields.find(field => !buyerForm[field]);
       if (missingBuyerField) {
+        console.log('❌ Campo obrigatório faltando:', missingBuyerField);
         Alert.alert('Erro', 'Preencha todos os campos obrigatórios do comprador.');
         return;
       }
+      console.log('✅ Dados do comprador válidos');
     } else if (userType === 'seller') {
+      console.log('🔵 Validando dados do vendedor...');
+      console.log('Seller form:', sellerForm);
+      console.log('Atividades selecionadas:', selectedActivities);
       const requiredSellerFields: Array<keyof SellerForm> = [
         'email',
         'nome_propriedade',
@@ -404,15 +425,20 @@ export default function RegisterScreen() {
 
       const missingField = requiredSellerFields.find(field => !sellerForm[field]);
       if (missingField) {
+        console.log('❌ Campo obrigatório faltando:', missingField);
         Alert.alert('Erro', 'Preencha todos os campos obrigatórios da empresa.');
         return;
       }
 
       if (selectedActivities.length === 0) {
+        console.log('❌ Nenhuma atividade selecionada');
         Alert.alert('Erro', 'Selecione pelo menos uma atividade.');
         return;
       }
+      console.log('✅ Dados do vendedor válidos');
     } else if (userType === 'service_provider') {
+      console.log('🔵 Validando dados do prestador...');
+      console.log('Service form:', serviceForm);
       const requiredServiceFields: Array<keyof ServiceForm> = [
         'nome_servico',
         'email_contato',
@@ -421,16 +447,19 @@ export default function RegisterScreen() {
       ];
       const missing = requiredServiceFields.find(field => !serviceForm[field]);
       if (missing) {
+        console.log('❌ Campo obrigatório faltando:', missing);
         Alert.alert('Erro', 'Preencha os dados obrigatórios do prestador.');
         return;
       }
+      console.log('✅ Dados do prestador válidos');
     }
 
     setLoading(true);
+    console.log('🔵 ===== ENVIANDO DADOS PARA O BACKEND =====');
 
     try {
       if (userType === 'buyer') {
-        await registerBuyer({
+        const buyerPayload = {
           email,
           password,
           nickname,
@@ -442,17 +471,21 @@ export default function RegisterScreen() {
             estado_civil: buyerForm.estado_civil || undefined,
             naturalidade: buyerForm.naturalidade || undefined,
             endereco: buyerForm.endereco,
+            bairro: buyerForm.bairro || undefined,
             cep: buyerForm.cep,
             cidade: buyerForm.cidade,
             estado: buyerForm.estado,
           },
-        });
+        };
+        console.log('📤 Payload do comprador:', JSON.stringify(buyerPayload, null, 2));
+        await registerBuyer(buyerPayload);
+        console.log('✅ Comprador cadastrado com sucesso!');
         Alert.alert(
-          'Cadastro realizado com sucesso!',
-          'Sua conta foi criada. Faça login para continuar.',
+          '✅ Cadastro realizado com sucesso!',
+          'Sua conta foi criada com sucesso. Você já pode fazer login.',
           [
             {
-              text: 'OK',
+              text: 'Fazer Login',
               onPress: () => {
                 resetFormState();
                 router.replace('/(auth)/login');
@@ -461,7 +494,7 @@ export default function RegisterScreen() {
           ]
         );
       } else if (userType === 'seller') {
-        await registerSeller({
+        const sellerPayload = {
           email,
           password,
           company: {
@@ -472,13 +505,16 @@ export default function RegisterScreen() {
             insc_est_identidade: sellerForm.insc_est_identidade || undefined,
             activities: sellerActivitiesPayload,
           },
-        });
+        };
+        console.log('📤 Payload do vendedor:', JSON.stringify(sellerPayload, null, 2));
+        await registerSeller(sellerPayload);
+        console.log('✅ Vendedor cadastrado com sucesso!');
         Alert.alert(
-          'Cadastro realizado com sucesso!',
-          'Sua empresa foi cadastrada. Faça login para continuar.',
+          '✅ Cadastro realizado com sucesso!',
+          'Sua empresa foi cadastrada com sucesso. Você já pode fazer login.',
           [
             {
-              text: 'OK',
+              text: 'Fazer Login',
               onPress: () => {
                 resetFormState();
                 router.replace('/(auth)/login');
@@ -487,7 +523,7 @@ export default function RegisterScreen() {
           ]
         );
       } else {
-        await registerServiceProvider({
+        const servicePayload = {
           email,
           password,
           service_provider: {
@@ -503,13 +539,16 @@ export default function RegisterScreen() {
             cnpj_cpf: serviceForm.cnpj_cpf || undefined,
             insc_est_identidade: serviceForm.insc_est_identidade || undefined,
           },
-        });
+        };
+        console.log('📤 Payload do prestador:', JSON.stringify(servicePayload, null, 2));
+        await registerServiceProvider(servicePayload);
+        console.log('✅ Prestador cadastrado com sucesso!');
         Alert.alert(
-          'Cadastro realizado com sucesso!',
-          'Seu perfil de prestador foi criado. Faça login para continuar.',
+          '✅ Cadastro realizado com sucesso!',
+          'Seu perfil de prestador foi criado com sucesso. Você já pode fazer login.',
           [
             {
-              text: 'OK',
+              text: 'Fazer Login',
               onPress: () => {
                 resetFormState();
                 router.replace('/(auth)/login');
@@ -519,6 +558,9 @@ export default function RegisterScreen() {
         );
       }
     } catch (error: any) {
+      console.error('❌ ERRO NO CADASTRO:', error);
+      console.error('Status:', error?.response?.status);
+      console.error('Data:', error?.response?.data);
       // Tratamento de erros de validação do backend (422)
       if (error?.response?.status === 422 && error?.response?.data?.errors) {
         const backendErrors = error.response.data.errors;
@@ -532,10 +574,10 @@ export default function RegisterScreen() {
           setPasswordErrors([backendErrors.password]);
         }
 
-        // Mostra primeiro erro encontrado
-        const firstError = Object.values(backendErrors)[0];
-        if (firstError) {
-          Alert.alert('Erro de validação', String(firstError));
+        // Mostra todos os erros encontrados
+        const errorMessages = Object.values(backendErrors).join('\n');
+        if (errorMessages) {
+          Alert.alert('❌ Erro de validação', errorMessages);
         }
       } else if (error instanceof Error && error.message.includes('já cadastrado')) {
         setEmailError('Este email já está cadastrado');
@@ -549,10 +591,11 @@ export default function RegisterScreen() {
         }
         showApiError(error, detail);
       } else {
-        showApiError(
-          error,
-          'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.'
-        );
+        const errorMessage = error?.response?.data?.detail || 
+                            error?.message || 
+                            'Não foi possível concluir o cadastro. Verifique os dados e tente novamente.';
+        Alert.alert('❌ Erro ao cadastrar', errorMessage);
+        console.error('Erro completo:', error);
       }
     } finally {
       setLoading(false);
@@ -964,7 +1007,7 @@ export default function RegisterScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+        {emailError && <Text style={styles.errorText}>{emailError}</Text>}
         <TextInput
           style={[styles.input, passwordErrors.length > 0 ? styles.inputError : null]}
           placeholder="Senha (mínimo 8 caracteres)"
@@ -1010,9 +1053,9 @@ export default function RegisterScreen() {
           }}
           secureTextEntry
         />
-        {password !== confirmPassword && confirmPassword ? (
+        {password !== confirmPassword && confirmPassword && (
           <Text style={styles.errorText}>As senhas não conferem</Text>
-        ) : null}
+        )}
 
         {userType === 'buyer' && renderBuyerForm()}
         {userType === 'seller' && renderSellerForm()}
