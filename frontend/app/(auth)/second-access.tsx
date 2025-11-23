@@ -311,6 +311,13 @@ export default function SecondAccessScreen() {
                 }}
               />
 
+              <ProfileSelector
+                selectedProfiles={selectedProfiles}
+                onSelectProfile={handleProfileSelect}
+                required
+              />
+              {errors.profile && <Text style={styles.profileError}>{errors.profile}</Text>}
+
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados da Empresa</Text>
 
               <View>
@@ -496,13 +503,6 @@ export default function SecondAccessScreen() {
                   isPassword
                 />
               </View>
-
-              <ProfileSelector
-                selectedProfiles={selectedProfiles}
-                onSelectProfile={handleProfileSelect}
-                required
-              />
-              {errors.profile && <Text style={styles.profileError}>{errors.profile}</Text>}
 
               <Text style={[styles.termsText, { color: colors.textSecondary }]}>
                 Ao clicar em 'Continuar cadastro', você concorda com os nossos{' '}
