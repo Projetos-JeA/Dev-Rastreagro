@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ImageBackground,
+  ActivityIndicator,
+  Alert,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useTheme } from '../../src/context/ThemeContext';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import Input from '../../src/components/Input';
-import StepIndicator from '../../src/components/StepIndicator';
 import ProfileSelector, { ProfileType } from '../../src/components/ProfileSelector';
+import StepIndicator from '../../src/components/StepIndicator';
+import { useTheme } from '../../src/context/ThemeContext';
+import { buscarCep } from '../../src/services/viacepService';
+import { buscarCnpj } from '../../src/services/cnpjService';
 
 export default function SecondAccessScreen() {
   const { colors } = useTheme();
@@ -28,15 +32,22 @@ export default function SecondAccessScreen() {
     stateRegistration: '',
     password: '',
     confirmPassword: '',
+    address: '',
+    cep: '',
+    city: '',
+    state: '',
+    neighborhood: '',
   });
   const [selectedProfiles, setSelectedProfiles] = useState<ProfileType[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [passwordMatch, setPasswordMatch] = useState<boolean | null>(null);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingCnpj, setLoadingCnpj] = useState(false);
 
   const updateField = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
@@ -52,27 +63,133 @@ export default function SecondAccessScreen() {
     }
   }, [formData.password, formData.confirmPassword]);
 
+  const handleBuscarCep = async () => {
+    const digits = (formData.cep || '').replace(/\D/g, '');
+    if (digits.length !== 8) {
+      Alert.alert('Erro', 'CEP inválido. Use 8 dígitos.');
+      return;
+    }
+    setLoadingCep(true);
+    try {
+      const data = await buscarCep(digits);
+      setFormData(prev => ({
+        ...prev,
+        address: data.logradouro || prev.address,
+        neighborhood: data.bairro || prev.neighborhood,
+        city: data.localidade || prev.city,
+        state: data.uf || prev.state,
+      }));
+    } catch (error: any) {
+      console.log('ERRO BUSCAR CEP >>>', JSON.stringify(error?.response?.data || error, null, 2));
+      const message =
+        error?.response?.data?.detail ||
+        error?.message ||
+        'CEP não encontrado. Verifique o número informado.';
+      Alert.alert('Erro', message);
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const handleBuscarCnpj = async () => {
+    const digits = (formData.cnpj || '').replace(/\D/g, '');
+    if (digits.length !== 14) {
+      Alert.alert('Erro', 'CNPJ inválido. Use 14 dígitos.');
+      return;
+    }
+    setLoadingCnpj(true);
+    try {
+      const data = await buscarCnpj(digits);
+      setFormData(prev => ({
+        ...prev,
+        cnpj: data.cnpj || prev.cnpj,
+        companyName: data.razao_social || prev.companyName,
+        tradeName: data.nome_fantasia || prev.tradeName,
+        stateRegistration: data.inscricao_estadual || prev.stateRegistration,
+        address: data.endereco || prev.address,
+        neighborhood: data.bairro || prev.neighborhood,
+        cep: data.cep || prev.cep,
+        city: data.cidade || prev.city,
+        state: data.estado || prev.state,
+      }));
+      // Limpa erros dos campos preenchidos
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.cnpj;
+        delete newErrors.companyName;
+        delete newErrors.tradeName;
+        delete newErrors.stateRegistration;
+        delete newErrors.address;
+        delete newErrors.neighborhood;
+        delete newErrors.cep;
+        delete newErrors.city;
+        delete newErrors.state;
+        return newErrors;
+      });
+      Alert.alert('Sucesso', 'Dados da empresa carregados com sucesso!');
+    } catch (error: any) {
+      console.log('ERRO BUSCAR CNPJ >>>', JSON.stringify(error?.response?.data || error, null, 2));
+      const message =
+        error?.response?.data?.detail ||
+        error?.message ||
+        'CNPJ não encontrado. Verifique o número informado.';
+      Alert.alert('Erro', message);
+    } finally {
+      setLoadingCnpj(false);
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.cnpj.trim()) {
-      newErrors.cnpj = 'CNPJ é obrigatório';
-    } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
-      newErrors.cnpj = 'CNPJ inválido';
+    // Se for Produtor + Fornecedor, sempre exige todos os campos de empresa
+    const isProducerAndSupplier = selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
+
+    if (isProducerAndSupplier) {
+      // Produtor + Fornecedor: todos os campos de empresa são obrigatórios
+      if (!formData.cnpj.trim()) {
+        newErrors.cnpj = 'CNPJ é obrigatório';
+      } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
+        newErrors.cnpj = 'CNPJ inválido';
+      }
+
+      if (!formData.companyName.trim()) {
+        newErrors.companyName = 'Razão social é obrigatória';
+      }
+
+      if (!formData.tradeName.trim()) {
+        newErrors.tradeName = 'Nome fantasia é obrigatório';
+      }
+
+      // Inscrição estadual é opcional, mas se preenchida deve ser válida
+      if (formData.stateRegistration.trim() && formData.stateRegistration.replace(/\D/g, '').length !== 12) {
+        newErrors.stateRegistration = 'Inscrição estadual inválida';
+      }
+    } else {
+      // Apenas Produtor: apenas nome da propriedade é obrigatório
+      if (!formData.companyName.trim() && !formData.tradeName.trim()) {
+        newErrors.companyName = 'Nome da propriedade é obrigatório';
+      }
     }
 
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Razão social é obrigatória';
+    if (!formData.cep.trim()) {
+      newErrors.cep = 'CEP é obrigatório';
+    } else if (formData.cep.replace(/\D/g, '').length !== 8) {
+      newErrors.cep = 'CEP inválido';
     }
 
-    if (!formData.tradeName.trim()) {
-      newErrors.tradeName = 'Nome fantasia é obrigatório';
+    if (!formData.address.trim()) {
+      newErrors.address = 'Endereço é obrigatório';
     }
 
-    if (!formData.stateRegistration.trim()) {
-      newErrors.stateRegistration = 'Inscrição estadual é obrigatória';
-    } else if (formData.stateRegistration.replace(/\D/g, '').length !== 12) {
-      newErrors.stateRegistration = 'Inscrição estadual inválida';
+    if (!formData.city.trim()) {
+      newErrors.city = 'Cidade é obrigatória';
+    }
+
+    if (!formData.state.trim()) {
+      newErrors.state = 'Estado é obrigatório';
+    } else if (formData.state.length !== 2) {
+      newErrors.state = 'Estado deve ser a sigla com 2 letras (ex: SP, RJ)';
     }
 
     if (!formData.password.trim()) {
@@ -113,14 +230,14 @@ export default function SecondAccessScreen() {
   };
 
   const handleProfileSelect = (profile: ProfileType) => {
-    setSelectedProfiles((prev) => {
+    setSelectedProfiles(prev => {
       let newProfiles: ProfileType[];
 
       if (prev.includes(profile)) {
-        newProfiles = prev.filter((p) => p !== profile);
+        newProfiles = prev.filter(p => p !== profile);
       } else {
         if (prev.length >= 2) {
-          setErrors((prevErrors) => ({
+          setErrors(prevErrors => ({
             ...prevErrors,
             profile: 'Você só pode selecionar no máximo 2 perfis',
           }));
@@ -138,7 +255,7 @@ export default function SecondAccessScreen() {
             (hasProducer && hasSupplier) || (hasSupplier && hasServiceProvider);
 
           if (!isValidCombination) {
-            setErrors((prevErrors) => ({
+            setErrors(prevErrors => ({
               ...prevErrors,
               profile:
                 'Combinação inválida. Só é permitido: Produtor + Fornecedor ou Fornecedor + Prestador de Serviço.',
@@ -149,7 +266,7 @@ export default function SecondAccessScreen() {
       }
 
       if (errors.profile) {
-        setErrors((prevErrors) => {
+        setErrors(prevErrors => {
           const { profile, ...rest } = prevErrors;
           return rest;
         });
@@ -187,65 +304,177 @@ export default function SecondAccessScreen() {
               <StepIndicator
                 currentStep={2}
                 totalSteps={3}
-                onStepPress={(step) => {
+                onStepPress={step => {
                   if (step === 1) {
                     router.back();
                   }
                 }}
               />
 
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Dados da Empresa
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados da Empresa</Text>
 
               <View>
-                <Input
-                  label="CNPJ"
-                  required
-                  value={formData.cnpj}
-                  onChangeText={(text) => updateField('cnpj', text)}
-                  error={errors.cnpj}
-                  placeholder="xx.xxx.xxx/xxxx-xx"
-                  mask="cnpj"
-                  maxLength={18}
-                />
+                {/* Verifica se é Produtor + Fornecedor */}
+                {(() => {
+                  const isProducerAndSupplier = selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
+                  
+                  // Se for Produtor + Fornecedor, mostra todos os campos de empresa
+                  if (isProducerAndSupplier) {
+                    return (
+                      <>
+                        <View style={styles.cnpjContainer}>
+                          <View style={styles.cnpjInputContainer}>
+                            <Input
+                              label="CNPJ"
+                              required
+                              value={formData.cnpj}
+                              onChangeText={text => updateField('cnpj', text)}
+                              error={errors.cnpj}
+                              placeholder="xx.xxx.xxx/xxxx-xx"
+                              mask="cnpj"
+                              maxLength={18}
+                            />
+                          </View>
+                          <TouchableOpacity
+                            style={[styles.cnpjButton, { backgroundColor: colors.primary }]}
+                            onPress={handleBuscarCnpj}
+                            disabled={loadingCnpj || !formData.cnpj}
+                          >
+                            {loadingCnpj ? (
+                              <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                              <Text style={styles.cnpjButtonText}>Buscar</Text>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+
+                        <Input
+                          label="Razão social"
+                          required
+                          value={formData.companyName}
+                          onChangeText={text => updateField('companyName', text)}
+                          error={errors.companyName}
+                          placeholder="Digite sua razão social"
+                          autoCapitalize="words"
+                        />
+
+                        <Input
+                          label="Nome Fantasia"
+                          required
+                          value={formData.tradeName}
+                          onChangeText={text => updateField('tradeName', text)}
+                          error={errors.tradeName}
+                          placeholder="Digite seu nome fantasia"
+                          autoCapitalize="words"
+                        />
+
+                        <Input
+                          label="Inscrição estadual"
+                          value={formData.stateRegistration}
+                          onChangeText={text => updateField('stateRegistration', text)}
+                          error={errors.stateRegistration}
+                          placeholder="xxx.xxx.xxx.xxx (opcional)"
+                          mask="ie"
+                          maxLength={15}
+                        />
+                      </>
+                    );
+                  }
+                  
+                  // Se for apenas Produtor, mostra apenas nome da propriedade
+                  return (
+                    <Input
+                      label="Nome da Propriedade"
+                      required
+                      value={formData.companyName || formData.tradeName}
+                      onChangeText={text => {
+                        updateField('companyName', text);
+                        updateField('tradeName', text);
+                      }}
+                      error={errors.companyName}
+                      placeholder="Digite o nome da sua propriedade"
+                      autoCapitalize="words"
+                    />
+                  );
+                })()}
+
+                <View style={styles.cepContainer}>
+                  <View style={styles.cepInputContainer}>
+                    <Input
+                      label="CEP"
+                      required
+                      value={formData.cep}
+                      onChangeText={text => updateField('cep', text)}
+                      error={errors.cep}
+                      placeholder="00000-000"
+                      mask="cep"
+                      maxLength={9}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.cepButton, { backgroundColor: colors.primary }]}
+                    onPress={handleBuscarCep}
+                    disabled={loadingCep || !formData.cep}
+                  >
+                    {loadingCep ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.cepButtonText}>Buscar</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
 
                 <Input
-                  label="Razão social"
+                  label="Endereço"
                   required
-                  value={formData.companyName}
-                  onChangeText={(text) => updateField('companyName', text)}
-                  error={errors.companyName}
-                  placeholder="Digite sua razão"
+                  value={formData.address}
+                  onChangeText={text => updateField('address', text)}
+                  error={errors.address}
+                  placeholder="Rua, Avenida, etc."
                   autoCapitalize="words"
                 />
 
                 <Input
-                  label="Nome Fantasia"
-                  required
-                  value={formData.tradeName}
-                  onChangeText={(text) => updateField('tradeName', text)}
-                  error={errors.tradeName}
-                  placeholder="Digite seu nome"
+                  label="Bairro"
+                  value={formData.neighborhood}
+                  onChangeText={text => updateField('neighborhood', text)}
+                  error={errors.neighborhood}
+                  placeholder="Nome do bairro"
                   autoCapitalize="words"
                 />
 
-                <Input
-                  label="Inscrição estadual"
-                  required
-                  value={formData.stateRegistration}
-                  onChangeText={(text) => updateField('stateRegistration', text)}
-                  error={errors.stateRegistration}
-                  placeholder="xxx.xxx.xxx.xxx"
-                  mask="ie"
-                  maxLength={15}
-                />
+                <View style={styles.cityStateContainer}>
+                  <View style={styles.cityInput}>
+                    <Input
+                      label="Cidade"
+                      required
+                      value={formData.city}
+                      onChangeText={text => updateField('city', text)}
+                      error={errors.city}
+                      placeholder="Nome da cidade"
+                      autoCapitalize="words"
+                    />
+                  </View>
+                  <View style={styles.stateInput}>
+                    <Input
+                      label="Estado (UF)"
+                      required
+                      value={formData.state}
+                      onChangeText={text => updateField('state', text.toUpperCase())}
+                      error={errors.state}
+                      placeholder="SP"
+                      maxLength={2}
+                      autoCapitalize="characters"
+                    />
+                  </View>
+                </View>
 
                 <Input
                   label="Criar senha"
                   required
                   value={formData.password}
-                  onChangeText={(text) => updateField('password', text)}
+                  onChangeText={text => updateField('password', text)}
                   error={errors.password}
                   successMessage={
                     passwordMatch && formData.password ? 'As senhas são iguais' : undefined
@@ -258,12 +487,10 @@ export default function SecondAccessScreen() {
                   label="Confirmar senha"
                   required
                   value={formData.confirmPassword}
-                  onChangeText={(text) => updateField('confirmPassword', text)}
+                  onChangeText={text => updateField('confirmPassword', text)}
                   error={errors.confirmPassword}
                   successMessage={
-                    passwordMatch && formData.confirmPassword
-                      ? 'As senhas são iguais'
-                      : undefined
+                    passwordMatch && formData.confirmPassword ? 'As senhas são iguais' : undefined
                   }
                   placeholder="Digite sua senha novamente"
                   isPassword
@@ -293,9 +520,7 @@ export default function SecondAccessScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleLoginRedirect} activeOpacity={0.7}>
-                <Text style={[styles.loginLink, { color: colors.text }]}>
-                  Possuo cadastro
-                </Text>
+                <Text style={[styles.loginLink, { color: colors.text }]}>Possuo cadastro</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -375,5 +600,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  cnpjContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  cnpjInputContainer: {
+    flex: 1,
+  },
+  cnpjButton: {
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 80,
+    marginLeft: 10,
+    marginTop: 20,
+  },
+  cnpjButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  cepContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  cepInputContainer: {
+    flex: 1,
+  },
+  cepButton: {
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 80,
+    marginLeft: 10,
+    marginTop: 20,
+  },
+  cepButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  cityStateContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  cityInput: {
+    flex: 2,
+    marginRight: 10,
+  },
+  stateInput: {
+    flex: 1,
   },
 });
