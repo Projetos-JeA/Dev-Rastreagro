@@ -1,12 +1,19 @@
 """Ponto de entrada principal da aplicação FastAPI"""
 
+import logging
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routes import activities, auth, companies, health, users, viacep
+from app.routes import activities, auth, companies, health, users, viacep, cnpj
 from app.utils.validation_errors import validation_exception_handler
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 # Importa rotas incluindo ViaCEP
 
@@ -47,6 +54,8 @@ app.include_router(companies.router)
 app.include_router(activities.router)
 # Rota ViaCEP para busca de endereço por CEP
 app.include_router(viacep.router)
+# Rota CNPJ para busca de dados de empresa
+app.include_router(cnpj.router)
 
 
 @app.get("/")
