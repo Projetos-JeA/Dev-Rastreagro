@@ -20,16 +20,15 @@ import Input from '../../src/components/Input';
 export default function LoginScreen() {
   const { login } = useAuth();
   const { colors } = useTheme();
-  const router = useRouter();
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const updateField = (field: string, value: string) => {
+  function updateField(field: string, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
@@ -145,7 +144,7 @@ export default function LoginScreen() {
 
             <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.buttonSocialBackground, borderColor: colors.buttonSocialBorder }]}>
               <View style={[styles.facebookIconContainer, { backgroundColor: colors.facebookColor }]}>
-                <Text style={styles.facebookIcon}>f</Text>
+                <Text style={[styles.facebookIcon, { color: colors.white }]}>f</Text>
               </View>
               <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>Entrar com facebook</Text>
             </TouchableOpacity>
@@ -234,7 +233,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   facebookIcon: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },

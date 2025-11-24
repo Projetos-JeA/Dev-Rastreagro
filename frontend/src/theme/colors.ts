@@ -20,6 +20,7 @@ export interface ThemeColors {
   errorBackground: string;
   link: string;
   success: string;
+  successLight: string;
   warning: string;
   info: string;
   iconQuotation: string;
@@ -29,7 +30,10 @@ export interface ThemeColors {
   iconSocial: string;
   iconHerdControl: string;
   cardBackground: string;
+  cardBorder: string;
+  cardAlt: string;
   shadowColor: string;
+  white: string;
 }
 
 export const lightTheme: ThemeColors = {
@@ -54,6 +58,7 @@ export const lightTheme: ThemeColors = {
   errorBackground: 'rgba(255, 235, 238, 0.9)',
   link: '#000000',
   success: '#4CAF50',
+  successLight: '#E8F5E9',
   warning: '#FF9800',
   info: '#2196F3',
   iconQuotation: '#FFB300',
@@ -63,7 +68,10 @@ export const lightTheme: ThemeColors = {
   iconSocial: '#E53935',
   iconHerdControl: '#8D6E63',
   cardBackground: 'rgba(255, 255, 255, 0.9)',
+  cardBorder: '#E0E0E0',
+  cardAlt: '#F5F5F5',
   shadowColor: '#000',
+  white: '#FFFFFF',
 };
 
 export const darkTheme: ThemeColors = {
@@ -88,6 +96,7 @@ export const darkTheme: ThemeColors = {
   errorBackground: 'rgba(211, 47, 47, 0.2)',
   link: '#FFFFFF',
   success: '#66BB6A',
+  successLight: 'rgba(102, 187, 106, 0.2)',
   warning: '#FFA726',
   info: '#42A5F5',
   iconQuotation: '#FFD54F',
@@ -97,5 +106,8 @@ export const darkTheme: ThemeColors = {
   iconSocial: '#EF5350',
   iconHerdControl: '#A1887F',
   cardBackground: 'rgba(30, 30, 30, 0.9)',
+  cardBorder: '#444444',
+  cardAlt: '#2A2A2A',
   shadowColor: '#000',
+  white: '#FFFFFF',
 };

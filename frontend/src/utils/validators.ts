@@ -87,7 +87,6 @@ export function validateNomeCompleto(nome: string): { isValid: boolean; error: s
 
   const nomeNormalized = nome.trim();
 
-  // Verifica se contém apenas letras (incluindo acentos), espaços e hífen
   for (const char of nomeNormalized) {
     if (!(char.match(/[a-zA-ZÀ-ÿ]/) || char === ' ' || char === '-')) {
       return { isValid: false, error: "O campo 'nome' só pode conter letras e espaços" };

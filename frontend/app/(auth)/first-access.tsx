@@ -17,7 +17,6 @@ import StepIndicator from '../../src/components/StepIndicator';
 
 export default function FirstAccessScreen() {
   const { colors } = useTheme();
-  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: '',
     birthDate: '',
@@ -26,8 +25,9 @@ export default function FirstAccessScreen() {
     phone: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const router = useRouter();
 
-  const updateField = (field: string, value: string) => {
+  function updateField(field: string, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
@@ -36,9 +36,9 @@ export default function FirstAccessScreen() {
         return newErrors;
       });
     }
-  };
+  }
 
-  const validateForm = (): boolean => {
+  function validateForm(): boolean {
     const newErrors: Record<string, string> = {};
 
     if (!formData.fullName.trim()) {
@@ -71,26 +71,25 @@ export default function FirstAccessScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }
 
-  const handleContinue = () => {
+  function handleContinue() {
     if (validateForm()) {
       router.push({
         pathname: '/(auth)/second-access',
         params: formData,
       });
     }
-  };
+  }
 
-  const handleLoginRedirect = () => {
+  function handleLoginRedirect() {
     router.push('/(auth)/login');
-  };
+  }
 
   return (
     <ImageBackground
       source={require('../../assets/background.png')}
       style={styles.backgroundImage}
-      blurRadius={3}
     >
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]}>
         <KeyboardAvoidingView
@@ -174,7 +173,7 @@ export default function FirstAccessScreen() {
               </View>
 
               <TouchableOpacity
-                style={[styles.continueButton, { backgroundColor: colors.buttonBackground }]}
+                style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
               >
@@ -236,7 +235,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,

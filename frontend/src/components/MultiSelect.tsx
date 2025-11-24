@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, DimensionValue } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Input from './Input';
 
@@ -41,18 +41,18 @@ export default function MultiSelect({
 
   const showCustomInput = allowCustom && selectedValues.includes('outros');
 
-  const getItemWidth = (itemsInRow: number): string => {
+  function getItemWidth(itemsInRow: number): DimensionValue {
     const gap = 10;
     const totalGaps = (itemsInRow - 1) * gap;
     const width = (100 - totalGaps / 3.7) / itemsInRow;
-    return `${width}%`;
-  };
+    return `${width}%` as DimensionValue;
+  }
 
   return (
     <View style={styles.container}>
       <Text style={[styles.label, { color: colors.text }]}>
         {label}
-        {required && <Text style={styles.required}> *</Text>}
+        {required && <Text style={{ color: colors.error }}> *</Text>}
       </Text>
 
       <View style={styles.rowsContainer}>
@@ -80,7 +80,7 @@ export default function MultiSelect({
                     style={[
                       styles.chipText,
                       {
-                        color: isSelected ? '#FFFFFF' : colors.text,
+                        color: isSelected ? colors.white : colors.text,
                       },
                     ]}
                   >
@@ -103,7 +103,7 @@ export default function MultiSelect({
         />
       )}
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
     </View>
   );
 }
@@ -116,9 +116,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 12,
-  },
-  required: {
-    color: '#F44336',
   },
   rowsContainer: {
     gap: 10,
@@ -143,7 +140,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: '#F44336',
     marginTop: 8,
   },
 });

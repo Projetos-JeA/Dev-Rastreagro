@@ -44,7 +44,7 @@ export default function SecondAccessScreen() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingCnpj, setLoadingCnpj] = useState(false);
 
-  const updateField = (field: string, value: string) => {
+  function updateField(field: string, value: string) {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => {
@@ -53,7 +53,7 @@ export default function SecondAccessScreen() {
         return newErrors;
       });
     }
-  };
+  }
 
   useEffect(() => {
     if (formData.password && formData.confirmPassword) {
@@ -63,7 +63,7 @@ export default function SecondAccessScreen() {
     }
   }, [formData.password, formData.confirmPassword]);
 
-  const handleBuscarCep = async () => {
+  async function handleBuscarCep() {
     const digits = (formData.cep || '').replace(/\D/g, '');
     if (digits.length !== 8) {
       Alert.alert('Erro', 'CEP inválido. Use 8 dígitos.');
@@ -89,9 +89,9 @@ export default function SecondAccessScreen() {
     } finally {
       setLoadingCep(false);
     }
-  };
+  }
 
-  const handleBuscarCnpj = async () => {
+  async function handleBuscarCnpj() {
     const digits = (formData.cnpj || '').replace(/\D/g, '');
     if (digits.length !== 14) {
       Alert.alert('Erro', 'CNPJ inválido. Use 14 dígitos.');
@@ -112,7 +112,6 @@ export default function SecondAccessScreen() {
         city: data.cidade || prev.city,
         state: data.estado || prev.state,
       }));
-      // Limpa erros dos campos preenchidos
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.cnpj;
@@ -137,16 +136,14 @@ export default function SecondAccessScreen() {
     } finally {
       setLoadingCnpj(false);
     }
-  };
+  }
 
-  const validateForm = (): boolean => {
+  function validateForm(): boolean {
     const newErrors: Record<string, string> = {};
 
-    // Se for Produtor + Fornecedor, sempre exige todos os campos de empresa
     const isProducerAndSupplier = selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
 
     if (isProducerAndSupplier) {
-      // Produtor + Fornecedor: todos os campos de empresa são obrigatórios
       if (!formData.cnpj.trim()) {
         newErrors.cnpj = 'CNPJ é obrigatório';
       } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
@@ -161,12 +158,10 @@ export default function SecondAccessScreen() {
         newErrors.tradeName = 'Nome fantasia é obrigatório';
       }
 
-      // Inscrição estadual é opcional, mas se preenchida deve ser válida
       if (formData.stateRegistration.trim() && formData.stateRegistration.replace(/\D/g, '').length !== 12) {
         newErrors.stateRegistration = 'Inscrição estadual inválida';
       }
     } else {
-      // Apenas Produtor: apenas nome da propriedade é obrigatório
       if (!formData.companyName.trim() && !formData.tradeName.trim()) {
         newErrors.companyName = 'Nome da propriedade é obrigatório';
       }
@@ -210,9 +205,9 @@ export default function SecondAccessScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }
 
-  const handleContinue = () => {
+  function handleContinue() {
     if (validateForm()) {
       router.push({
         pathname: '/(auth)/third-access',
@@ -223,13 +218,13 @@ export default function SecondAccessScreen() {
         },
       });
     }
-  };
+  }
 
-  const handleLoginRedirect = () => {
+  function handleLoginRedirect() {
     router.push('/(auth)/login');
-  };
+  }
 
-  const handleProfileSelect = (profile: ProfileType) => {
+  function handleProfileSelect(profile: ProfileType) {
     setSelectedProfiles(prev => {
       let newProfiles: ProfileType[];
 
@@ -274,13 +269,12 @@ export default function SecondAccessScreen() {
 
       return newProfiles;
     });
-  };
+  }
 
   return (
     <ImageBackground
       source={require('../../assets/background.png')}
       style={styles.backgroundImage}
-      blurRadius={3}
     >
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]}>
         <KeyboardAvoidingView
@@ -316,16 +310,14 @@ export default function SecondAccessScreen() {
                 onSelectProfile={handleProfileSelect}
                 required
               />
-              {errors.profile && <Text style={styles.profileError}>{errors.profile}</Text>}
+              {errors.profile && <Text style={[styles.profileError, { color: colors.error }]}>{errors.profile}</Text>}
 
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados da Empresa</Text>
 
               <View>
-                {/* Verifica se é Produtor + Fornecedor */}
                 {(() => {
                   const isProducerAndSupplier = selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
-                  
-                  // Se for Produtor + Fornecedor, mostra todos os campos de empresa
+
                   if (isProducerAndSupplier) {
                     return (
                       <>
@@ -348,9 +340,9 @@ export default function SecondAccessScreen() {
                             disabled={loadingCnpj || !formData.cnpj}
                           >
                             {loadingCnpj ? (
-                              <ActivityIndicator size="small" color="#fff" />
+                              <ActivityIndicator size="small" color={colors.white} />
                             ) : (
-                              <Text style={styles.cnpjButtonText}>Buscar</Text>
+                              <Text style={[styles.cnpjButtonText, { color: colors.white }]}>Buscar</Text>
                             )}
                           </TouchableOpacity>
                         </View>
@@ -387,8 +379,7 @@ export default function SecondAccessScreen() {
                       </>
                     );
                   }
-                  
-                  // Se for apenas Produtor, mostra apenas nome da propriedade
+
                   return (
                     <Input
                       label="Nome da Propriedade"
@@ -425,9 +416,9 @@ export default function SecondAccessScreen() {
                     disabled={loadingCep || !formData.cep}
                   >
                     {loadingCep ? (
-                      <ActivityIndicator size="small" color="#fff" />
+                      <ActivityIndicator size="small" color={colors.white} />
                     ) : (
-                      <Text style={styles.cepButtonText}>Buscar</Text>
+                      <Text style={[styles.cepButtonText, { color: colors.white }]}>Buscar</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -510,7 +501,7 @@ export default function SecondAccessScreen() {
               </Text>
 
               <TouchableOpacity
-                style={[styles.continueButton, { backgroundColor: colors.buttonBackground }]}
+                style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
               >
@@ -564,7 +555,6 @@ const styles = StyleSheet.create({
   },
   profileError: {
     fontSize: 12,
-    color: '#F44336',
     marginTop: -15,
     marginBottom: 15,
   },
@@ -583,7 +573,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -619,7 +608,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   cnpjButtonText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 14,
   },
@@ -641,7 +629,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   cepButtonText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 14,
   },

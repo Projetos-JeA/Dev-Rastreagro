@@ -32,11 +32,10 @@ export default function Select({
 }: SelectProps) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-
   const selectedOption = options.find((opt) => opt.value === value);
   const displayText = selectedOption ? selectedOption.label : placeholder;
 
-  const handleSelect = (itemValue: string) => {
+  function handleSelect(itemValue: string) {
     onValueChange(itemValue);
     setModalVisible(false);
   };
@@ -45,16 +44,15 @@ export default function Select({
     <View style={styles.container}>
       <Text style={[styles.label, { color: colors.text }]}>
         {label}
-        {required && <Text style={styles.required}> *</Text>}
+        {required && <Text style={{ color: colors.error }}> *</Text>}
       </Text>
 
       <TouchableOpacity
         style={[
           styles.selectButton,
           {
-            borderBottomColor: colors.inputBorder,
+            borderBottomColor: error ? colors.error : colors.inputBorder,
           },
-          error && styles.selectError,
         ]}
         onPress={() => setModalVisible(true)}
         activeOpacity={0.7}
@@ -77,7 +75,7 @@ export default function Select({
         />
       </TouchableOpacity>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
 
       <Modal
         animationType="slide"
@@ -87,7 +85,7 @@ export default function Select({
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{label}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
@@ -101,6 +99,7 @@ export default function Select({
                 <TouchableOpacity
                   style={[
                     styles.optionItem,
+                    { borderBottomColor: colors.cardBorder },
                     item.value === value && {
                       backgroundColor: colors.primary + '20',
                     },
@@ -139,9 +138,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
   },
-  required: {
-    color: '#F44336',
-  },
   selectButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -150,9 +146,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     borderBottomWidth: 1,
     backgroundColor: 'transparent',
-  },
-  selectError: {
-    borderBottomColor: '#F44336',
   },
   selectText: {
     fontSize: 16,
@@ -163,7 +156,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: '#F44336',
     marginTop: 4,
   },
   modalOverlay: {
@@ -184,7 +176,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   modalTitle: {
     fontSize: 18,
@@ -197,7 +188,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   optionText: {
     fontSize: 16,

@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,7 +18,7 @@ import MenuCard from '../../src/components/MenuCard';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const roleLabel: Record<string, string> = {
@@ -76,7 +77,7 @@ export default function HomeScreen() {
     >
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+        <View style={[styles.header, { marginTop: Platform.OS === 'ios' ? 30 : 20 }]}>
           <TouchableOpacity onPress={handleMoreOptions}>
             <Ionicons name="ellipsis-horizontal" size={28} color={colors.text} />
           </TouchableOpacity>
@@ -157,7 +158,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 20,
     marginBottom: 10,
   },
   profileContainer: {

@@ -126,19 +126,10 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
-      // Log detalhado para debug
-      console.error('🔴 Erro no registerSeller:', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        message: error?.message,
-      });
-      console.error('🔴 DETALHES COMPLETOS DO ERRO:', JSON.stringify(error?.response?.data, null, 2));
-      
       const apiError = buildApiError(error, 'Erro ao registrar empresa');
       if (error?.response?.status === 409) {
         throw new ApiError('Email já cadastrado', 409);
       }
-      // Preserva o status code do erro original
       if (error?.response?.status) {
         apiError.status = error.response.status;
       }

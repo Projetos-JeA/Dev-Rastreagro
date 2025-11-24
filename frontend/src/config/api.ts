@@ -1,7 +1,3 @@
-/**
- * Configuração central do cliente HTTP da aplicação
- */
-
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = __DEV__
