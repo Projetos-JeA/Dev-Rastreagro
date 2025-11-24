@@ -6,9 +6,20 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
 from app.schemas import RegisterRequest, LoginRequest, TokenPair, RefreshRequest
+from app.schemas.auth import CheckAvailabilityRequest, CheckAvailabilityResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+@router.post(
+    "/check-availability",
+    response_model=CheckAvailabilityResponse,
+    summary="Verificar disponibilidade de email/CPF/CNPJ"
+)
+def check_availability(payload: CheckAvailabilityRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    return service.check_availability(payload)
 
 
 @router.post("/register", response_model=TokenPair, summary="Registrar usuário")

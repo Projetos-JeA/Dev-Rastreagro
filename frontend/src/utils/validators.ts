@@ -51,6 +51,12 @@ export interface PasswordValidationResult {
   errors: string[];
 }
 
+export interface PasswordRequirement {
+  key: string;
+  label: string;
+  met: boolean;
+}
+
 export function validatePassword(password: string): PasswordValidationResult {
   const errors: string[] = [];
 
@@ -78,6 +84,16 @@ export function validatePassword(password: string): PasswordValidationResult {
     isValid: errors.length === 0,
     errors,
   };
+}
+
+export function getPasswordRequirements(password: string): PasswordRequirement[] {
+  return [
+    { key: 'length', label: 'Mínimo 8 caracteres', met: password.length >= 8 },
+    { key: 'uppercase', label: 'Uma letra maiúscula', met: /[A-Z]/.test(password) },
+    { key: 'lowercase', label: 'Uma letra minúscula', met: /[a-z]/.test(password) },
+    { key: 'number', label: 'Um número', met: /[0-9]/.test(password) },
+    { key: 'special', label: 'Um caractere especial (!@#$%&*)', met: /[!@#$%&*]/.test(password) },
+  ];
 }
 
 export function validateNomeCompleto(nome: string): { isValid: boolean; error: string } {

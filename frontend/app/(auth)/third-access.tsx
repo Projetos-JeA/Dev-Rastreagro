@@ -447,22 +447,22 @@ export default function ThirdAccessScreen() {
   const [producerType, setProducerType] = useState<string>('');
   const [supplierType, setSupplierType] = useState<string>('');
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
-  const [segmentsCustom, setSegmentsCustom] = useState<string>('');
+  const [segmentsCustom, setSegmentsCustom] = useState<string[]>([]);
 
-  const [segmentData, setSegmentData] = useState<Record<string, { products: string[]; productsCustom: string }>>({});
+  const [segmentData, setSegmentData] = useState<Record<string, { products: string[]; productsCustom: string[] }>>({});
 
   const [activities, setActivities] = useState<string[]>([]);
-  const [activitiesCustom, setActivitiesCustom] = useState<string>('');
+  const [activitiesCustom, setActivitiesCustom] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [categoriesCustom, setCategoriesCustom] = useState<string>('');
+  const [categoriesCustom, setCategoriesCustom] = useState<string[]>([]);
   const [herdTypes, setHerdTypes] = useState<string[]>([]);
-  const [herdTypesCustom, setHerdTypesCustom] = useState<string>('');
+  const [herdTypesCustom, setHerdTypesCustom] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<string[]>([]);
-  const [preferencesCustom, setPreferencesCustom] = useState<string>('');
+  const [preferencesCustom, setPreferencesCustom] = useState<string[]>([]);
   const [commonDiseases, setCommonDiseases] = useState<string[]>([]);
-  const [commonDiseasesCustom, setCommonDiseasesCustom] = useState<string>('');
+  const [commonDiseasesCustom, setCommonDiseasesCustom] = useState<string[]>([]);
   const [livestockSupplies, setLivestockSupplies] = useState<string[]>([]);
-  const [livestockSuppliesCustom, setLivestockSuppliesCustom] = useState<string>('');
+  const [livestockSuppliesCustom, setLivestockSuppliesCustom] = useState<string[]>([]);
   const [animalQuantity, setAnimalQuantity] = useState<string>('');
   const [vaccinationDate, setVaccinationDate] = useState<string>('');
 
@@ -470,23 +470,23 @@ export default function ThirdAccessScreen() {
   const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>({});
 
   const [agricultureTypes, setAgricultureTypes] = useState<string[]>([]);
-  const [agricultureTypesCustom, setAgricultureTypesCustom] = useState<string>('');
+  const [agricultureTypesCustom, setAgricultureTypesCustom] = useState<string[]>([]);
   const [cropTypes, setCropTypes] = useState<string[]>([]);
-  const [cropTypesCustom, setCropTypesCustom] = useState<string>('');
+  const [cropTypesCustom, setCropTypesCustom] = useState<string[]>([]);
   const [seedTypes, setSeedTypes] = useState<string[]>([]);
-  const [seedTypesCustom, setSeedTypesCustom] = useState<string>('');
+  const [seedTypesCustom, setSeedTypesCustom] = useState<string[]>([]);
   const [fertilizerTypes, setFertilizerTypes] = useState<string[]>([]);
-  const [fertilizerTypesCustom, setFertilizerTypesCustom] = useState<string>('');
+  const [fertilizerTypesCustom, setFertilizerTypesCustom] = useState<string[]>([]);
   const [organicFertilizerTypes, setOrganicFertilizerTypes] = useState<string[]>([]);
-  const [organicFertilizerTypesCustom, setOrganicFertilizerTypesCustom] = useState<string>('');
+  const [organicFertilizerTypesCustom, setOrganicFertilizerTypesCustom] = useState<string[]>([]);
   const [defensiveTypes, setDefensiveTypes] = useState<string[]>([]);
-  const [defensiveTypesCustom, setDefensiveTypesCustom] = useState<string>('');
+  const [defensiveTypesCustom, setDefensiveTypesCustom] = useState<string[]>([]);
   const [limestoneTypes, setLimestoneTypes] = useState<string[]>([]);
-  const [limestoneTypesCustom, setLimestoneTypesCustom] = useState<string>('');
+  const [limestoneTypesCustom, setLimestoneTypesCustom] = useState<string[]>([]);
 
   const [selectedServiceSegments, setSelectedServiceSegments] = useState<string[]>([]);
-  const [serviceSegmentsCustom, setServiceSegmentsCustom] = useState<string>('');
-  const [serviceSegmentData, setServiceSegmentData] = useState<Record<string, { services: string[]; servicesCustom: string }>>({});
+  const [serviceSegmentsCustom, setServiceSegmentsCustom] = useState<string[]>([]);
+  const [serviceSegmentData, setServiceSegmentData] = useState<Record<string, { services: string[]; servicesCustom: string[] }>>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -590,7 +590,7 @@ export default function ThirdAccessScreen() {
       if (!supplierType) {
         newErrors.supplierType = 'Selecione o tipo de fornecedor';
       }
-      if (selectedSegments.length === 0 && !segmentsCustom) {
+      if (selectedSegments.length === 0 && segmentsCustom.length === 0) {
         newErrors.segments = 'Selecione pelo menos um segmento';
       }
     }
@@ -765,6 +765,7 @@ export default function ThirdAccessScreen() {
         const sellerPayload = {
           email: completeData.email,
           password: completeData.password,
+          nickname: completeData.nickname || null,
           company: {
             nome_propriedade: completeData.companyName || completeData.tradeName || params.fullName || 'Propriedade',
             cnpj_cpf: documentNumber,
@@ -797,13 +798,19 @@ export default function ThirdAccessScreen() {
       } else if (completeData.profileTypes.includes('supplier')) {
         console.log('📤 Cadastrando como FORNECEDOR (Seller)...');
 
-
-        const activities: any[] = [];
+        const activities: any[] = [
+          {
+            category_id: 3,
+            group_id: null,
+            item_id: null,
+          },
+        ];
 
 
         const sellerPayload = {
           email: completeData.email,
           password: completeData.password,
+          nickname: completeData.nickname || null,
           company: {
             nome_propriedade: completeData.companyName || completeData.tradeName || 'Empresa',
             cnpj_cpf: completeData.cnpj || '',
@@ -839,6 +846,7 @@ export default function ThirdAccessScreen() {
         const servicePayload = {
           email: completeData.email,
           password: completeData.password,
+          nickname: completeData.nickname || null,
           service_provider: {
             nome_servico: completeData.serviceName || 'Serviço',
             email_contato: completeData.email,
@@ -965,40 +973,40 @@ export default function ThirdAccessScreen() {
     });
 
     setActivities([]);
-    setActivitiesCustom('');
+    setActivitiesCustom([]);
     setCategories([]);
-    setCategoriesCustom('');
+    setCategoriesCustom([]);
     setHerdTypes([]);
-    setHerdTypesCustom('');
+    setHerdTypesCustom([]);
     setPreferences([]);
-    setPreferencesCustom('');
+    setPreferencesCustom([]);
     setCommonDiseases([]);
-    setCommonDiseasesCustom('');
+    setCommonDiseasesCustom([]);
     setLivestockSupplies([]);
-    setLivestockSuppliesCustom('');
+    setLivestockSuppliesCustom([]);
     setAnimalQuantity('');
     setVaccinationDate('');
     setHerdControl([]);
     setAgricultureTypes([]);
-    setAgricultureTypesCustom('');
+    setAgricultureTypesCustom([]);
     setCropTypes([]);
-    setCropTypesCustom('');
+    setCropTypesCustom([]);
     setSeedTypes([]);
-    setSeedTypesCustom('');
+    setSeedTypesCustom([]);
     setFertilizerTypes([]);
-    setFertilizerTypesCustom('');
+    setFertilizerTypesCustom([]);
     setOrganicFertilizerTypes([]);
-    setOrganicFertilizerTypesCustom('');
+    setOrganicFertilizerTypesCustom([]);
     setDefensiveTypes([]);
-    setDefensiveTypesCustom('');
+    setDefensiveTypesCustom([]);
     setLimestoneTypes([]);
-    setLimestoneTypesCustom('');
+    setLimestoneTypesCustom([]);
   }
 
   function handleSupplierTypeChange(type: string) {
     setSupplierType(type);
     setSelectedSegments([]);
-    setSegmentsCustom('');
+    setSegmentsCustom([]);
     setSegmentData({});
     setErrors((prev) => {
       const { supplierType, segments, ...rest } = prev;
@@ -1018,6 +1026,24 @@ export default function ThirdAccessScreen() {
     }
   }
 
+  function addCustomValue(
+    setCustomValues: (values: string[]) => void,
+    currentValues: string[],
+    value: string
+  ) {
+    if (!currentValues.includes(value)) {
+      setCustomValues([...currentValues, value]);
+    }
+  }
+
+  function removeCustomValue(
+    setCustomValues: (values: string[]) => void,
+    currentValues: string[],
+    value: string
+  ) {
+    setCustomValues(currentValues.filter((v) => v !== value));
+  }
+
   function toggleSegment(segment: string) {
     setSelectedSegments((prev) => {
       if (prev.includes(segment)) {
@@ -1032,7 +1058,7 @@ export default function ThirdAccessScreen() {
           ...prevData,
           [segment]: {
             products: [],
-            productsCustom: '',
+            productsCustom: [],
           },
         }));
         return [...prev, segment];
@@ -1064,12 +1090,22 @@ export default function ThirdAccessScreen() {
     });
   }
 
-  function updateSegmentCustom(segment: string, value: string) {
+  function addSegmentCustom(segment: string, value: string) {
     setSegmentData((prev) => ({
       ...prev,
       [segment]: {
         ...prev[segment],
-        productsCustom: value,
+        productsCustom: [...(prev[segment]?.productsCustom || []), value],
+      },
+    }));
+  }
+
+  function removeSegmentCustom(segment: string, value: string) {
+    setSegmentData((prev) => ({
+      ...prev,
+      [segment]: {
+        ...prev[segment],
+        productsCustom: (prev[segment]?.productsCustom || []).filter((v) => v !== value),
       },
     }));
   }
@@ -1088,7 +1124,7 @@ export default function ThirdAccessScreen() {
           ...prevData,
           [segment]: {
             services: [],
-            servicesCustom: '',
+            servicesCustom: [],
           },
         }));
         return [...prev, segment];
@@ -1120,12 +1156,22 @@ export default function ThirdAccessScreen() {
     });
   }
 
-  function updateServiceSegmentCustom(segment: string, value: string) {
+  function addServiceSegmentCustom(segment: string, value: string) {
     setServiceSegmentData((prev) => ({
       ...prev,
       [segment]: {
         ...prev[segment],
-        servicesCustom: value,
+        servicesCustom: [...(prev[segment]?.servicesCustom || []), value],
+      },
+    }));
+  }
+
+  function removeServiceSegmentCustom(segment: string, value: string) {
+    setServiceSegmentData((prev) => ({
+      ...prev,
+      [segment]: {
+        ...prev[segment],
+        servicesCustom: (prev[segment]?.servicesCustom || []).filter((v) => v !== value),
       },
     }));
   }
@@ -1394,8 +1440,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(activities, setActivities, value)}
                         error={errors.activities}
                         allowCustom
-                        customValue={activitiesCustom}
-                        onCustomChange={setActivitiesCustom}
+                        customValues={activitiesCustom}
+                        onAddCustom={(value) => addCustomValue(setActivitiesCustom, activitiesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setActivitiesCustom, activitiesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1406,8 +1453,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(categories, setCategories, value)}
                         error={errors.categories}
                         allowCustom
-                        customValue={categoriesCustom}
-                        onCustomChange={setCategoriesCustom}
+                        customValues={categoriesCustom}
+                        onAddCustom={(value) => addCustomValue(setCategoriesCustom, categoriesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setCategoriesCustom, categoriesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1418,8 +1466,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(herdTypes, setHerdTypes, value)}
                         error={errors.herdTypes}
                         allowCustom
-                        customValue={herdTypesCustom}
-                        onCustomChange={setHerdTypesCustom}
+                        customValues={herdTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setHerdTypesCustom, herdTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setHerdTypesCustom, herdTypesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1430,8 +1479,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(preferences, setPreferences, value)}
                         error={errors.preferences}
                         allowCustom
-                        customValue={preferencesCustom}
-                        onCustomChange={setPreferencesCustom}
+                        customValues={preferencesCustom}
+                        onAddCustom={(value) => addCustomValue(setPreferencesCustom, preferencesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setPreferencesCustom, preferencesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1442,8 +1492,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(commonDiseases, setCommonDiseases, value)}
                         error={errors.commonDiseases}
                         allowCustom
-                        customValue={commonDiseasesCustom}
-                        onCustomChange={setCommonDiseasesCustom}
+                        customValues={commonDiseasesCustom}
+                        onAddCustom={(value) => addCustomValue(setCommonDiseasesCustom, commonDiseasesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setCommonDiseasesCustom, commonDiseasesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1456,8 +1507,9 @@ export default function ThirdAccessScreen() {
                         }
                         error={errors.livestockSupplies}
                         allowCustom
-                        customValue={livestockSuppliesCustom}
-                        onCustomChange={setLivestockSuppliesCustom}
+                        customValues={livestockSuppliesCustom}
+                        onAddCustom={(value) => addCustomValue(setLivestockSuppliesCustom, livestockSuppliesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setLivestockSuppliesCustom, livestockSuppliesCustom, value)}
                       />
 
                       <Input
@@ -1844,8 +1896,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(agricultureTypes, setAgricultureTypes, value)}
                         error={errors.agricultureTypes}
                         allowCustom
-                        customValue={agricultureTypesCustom}
-                        onCustomChange={setAgricultureTypesCustom}
+                        customValues={agricultureTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setAgricultureTypesCustom, agricultureTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setAgricultureTypesCustom, agricultureTypesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1856,8 +1909,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(cropTypes, setCropTypes, value)}
                         error={errors.cropTypes}
                         allowCustom
-                        customValue={cropTypesCustom}
-                        onCustomChange={setCropTypesCustom}
+                        customValues={cropTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setCropTypesCustom, cropTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setCropTypesCustom, cropTypesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1868,8 +1922,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(seedTypes, setSeedTypes, value)}
                         error={errors.seedTypes}
                         allowCustom
-                        customValue={seedTypesCustom}
-                        onCustomChange={setSeedTypesCustom}
+                        customValues={seedTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setSeedTypesCustom, seedTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setSeedTypesCustom, seedTypesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1880,8 +1935,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(fertilizerTypes, setFertilizerTypes, value)}
                         error={errors.fertilizerTypes}
                         allowCustom
-                        customValue={fertilizerTypesCustom}
-                        onCustomChange={setFertilizerTypesCustom}
+                        customValues={fertilizerTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setFertilizerTypesCustom, fertilizerTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setFertilizerTypesCustom, fertilizerTypesCustom, value)}
                       />
 
                       {fertilizerTypes.includes('organico') && (
@@ -1893,8 +1949,9 @@ export default function ThirdAccessScreen() {
                           onToggle={(value) => toggleMultiSelect(organicFertilizerTypes, setOrganicFertilizerTypes, value)}
                           error={errors.organicFertilizerTypes}
                           allowCustom
-                          customValue={organicFertilizerTypesCustom}
-                          onCustomChange={setOrganicFertilizerTypesCustom}
+                          customValues={organicFertilizerTypesCustom}
+                          onAddCustom={(value) => addCustomValue(setOrganicFertilizerTypesCustom, organicFertilizerTypesCustom, value)}
+                          onRemoveCustom={(value) => removeCustomValue(setOrganicFertilizerTypesCustom, organicFertilizerTypesCustom, value)}
                         />
                       )}
 
@@ -1906,8 +1963,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(defensiveTypes, setDefensiveTypes, value)}
                         error={errors.defensiveTypes}
                         allowCustom
-                        customValue={defensiveTypesCustom}
-                        onCustomChange={setDefensiveTypesCustom}
+                        customValues={defensiveTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setDefensiveTypesCustom, defensiveTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setDefensiveTypesCustom, defensiveTypesCustom, value)}
                       />
 
                       <MultiSelect
@@ -1918,8 +1976,9 @@ export default function ThirdAccessScreen() {
                         onToggle={(value) => toggleMultiSelect(limestoneTypes, setLimestoneTypes, value)}
                         error={errors.limestoneTypes}
                         allowCustom
-                        customValue={limestoneTypesCustom}
-                        onCustomChange={setLimestoneTypesCustom}
+                        customValues={limestoneTypesCustom}
+                        onAddCustom={(value) => addCustomValue(setLimestoneTypesCustom, limestoneTypesCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setLimestoneTypesCustom, limestoneTypesCustom, value)}
                       />
                     </>
                   )}
@@ -1954,8 +2013,9 @@ export default function ThirdAccessScreen() {
                         onToggle={toggleSegment}
                         error={errors.segments}
                         allowCustom
-                        customValue={segmentsCustom}
-                        onCustomChange={setSegmentsCustom}
+                        customValues={segmentsCustom}
+                        onAddCustom={(value) => addCustomValue(setSegmentsCustom, segmentsCustom, value)}
+                        onRemoveCustom={(value) => removeCustomValue(setSegmentsCustom, segmentsCustom, value)}
                         itemsPerRow={supplierType === 'comercio' ? 2 : 3}
                       />
 
@@ -1971,8 +2031,9 @@ export default function ThirdAccessScreen() {
                             selectedValues={segmentData[segment]?.products || []}
                             onToggle={(value) => toggleSegmentProduct(segment, value)}
                             allowCustom
-                            customValue={segmentData[segment]?.productsCustom || ''}
-                            onCustomChange={(value) => updateSegmentCustom(segment, value)}
+                            customValues={segmentData[segment]?.productsCustom || []}
+                            onAddCustom={(value) => addSegmentCustom(segment, value)}
+                            onRemoveCustom={(value) => removeSegmentCustom(segment, value)}
                           />
                         </View>
                       ))}
@@ -1997,8 +2058,9 @@ export default function ThirdAccessScreen() {
                     onToggle={toggleServiceSegment}
                     error={errors.serviceSegments}
                     allowCustom
-                    customValue={serviceSegmentsCustom}
-                    onCustomChange={setServiceSegmentsCustom}
+                    customValues={serviceSegmentsCustom}
+                    onAddCustom={(value) => addCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)}
+                    onRemoveCustom={(value) => removeCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)}
                     itemsPerRow={2}
                   />
 
@@ -2014,8 +2076,9 @@ export default function ThirdAccessScreen() {
                         selectedValues={serviceSegmentData[segment]?.services || []}
                         onToggle={(value) => toggleServiceSegmentService(segment, value)}
                         allowCustom
-                        customValue={serviceSegmentData[segment]?.servicesCustom || ''}
-                        onCustomChange={(value) => updateServiceSegmentCustom(segment, value)}
+                        customValues={serviceSegmentData[segment]?.servicesCustom || []}
+                        onAddCustom={(value) => addServiceSegmentCustom(segment, value)}
+                        onRemoveCustom={(value) => removeServiceSegmentCustom(segment, value)}
                       />
                     </View>
                   ))}

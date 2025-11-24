@@ -9,22 +9,27 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useRouter } from 'expo-router';
 import Input from '../../src/components/Input';
 import StepIndicator from '../../src/components/StepIndicator';
+import { authService } from '../../src/services/authService';
 
 export default function FirstAccessScreen() {
   const { colors } = useTheme();
   const [formData, setFormData] = useState({
     fullName: '',
+    nickname: '',
     birthDate: '',
     cpf: '',
     email: '',
     phone: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   function updateField(field: string, value: string) {
@@ -43,6 +48,10 @@ export default function FirstAccessScreen() {
 
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Nome completo é obrigatório';
+    }
+
+    if (!formData.nickname.trim()) {
+      newErrors.nickname = 'Apelido é obrigatório';
     }
 
     if (!formData.birthDate.trim()) {
@@ -73,12 +82,41 @@ export default function FirstAccessScreen() {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleContinue() {
-    if (validateForm()) {
+  async function handleContinue() {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const availability = await authService.checkAvailability({
+        email: formData.email,
+        cpf: formData.cpf,
+      });
+
+      const newErrors: Record<string, string> = {};
+
+      if (availability.email_available === false) {
+        newErrors.email = 'Este email já está cadastrado';
+      }
+
+      if (availability.cpf_available === false) {
+        newErrors.cpf = 'Este CPF já está cadastrado';
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+
       router.push({
         pathname: '/(auth)/second-access',
         params: formData,
       });
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível verificar os dados. Tente novamente.');
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -124,6 +162,16 @@ export default function FirstAccessScreen() {
                   onChangeText={(text) => updateField('fullName', text)}
                   error={errors.fullName}
                   placeholder="Digite o nome"
+                  autoCapitalize="words"
+                />
+
+                <Input
+                  label="Apelido"
+                  required
+                  value={formData.nickname}
+                  onChangeText={(text) => updateField('nickname', text)}
+                  error={errors.nickname}
+                  placeholder="Como deseja ser chamado"
                   autoCapitalize="words"
                 />
 
@@ -176,10 +224,15 @@ export default function FirstAccessScreen() {
                 style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
+                disabled={isLoading}
               >
-                <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-                  Continuar
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color={colors.buttonText} />
+                ) : (
+                  <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
+                    Continuar
+                  </Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleLoginRedirect} activeOpacity={0.7}>

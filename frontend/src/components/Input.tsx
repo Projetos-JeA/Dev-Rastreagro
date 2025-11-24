@@ -134,6 +134,8 @@ export default function Input({
           placeholderTextColor={colors.textPlaceholder}
           keyboardType={getKeyboardType()}
           secureTextEntry={isPassword && !showPassword}
+          autoComplete={isPassword ? 'off' : undefined}
+          textContentType={isPassword ? 'none' : undefined}
           {...rest}
         />
         {isPassword && (

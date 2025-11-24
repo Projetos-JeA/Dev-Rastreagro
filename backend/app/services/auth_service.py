@@ -32,6 +32,7 @@ from app.repositories.service_provider_repository import ServiceProviderReposito
 from app.repositories.buyer_profile_repository import BuyerProfileRepository
 from app.repositories.email_verification_repository import EmailVerificationRepository
 from app.schemas import RegisterRequest, LoginRequest
+from app.schemas.auth import CheckAvailabilityRequest, CheckAvailabilityResponse
 from app.services.nickname_blacklist import BLACKLISTED_NICKNAMES
 from app.services.email_service import EmailService
 from app.services.document_validation_service import DocumentValidationService
@@ -297,6 +298,42 @@ class AuthService:
             # Se falhar ao enviar email, não bloqueia o cadastro
             # O usuário pode solicitar reenvio depois
             pass
+
+    def check_availability(self, payload: CheckAvailabilityRequest) -> CheckAvailabilityResponse:
+        import re
+        from app.utils.validators import format_cpf, format_cnpj
+
+        response = CheckAvailabilityResponse()
+
+        if payload.email:
+            existing = self.user_repo.get_by_email(payload.email)
+            response.email_available = existing is None
+
+        if payload.cpf:
+            cpf_clean = re.sub(r'[^0-9]', '', payload.cpf)
+            if len(cpf_clean) == 11:
+                cpf_formatted = format_cpf(payload.cpf)
+                existing_buyer = self.buyer_profile_repo.get_by_cpf(cpf_formatted)
+                existing_company = self.company_repo.get_by_cnpj_cpf(cpf_formatted)
+                existing_provider = self.service_provider_repo.get_by_cnpj_cpf(cpf_formatted)
+                response.cpf_available = (
+                    existing_buyer is None and
+                    existing_company is None and
+                    existing_provider is None
+                )
+
+        if payload.cnpj:
+            cnpj_clean = re.sub(r'[^0-9]', '', payload.cnpj)
+            if len(cnpj_clean) == 14:
+                cnpj_formatted = format_cnpj(payload.cnpj)
+                existing_company = self.company_repo.get_by_cnpj_cpf(cnpj_formatted)
+                existing_provider = self.service_provider_repo.get_by_cnpj_cpf(cnpj_formatted)
+                response.cnpj_available = (
+                    existing_company is None and
+                    existing_provider is None
+                )
+
+        return response
 
     async def register(self, payload: RegisterRequest) -> User:
         import logging
