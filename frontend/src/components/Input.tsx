@@ -38,7 +38,7 @@ export default function Input({
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const applyMask = (text: string): string => {
+  function applyMask(text: string): string {
     if (!mask) return text;
 
     const numbers = text.replace(/\D/g, '');
@@ -93,29 +93,29 @@ export default function Input({
       default:
         return text;
     }
-  };
+  }
 
-  const handleChangeText = (text: string) => {
+  function handleChangeText(text: string) {
     if (mask && onChangeText) {
       const maskedText = applyMask(text);
       onChangeText(maskedText);
     } else if (onChangeText) {
       onChangeText(text);
     }
-  };
+  }
 
-  const getKeyboardType = (): KeyboardTypeOptions => {
+  function getKeyboardType(): KeyboardTypeOptions {
     if (keyboardType) return keyboardType;
     if (mask === 'cpf' || mask === 'cnpj' || mask === 'phone' || mask === 'date' || mask === 'cep' || mask === 'rg' || mask === 'ie')
       return 'numeric';
     return 'default';
-  };
+  }
 
   return (
     <View style={styles.container}>
       <Text style={[styles.label, { color: colors.text }]}>
         {label}
-        {required && <Text style={styles.required}> *</Text>}
+        {required && <Text style={{ color: colors.error }}> *</Text>}
       </Text>
       <View style={styles.inputContainer}>
         <TextInput
@@ -123,10 +123,8 @@ export default function Input({
             styles.input,
             {
               color: colors.inputText,
-              borderBottomColor: isFocused ? colors.text : colors.inputBorder,
+              borderBottomColor: error ? colors.error : (successMessage ? colors.success : (isFocused ? colors.text : colors.inputBorder)),
             },
-            error ? styles.inputError : undefined,
-            successMessage ? styles.inputSuccess : undefined,
             (isPassword || rightIcon) ? styles.inputWithIcon : undefined,
           ]}
           value={value}
@@ -153,8 +151,8 @@ export default function Input({
         )}
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-      {successMessage && <Text style={styles.successText}>{successMessage}</Text>}
+      {error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
+      {successMessage && <Text style={[styles.successText, { color: colors.success }]}>{successMessage}</Text>}
     </View>
   );
 }
@@ -168,9 +166,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
   },
-  required: {
-    color: '#F44336',
-  },
   inputContainer: {
     position: 'relative',
   },
@@ -183,12 +178,6 @@ const styles = StyleSheet.create({
   },
   inputWithIcon: {
     paddingRight: 40,
-  },
-  inputError: {
-    borderBottomColor: '#F44336',
-  },
-  inputSuccess: {
-    borderBottomColor: '#4CAF50',
   },
   eyeIcon: {
     position: 'absolute',
@@ -204,12 +193,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: '#F44336',
     marginTop: 4,
   },
   successText: {
     fontSize: 12,
-    color: '#4CAF50',
     marginTop: 4,
   },
 });

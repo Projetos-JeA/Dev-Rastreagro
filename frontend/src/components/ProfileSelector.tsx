@@ -46,7 +46,7 @@ export default function ProfileSelector({
     <View style={styles.container}>
       <Text style={[styles.title, { color: colors.text }]}>
         Selecione o tipo de perfil (1 ou 2)
-        {required && <Text style={styles.required}> *</Text>}
+        {required && <Text style={{ color: colors.error }}> *</Text>}
       </Text>
       <View style={styles.optionsContainer}>
         {profileOptions.map((option) => {
@@ -97,9 +97,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 15,
-  },
-  required: {
-    color: '#F44336',
   },
   optionsContainer: {
     flexDirection: 'row',

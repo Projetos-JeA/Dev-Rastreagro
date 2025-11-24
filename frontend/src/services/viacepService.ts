@@ -22,7 +22,6 @@ export const buscarCep = async (cep: string): Promise<ViaCepResponse> => {
   return data;
 };
 
-// Mantém compatibilidade com código existente
 export const viacepService = {
   async buscarCep(cep: string): Promise<ViaCepResponse> {
     return buscarCep(cep);

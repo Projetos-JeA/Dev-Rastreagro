@@ -28,7 +28,6 @@ export const buscarCnpj = async (cnpj: string): Promise<CnpjResponse> => {
   return data;
 };
 
-// Mantém compatibilidade com código existente
 export const cnpjService = {
   async buscarCnpj(cnpj: string): Promise<CnpjResponse> {
     return buscarCnpj(cnpj);

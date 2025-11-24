@@ -20,7 +20,7 @@ export default function MenuCard({ icon, title, onPress, iconColor }: MenuCardPr
       activeOpacity={0.7}
     >
       <View style={[styles.iconContainer, { backgroundColor: iconColor }]}>
-        <Ionicons name={icon} size={32} color="#FFFFFF" />
+        <Ionicons name={icon} size={32} color={colors.white} />
       </View>
       <Text style={[styles.menuCardText, { color: colors.text }]}>{title}</Text>
     </TouchableOpacity>

@@ -11,7 +11,7 @@ interface StepIndicatorProps {
 export default function StepIndicator({ currentStep, totalSteps, onStepPress }: StepIndicatorProps) {
   const { colors } = useTheme();
 
-  const handleStepPress = (step: number) => {
+  function handleStepPress(step: number) {
     if (step < currentStep && onStepPress) {
       onStepPress(step);
     }
@@ -45,7 +45,7 @@ export default function StepIndicator({ currentStep, totalSteps, onStepPress }: 
                   style={[
                     styles.stepNumber,
                     {
-                      color: isActive || isCompleted ? '#FFFFFF' : colors.textSecondary,
+                      color: isActive || isCompleted ? colors.white : colors.textSecondary,
                     },
                   ]}
                 >

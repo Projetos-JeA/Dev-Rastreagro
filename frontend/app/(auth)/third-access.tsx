@@ -490,7 +490,7 @@ export default function ThirdAccessScreen() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleContinue = async () => {
+  async function handleContinue() {
     const newErrors: Record<string, string> = {};
 
     if (selectedProfiles.includes('producer') && !producerType) {
@@ -667,101 +667,101 @@ export default function ThirdAccessScreen() {
 
     console.log('🔵 ===== DADOS COMPLETOS DO CADASTRO =====');
     console.log(JSON.stringify(completeData, null, 2));
-    
-    // Enviar para o backend
+
+
     setIsSubmitting(true);
     try {
       console.log('🔵 Enviando dados para o backend...');
-      
-      // Mapear dados para o formato esperado pelo backend
+
+
       if (completeData.profileTypes.includes('producer')) {
         console.log('📤 Cadastrando como PRODUTOR (Seller)...');
-        
-        // Verificar campos obrigatórios
+
+
         if (!completeData.email || !completeData.password) {
           Alert.alert('Erro', 'Email e senha são obrigatórios');
           setIsSubmitting(false);
           return;
         }
-        
+
         if (!completeData.companyName && !completeData.tradeName) {
           Alert.alert('Erro', 'Nome da propriedade é obrigatório');
           setIsSubmitting(false);
           return;
         }
-        
-        // Verificar se é Produtor + Fornecedor (sempre exige CNPJ)
+
+
         const isProducerAndSupplier = completeData.profileTypes?.includes('producer') && completeData.profileTypes?.includes('supplier');
-        
+
         if (isProducerAndSupplier) {
-          // Produtor + Fornecedor: CNPJ obrigatório
+
           if (!completeData.cnpj) {
             Alert.alert('Erro', 'CNPJ é obrigatório');
             setIsSubmitting(false);
             return;
           }
         } else {
-          // Apenas Produtor: CPF obrigatório
+
           if (!completeData.cpf) {
             Alert.alert('Erro', 'CPF é obrigatório');
             setIsSubmitting(false);
             return;
           }
         }
-        
-        // Campos de endereço - agora coletados no second-access
+
+
         const address = completeData.address || '';
         const city = completeData.city || '';
         const state = completeData.state || '';
         const cep = completeData.cep || '';
-        
+
         if (!address || !city || !state || !cep) {
           Alert.alert('Erro', 'Campos de endereço são obrigatórios. Por favor, preencha todos os campos.');
           setIsSubmitting(false);
           return;
         }
-        
-        // Mapear dados de agricultura/pecuária para activities
-        // Por enquanto, vamos criar activities básicas baseadas no tipo de produtor
+
+
+
         const activities: any[] = [];
-        
-        // Se for agricultor, adicionar atividades relacionadas
+
+
         if (completeData.producerType === 'agricultor' || completeData.producerType === 'ambos') {
-          // Categoria: Produção (assumindo ID 1, ajustar conforme banco)
-          // TODO: Buscar IDs corretos das categorias do banco
+
+
           if (completeData.agricultureData?.cropTypes?.length > 0) {
             activities.push({
-              category_id: 1, // Produção
+              category_id: 1,
               group_id: null,
               item_id: null,
             });
           }
         }
-        
-        // Se for pecuarista, adicionar atividades relacionadas
+
+
         if (completeData.producerType === 'pecuarista' || completeData.producerType === 'ambos') {
-          // Categoria: Pecuária (assumindo ID 2, ajustar conforme banco)
+
           activities.push({
-            category_id: 2, // Pecuária
+            category_id: 2,
             group_id: null,
             item_id: null,
           });
         }
-        
-        // Se não tiver activities, adicionar uma genérica
+
+
         if (activities.length === 0) {
           activities.push({
-            category_id: 1, // Produção genérica
+            category_id: 1,
             group_id: null,
             item_id: null,
           });
         }
-        
-        // Determinar documento baseado nos perfis selecionados
-        const documentNumber = isProducerAndSupplier 
+
+
+        const documentNumber = isProducerAndSupplier
           ? (completeData.cnpj || '')
           : (completeData.cpf || '');
-        
+
         const sellerPayload = {
           email: completeData.email,
           password: completeData.password,
@@ -778,29 +778,29 @@ export default function ThirdAccessScreen() {
             activities: activities,
           },
         };
-        
+
         console.log('📤 Payload do produtor (seller):', JSON.stringify(sellerPayload, null, 2));
         await registerSeller(sellerPayload);
         console.log('✅ Produtor cadastrado com sucesso!');
-        
-        // Redireciona automaticamente para login após cadastro bem-sucedido
+
+
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
           'Sua propriedade foi cadastrada. Redirecionando para login...',
           [{ text: 'OK' }]
         );
-        
-        // Aguarda um momento para o usuário ver a mensagem e redireciona
+
+
         setTimeout(() => {
           router.replace('/(auth)/login');
         }, 1500);
       } else if (completeData.profileTypes.includes('supplier')) {
         console.log('📤 Cadastrando como FORNECEDOR (Seller)...');
-        
-        // Mapear segmentos para activities
+
+
         const activities: any[] = [];
-        // TODO: Mapear segmentos para activities baseado no banco de dados
-        
+
+
         const sellerPayload = {
           email: completeData.email,
           password: completeData.password,
@@ -817,25 +817,25 @@ export default function ThirdAccessScreen() {
             activities: activities,
           },
         };
-        
+
         console.log('📤 Payload do vendedor:', JSON.stringify(sellerPayload, null, 2));
         await registerSeller(sellerPayload);
         console.log('✅ Vendedor cadastrado com sucesso!');
-        
-        // Redireciona automaticamente para login após cadastro bem-sucedido
+
+
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
           'Sua empresa foi cadastrada. Redirecionando para login...',
           [{ text: 'OK' }]
         );
-        
-        // Aguarda um momento para o usuário ver a mensagem e redireciona
+
+
         setTimeout(() => {
           router.replace('/(auth)/login');
         }, 1500);
       } else if (completeData.profileTypes.includes('service_provider')) {
         console.log('📤 Cadastrando como PRESTADOR DE SERVIÇO...');
-        
+
         const servicePayload = {
           email: completeData.email,
           password: completeData.password,
@@ -852,19 +852,19 @@ export default function ThirdAccessScreen() {
             insc_est_identidade: completeData.stateRegistration || null,
           },
         };
-        
+
         console.log('📤 Payload do prestador:', JSON.stringify(servicePayload, null, 2));
         await registerServiceProvider(servicePayload);
         console.log('✅ Prestador cadastrado com sucesso!');
-        
-        // Redireciona automaticamente para login após cadastro bem-sucedido
+
+
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
           'Seu perfil foi criado. Redirecionando para login...',
           [{ text: 'OK' }]
         );
-        
-        // Aguarda um momento para o usuário ver a mensagem e redireciona
+
+
         setTimeout(() => {
           router.replace('/(auth)/login');
         }, 1500);
@@ -872,26 +872,26 @@ export default function ThirdAccessScreen() {
         Alert.alert('Erro', 'Tipo de perfil não suportado para cadastro automático.');
       }
     } catch (error: any) {
-        console.error('❌ ERRO NO CADASTRO:', error);
-        console.error('Status:', error?.response?.status);
-        console.error('Data:', error?.response?.data);
-        console.error('Error completo:', JSON.stringify(error, null, 2));
-        console.error('Error.message:', error?.message);
-        console.error('Error.name:', error?.name);
-        console.error('🔴 DETALHES DO ERRO DO BACKEND:', JSON.stringify(error?.response?.data, null, 2));
-      
-      // Extrair mensagem de erro de diferentes fontes
+      console.error('❌ ERRO NO CADASTRO:', error);
+      console.error('Status:', error?.response?.status);
+      console.error('Data:', error?.response?.data);
+      console.error('Error completo:', JSON.stringify(error, null, 2));
+      console.error('Error.message:', error?.message);
+      console.error('Error.name:', error?.name);
+      console.error('🔴 DETALHES DO ERRO DO BACKEND:', JSON.stringify(error?.response?.data, null, 2));
+
+
       let errorMessage = 'Não foi possível concluir o cadastro.';
       let errorTitle = '❌ Erro ao cadastrar';
-      
-      // Tratamento específico por status code
+
+
       const status = error?.response?.status || error?.status;
-      
-      // Prioridade 1: Erros de validação do Pydantic (422)
+
+
       if (status === 422) {
-        // Pydantic retorna errors como array ou objeto
+
         if (error?.response?.data?.detail) {
-          // Se detail é um array (formato Pydantic padrão)
+
           if (Array.isArray(error.response.data.detail)) {
             const firstError = error.response.data.detail[0];
             if (firstError?.msg) {
@@ -901,20 +901,20 @@ export default function ThirdAccessScreen() {
             } else {
               errorMessage = JSON.stringify(firstError);
             }
-          } 
-          // Se detail é string
+          }
+
           else if (typeof error.response.data.detail === 'string') {
             errorMessage = error.response.data.detail;
             errorTitle = '❌ Erro de validação';
           }
-          // Se detail é objeto com errors
+
           else if (error.response.data.detail.errors) {
             const firstError = Object.values(error.response.data.detail.errors)[0];
             errorMessage = String(firstError);
             errorTitle = '❌ Erro de validação';
           }
         }
-        // Formato alternativo: errors direto
+
         else if (error?.response?.data?.errors) {
           const backendErrors = error.response.data.errors;
           if (Array.isArray(backendErrors)) {
@@ -932,32 +932,32 @@ export default function ThirdAccessScreen() {
           errorTitle = '❌ Erro de validação';
         }
       } else if (status === 400) {
-        // Erro 400 - Bad Request (validação de CNPJ, campos obrigatórios, etc)
+
         errorTitle = '❌ Erro ao cadastrar';
         if (!errorMessage || errorMessage === 'Não foi possível concluir o cadastro.') {
           errorMessage = 'Dados inválidos. Verifique os campos preenchidos.';
         }
       } else if (status === 409) {
-        // Conflito - email ou documento já cadastrado
+
         errorTitle = '❌ Erro';
         if (!errorMessage || errorMessage === 'Não foi possível concluir o cadastro.') {
           errorMessage = 'Email ou documento já cadastrado';
         }
       }
-      
-      // Sempre exibir o erro na tela
+
+
       console.log('🔴 Exibindo erro na tela:', errorTitle, errorMessage);
       Alert.alert(errorTitle, errorMessage);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleLoginRedirect = () => {
+  function handleLoginRedirect() {
     router.push('/(auth)/login');
-  };
+  }
 
-  const handleProducerTypeChange = (type: string) => {
+  function handleProducerTypeChange(type: string) {
     setProducerType(type);
     setErrors((prev) => {
       const { producerType, ...rest } = prev;
@@ -993,9 +993,9 @@ export default function ThirdAccessScreen() {
     setDefensiveTypesCustom('');
     setLimestoneTypes([]);
     setLimestoneTypesCustom('');
-  };
+  }
 
-  const handleSupplierTypeChange = (type: string) => {
+  function handleSupplierTypeChange(type: string) {
     setSupplierType(type);
     setSelectedSegments([]);
     setSegmentsCustom('');
@@ -1004,21 +1004,21 @@ export default function ThirdAccessScreen() {
       const { supplierType, segments, ...rest } = prev;
       return rest;
     });
-  };
+  }
 
-  const toggleMultiSelect = (
+  function toggleMultiSelect(
     currentValues: string[],
     setValue: (values: string[]) => void,
     value: string
-  ) => {
+  ) {
     if (currentValues.includes(value)) {
       setValue(currentValues.filter((v) => v !== value));
     } else {
       setValue([...currentValues, value]);
     }
-  };
+  }
 
-  const toggleSegment = (segment: string) => {
+  function toggleSegment(segment: string) {
     setSelectedSegments((prev) => {
       if (prev.includes(segment)) {
         const newSegments = prev.filter((s) => s !== segment);
@@ -1045,9 +1045,9 @@ export default function ThirdAccessScreen() {
         return rest;
       });
     }
-  };
+  }
 
-  const toggleSegmentProduct = (segment: string, product: string) => {
+  function toggleSegmentProduct(segment: string, product: string) {
     setSegmentData((prev) => {
       const currentProducts = prev[segment]?.products || [];
       const newProducts = currentProducts.includes(product)
@@ -1062,9 +1062,9 @@ export default function ThirdAccessScreen() {
         },
       };
     });
-  };
+  }
 
-  const updateSegmentCustom = (segment: string, value: string) => {
+  function updateSegmentCustom(segment: string, value: string) {
     setSegmentData((prev) => ({
       ...prev,
       [segment]: {
@@ -1072,9 +1072,9 @@ export default function ThirdAccessScreen() {
         productsCustom: value,
       },
     }));
-  };
+  }
 
-  const toggleServiceSegment = (segment: string) => {
+  function toggleServiceSegment(segment: string) {
     setSelectedServiceSegments((prev) => {
       if (prev.includes(segment)) {
         const newSegments = prev.filter((s) => s !== segment);
@@ -1101,9 +1101,9 @@ export default function ThirdAccessScreen() {
         return rest;
       });
     }
-  };
+  }
 
-  const toggleServiceSegmentService = (segment: string, service: string) => {
+  function toggleServiceSegmentService(segment: string, service: string) {
     setServiceSegmentData((prev) => {
       const currentServices = prev[segment]?.services || [];
       const newServices = currentServices.includes(service)
@@ -1118,9 +1118,9 @@ export default function ThirdAccessScreen() {
         },
       };
     });
-  };
+  }
 
-  const updateServiceSegmentCustom = (segment: string, value: string) => {
+  function updateServiceSegmentCustom(segment: string, value: string) {
     setServiceSegmentData((prev) => ({
       ...prev,
       [segment]: {
@@ -1128,9 +1128,9 @@ export default function ThirdAccessScreen() {
         servicesCustom: value,
       },
     }));
-  };
+  }
 
-  const addAnimal = () => {
+  function addAnimal() {
     const newAnimal: HerdAnimal = {
       id: Date.now().toString(),
       tag: '',
@@ -1143,17 +1143,17 @@ export default function ThirdAccessScreen() {
     };
     setHerdControl((prev) => [...prev, newAnimal]);
     setActiveAnimalTabs((prev) => ({ ...prev, [newAnimal.id]: 'weight' }));
-  };
+  }
 
-  const removeAnimal = (id: string) => {
+  function removeAnimal(id: string) {
     setHerdControl((prev) => prev.filter((animal) => animal.id !== id));
     setActiveAnimalTabs((prev) => {
       const { [id]: removed, ...rest } = prev;
       return rest;
     });
-  };
+  }
 
-  const updateAnimal = (id: string, field: keyof HerdAnimal, value: string) => {
+  function updateAnimal(id: string, field: keyof HerdAnimal, value: string) {
     setHerdControl((prev) =>
       prev.map((animal) => (animal.id === id ? { ...animal, [field]: value } : animal))
     );
@@ -1165,9 +1165,9 @@ export default function ThirdAccessScreen() {
         return rest;
       });
     }
-  };
+  }
 
-  const addVaccine = (animalId: string) => {
+  function addVaccine(animalId: string) {
     const newVaccine: Vaccine = {
       id: Date.now().toString(),
       type: '',
@@ -1181,9 +1181,9 @@ export default function ThirdAccessScreen() {
           : animal
       )
     );
-  };
+  }
 
-  const removeVaccine = (animalId: string, vaccineId: string) => {
+  function removeVaccine(animalId: string, vaccineId: string) {
     setHerdControl((prev) =>
       prev.map((animal) =>
         animal.id === animalId
@@ -1191,9 +1191,9 @@ export default function ThirdAccessScreen() {
           : animal
       )
     );
-  };
+  }
 
-  const updateVaccine = (animalId: string, vaccineId: string, field: keyof Vaccine, value: string) => {
+  function updateVaccine(animalId: string, vaccineId: string, field: keyof Vaccine, value: string) {
     setHerdControl((prev) =>
       prev.map((animal) =>
         animal.id === animalId
@@ -1214,9 +1214,9 @@ export default function ThirdAccessScreen() {
         return rest;
       });
     }
-  };
+  }
 
-  const addWeightControl = (animalId: string) => {
+  function addWeightControl(animalId: string) {
     const newControl: WeightControl = {
       id: Date.now().toString(),
       date: '',
@@ -1229,9 +1229,9 @@ export default function ThirdAccessScreen() {
           : animal
       )
     );
-  };
+  }
 
-  const removeWeightControl = (animalId: string, controlId: string) => {
+  function removeWeightControl(animalId: string, controlId: string) {
     setHerdControl((prev) =>
       prev.map((animal) =>
         animal.id === animalId
@@ -1239,9 +1239,9 @@ export default function ThirdAccessScreen() {
           : animal
       )
     );
-  };
+  }
 
-  const updateWeightControl = (animalId: string, controlId: string, field: keyof WeightControl, value: string) => {
+  function updateWeightControl(animalId: string, controlId: string, field: keyof WeightControl, value: string) {
     setHerdControl((prev) =>
       prev.map((animal) =>
         animal.id === animalId
@@ -1262,9 +1262,9 @@ export default function ThirdAccessScreen() {
         return rest;
       });
     }
-  };
+  }
 
-  const updateWeightExit = (animalId: string, field: keyof WeightExit, value: string) => {
+  function updateWeightExit(animalId: string, field: keyof WeightExit, value: string) {
     setHerdControl((prev) =>
       prev.map((animal) =>
         animal.id === animalId
@@ -1277,9 +1277,9 @@ export default function ThirdAccessScreen() {
           : animal
       )
     );
-  };
+  }
 
-  const calculateTotalGain = (animal: HerdAnimal): string => {
+  function calculateTotalGain(animal: HerdAnimal): string {
     const initialWeight = parseFloat(animal.weight) || 0;
     const finalWeight = parseFloat(animal.weightExit?.finalWeight || '0') || 0;
 
@@ -1288,13 +1288,13 @@ export default function ThirdAccessScreen() {
     }
 
     return '0.00';
-  };
+  }
 
-  const setAnimalTab = (animalId: string, tab: 'weight' | 'vaccine') => {
+  function setAnimalTab(animalId: string, tab: 'weight' | 'vaccine') {
     setActiveAnimalTabs((prev) => ({ ...prev, [animalId]: tab }));
-  };
+  }
 
-  const getProfileLabel = (profile: ProfileType): string => {
+  function getProfileLabel(profile: ProfileType): string {
     switch (profile) {
       case 'producer':
         return 'Produtor';
@@ -1305,18 +1305,18 @@ export default function ThirdAccessScreen() {
       default:
         return '';
     }
-  };
+  }
 
-  const getSegmentLabel = (segment: string): string => {
+  function getSegmentLabel(segment: string): string {
     const allSegments = [...commerceSegmentOptions, ...industrySegmentOptions];
     const found = allSegments.find((s) => s.value === segment);
     return found ? found.label : segment;
-  };
+  }
 
-  const getServiceSegmentLabel = (segment: string): string => {
+  function getServiceSegmentLabel(segment: string): string {
     const found = serviceSegmentOptions.find((s) => s.value === segment);
     return found ? found.label : segment;
-  };
+  }
 
   const currentSegmentOptions =
     supplierType === 'comercio' ? commerceSegmentOptions : industrySegmentOptions;
@@ -1327,7 +1327,6 @@ export default function ThirdAccessScreen() {
     <ImageBackground
       source={require('../../assets/background.png')}
       style={styles.backgroundImage}
-      blurRadius={3}
     >
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]}>
         <KeyboardAvoidingView
@@ -1509,15 +1508,15 @@ export default function ThirdAccessScreen() {
                               onPress={addAnimal}
                               activeOpacity={0.7}
                             >
-                              <Ionicons name="add" size={20} color="#FFFFFF" />
-                              <Text style={styles.addButtonText}>Adicionar animal</Text>
+                              <Ionicons name="add" size={20} color={colors.white} />
+                              <Text style={[styles.addButtonText, { color: colors.white }]}>Adicionar animal</Text>
                             </TouchableOpacity>
                           </View>
 
                           {herdControl.map((animal, index) => (
                             <View
                               key={animal.id}
-                              style={[styles.animalCard, { backgroundColor: colors.surface }]}
+                              style={[styles.animalCard, { backgroundColor: colors.surface, shadowColor: colors.shadowColor }]}
                             >
                               <View style={styles.animalCardHeader}>
                                 <Text style={[styles.animalCardTitle, { color: colors.text }]}>
@@ -1527,7 +1526,7 @@ export default function ThirdAccessScreen() {
                                   onPress={() => removeAnimal(animal.id)}
                                   activeOpacity={0.7}
                                 >
-                                  <Ionicons name="trash-outline" size={20} color="#F44336" />
+                                  <Ionicons name="trash-outline" size={20} color={colors.error} />
                                 </TouchableOpacity>
                               </View>
 
@@ -1552,11 +1551,11 @@ export default function ThirdAccessScreen() {
                                 error={errors[`animal_${animal.id}_supplementation`]}
                               />
 
-                              <View style={styles.tabContainer}>
+                              <View style={[styles.tabContainer, { backgroundColor: colors.cardAlt }]}>
                                 <TouchableOpacity
                                   style={[
                                     styles.tab,
-                                    (activeAnimalTabs[animal.id] || 'weight') === 'weight' && styles.tabActive,
+                                    (activeAnimalTabs[animal.id] || 'weight') === 'weight' && [styles.tabActive, { backgroundColor: colors.white, shadowColor: colors.shadowColor }],
                                     { borderColor: colors.primary },
                                   ]}
                                   onPress={() => setAnimalTab(animal.id, 'weight')}
@@ -1585,7 +1584,7 @@ export default function ThirdAccessScreen() {
                                 <TouchableOpacity
                                   style={[
                                     styles.tab,
-                                    (activeAnimalTabs[animal.id] || 'weight') === 'vaccine' && styles.tabActive,
+                                    (activeAnimalTabs[animal.id] || 'weight') === 'vaccine' && [styles.tabActive, { backgroundColor: colors.white, shadowColor: colors.shadowColor }],
                                     { borderColor: colors.primary },
                                   ]}
                                   onPress={() => setAnimalTab(animal.id, 'vaccine')}
@@ -1651,15 +1650,15 @@ export default function ThirdAccessScreen() {
                                         onPress={() => addWeightControl(animal.id)}
                                         activeOpacity={0.7}
                                       >
-                                        <Ionicons name="add" size={16} color="#FFFFFF" />
-                                        <Text style={styles.addWeightControlButtonText}>Adicionar</Text>
+                                        <Ionicons name="add" size={16} color={colors.white} />
+                                        <Text style={[styles.addWeightControlButtonText, { color: colors.white }]}>Adicionar</Text>
                                       </TouchableOpacity>
                                     </View>
 
                                     {animal.weightControls.map((control, cIndex) => (
                                       <View
                                         key={control.id}
-                                        style={styles.weightControlCard}
+                                        style={[styles.weightControlCard, { borderColor: colors.cardBorder }]}
                                       >
                                         <View style={styles.weightControlCardHeader}>
                                           <Text style={[styles.weightControlCardTitle, { color: colors.text }]}>
@@ -1669,7 +1668,7 @@ export default function ThirdAccessScreen() {
                                             onPress={() => removeWeightControl(animal.id, control.id)}
                                             activeOpacity={0.7}
                                           >
-                                            <Ionicons name="close-circle" size={20} color="#F44336" />
+                                            <Ionicons name="close-circle" size={20} color={colors.error} />
                                           </TouchableOpacity>
                                         </View>
 
@@ -1730,8 +1729,8 @@ export default function ThirdAccessScreen() {
                                     />
 
                                     {animal.weightExit?.finalWeight && animal.weight && (
-                                      <View style={styles.totalGainContainer}>
-                                        <Text style={[styles.totalGainLabel, { color: colors.text }]}>
+                                      <View style={[styles.totalGainContainer, { backgroundColor: colors.successLight, borderLeftColor: colors.success }]}>
+                                        <Text style={[styles.totalGainLabel, { color: colors.primary }]}>
                                           Ganho total:
                                         </Text>
                                         <Text style={[styles.totalGainValue, { color: colors.primary }]}>
@@ -1751,15 +1750,15 @@ export default function ThirdAccessScreen() {
                                       onPress={() => addVaccine(animal.id)}
                                       activeOpacity={0.7}
                                     >
-                                      <Ionicons name="add" size={16} color="#FFFFFF" />
-                                      <Text style={styles.addVaccineButtonText}>Adicionar Vacina</Text>
+                                      <Ionicons name="add" size={16} color={colors.white} />
+                                      <Text style={[styles.addVaccineButtonText, { color: colors.white }]}>Adicionar Vacina</Text>
                                     </TouchableOpacity>
                                   </View>
 
                                   {animal.vaccines.map((vaccine, vIndex) => (
                                     <View
                                       key={vaccine.id}
-                                      style={styles.vaccineCard}
+                                      style={[styles.vaccineCard, { borderColor: colors.cardBorder }]}
                                     >
                                       <View style={styles.vaccineCardHeader}>
                                         <Text style={[styles.vaccineCardTitle, { color: colors.text }]}>
@@ -1769,7 +1768,7 @@ export default function ThirdAccessScreen() {
                                           onPress={() => removeVaccine(animal.id, vaccine.id)}
                                           activeOpacity={0.7}
                                         >
-                                          <Ionicons name="close-circle" size={20} color="#F44336" />
+                                          <Ionicons name="close-circle" size={20} color={colors.error} />
                                         </TouchableOpacity>
                                       </View>
 
@@ -2024,7 +2023,7 @@ export default function ThirdAccessScreen() {
               )}
 
               <TouchableOpacity
-                style={[styles.continueButton, { backgroundColor: colors.buttonBackground }]}
+                style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
               >
@@ -2119,7 +2118,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addButtonText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -2127,7 +2125,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -2156,7 +2153,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 15,
     borderRadius: 8,
-    backgroundColor: '#F5F5F5',
     padding: 4,
   },
   tab: {
@@ -2170,8 +2166,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
@@ -2216,7 +2210,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   addVaccineButtonText: {
-    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -2225,7 +2218,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     backgroundColor: 'transparent',
   },
   vaccineCardHeader: {
@@ -2276,7 +2268,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addWeightControlButtonText: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '500',
   },
@@ -2285,7 +2276,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     backgroundColor: 'transparent',
   },
   weightControlCardHeader: {
@@ -2316,23 +2306,18 @@ const styles = StyleSheet.create({
     marginTop: 15,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#E8F5E9',
     borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
   },
   totalGainLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2E7D32',
   },
   totalGainValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2E7D32',
   },
   errorText: {
     fontSize: 12,
-    color: '#F44336',
     marginTop: -15,
     marginBottom: 20,
     textAlign: 'center',
@@ -2343,7 +2328,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     marginTop: 30,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -2354,9 +2338,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  continueButtonDisabled: {
-    opacity: 0.6,
   },
   continueButtonText: {
     fontSize: 16,

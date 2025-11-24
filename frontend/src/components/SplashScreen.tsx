@@ -1,7 +1,9 @@
 import { View, StyleSheet, Animated, Image } from 'react-native';
 import { useEffect, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SplashScreen() {
+  const { colors } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -86,7 +88,7 @@ export default function SplashScreen() {
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <Animated.View
         style={[
           styles.content,
@@ -113,13 +115,13 @@ export default function SplashScreen() {
 
         <View style={styles.loadingContainer}>
           <Animated.View
-            style={[styles.loadingDot, { transform: [{ scale: dot1Scale }] }]}
+            style={[styles.loadingDot, { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: dot1Scale }] }]}
           />
           <Animated.View
-            style={[styles.loadingDot, { transform: [{ scale: dot2Scale }] }]}
+            style={[styles.loadingDot, { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: dot2Scale }] }]}
           />
           <Animated.View
-            style={[styles.loadingDot, { transform: [{ scale: dot3Scale }] }]}
+            style={[styles.loadingDot, { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: dot3Scale }] }]}
           />
         </View>
       </Animated.View>
@@ -130,7 +132,6 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -154,8 +155,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#545454',
-    shadowColor: '#545454',
     shadowOffset: {
       width: 0,
       height: 0,
