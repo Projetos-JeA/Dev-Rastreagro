@@ -139,3 +139,15 @@ class TokenPair(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class CheckAvailabilityRequest(BaseModel):
+    email: Optional[str] = None
+    cpf: Optional[str] = None
+    cnpj: Optional[str] = None
+
+
+class CheckAvailabilityResponse(BaseModel):
+    email_available: Optional[bool] = None
+    cpf_available: Optional[bool] = None
+    cnpj_available: Optional[bool] = None

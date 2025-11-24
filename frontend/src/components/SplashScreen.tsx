@@ -115,13 +115,13 @@ export default function SplashScreen() {
 
         <View style={styles.loadingContainer}>
           <Animated.View
-            style={[styles.loadingDot, { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: dot1Scale }] }]}
+            style={[styles.loadingDot, { backgroundColor: colors.textSecondary, shadowColor: colors.textSecondary, transform: [{ scale: dot1Scale }] }]}
           />
           <Animated.View
-            style={[styles.loadingDot, { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: dot2Scale }] }]}
+            style={[styles.loadingDot, { backgroundColor: colors.textSecondary, shadowColor: colors.textSecondary, transform: [{ scale: dot2Scale }] }]}
           />
           <Animated.View
-            style={[styles.loadingDot, { backgroundColor: colors.primary, shadowColor: colors.primary, transform: [{ scale: dot3Scale }] }]}
+            style={[styles.loadingDot, { backgroundColor: colors.textSecondary, shadowColor: colors.textSecondary, transform: [{ scale: dot3Scale }] }]}
           />
         </View>
       </Animated.View>

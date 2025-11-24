@@ -14,11 +14,14 @@ import {
   View,
 } from 'react-native';
 import Input from '../../src/components/Input';
+import PasswordRequirements from '../../src/components/PasswordRequirements';
 import ProfileSelector, { ProfileType } from '../../src/components/ProfileSelector';
 import StepIndicator from '../../src/components/StepIndicator';
 import { useTheme } from '../../src/context/ThemeContext';
 import { buscarCep } from '../../src/services/viacepService';
 import { buscarCnpj } from '../../src/services/cnpjService';
+import { authService } from '../../src/services/authService';
+import { validatePassword, getPasswordRequirements, PasswordRequirement } from '../../src/utils/validators';
 
 export default function SecondAccessScreen() {
   const { colors } = useTheme();
@@ -41,8 +44,10 @@ export default function SecondAccessScreen() {
   const [selectedProfiles, setSelectedProfiles] = useState<ProfileType[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [passwordMatch, setPasswordMatch] = useState<boolean | null>(null);
+  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirement[]>([]);
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingCnpj, setLoadingCnpj] = useState(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   function updateField(field: string, value: string) {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -62,6 +67,14 @@ export default function SecondAccessScreen() {
       setPasswordMatch(null);
     }
   }, [formData.password, formData.confirmPassword]);
+
+  useEffect(() => {
+    if (formData.password) {
+      setPasswordRequirements(getPasswordRequirements(formData.password));
+    } else {
+      setPasswordRequirements([]);
+    }
+  }, [formData.password]);
 
   async function handleBuscarCep() {
     const digits = (formData.cep || '').replace(/\D/g, '');
@@ -189,8 +202,11 @@ export default function SecondAccessScreen() {
 
     if (!formData.password.trim()) {
       newErrors.password = 'Senha é obrigatória';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Senha deve ter no mínimo 6 caracteres';
+    } else {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        newErrors.password = passwordValidation.errors[0];
+      }
     }
 
     if (!formData.confirmPassword.trim()) {
@@ -207,17 +223,41 @@ export default function SecondAccessScreen() {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleContinue() {
-    if (validateForm()) {
-      router.push({
-        pathname: '/(auth)/third-access',
-        params: {
-          ...params,
-          ...formData,
-          profileTypes: JSON.stringify(selectedProfiles),
-        },
-      });
+  async function handleContinue() {
+    if (!validateForm()) {
+      return;
     }
+
+    const cnpjDigits = (formData.cnpj || '').replace(/\D/g, '');
+    const needsCnpjCheck = cnpjDigits.length === 14;
+
+    if (needsCnpjCheck) {
+      setIsCheckingAvailability(true);
+      try {
+        const availability = await authService.checkAvailability({
+          cnpj: formData.cnpj,
+        });
+
+        if (availability.cnpj_available === false) {
+          setErrors(prev => ({ ...prev, cnpj: 'Este CNPJ já está cadastrado' }));
+          return;
+        }
+      } catch (error) {
+        Alert.alert('Erro', 'Não foi possível verificar o CNPJ. Tente novamente.');
+        return;
+      } finally {
+        setIsCheckingAvailability(false);
+      }
+    }
+
+    router.push({
+      pathname: '/(auth)/third-access',
+      params: {
+        ...params,
+        ...formData,
+        profileTypes: JSON.stringify(selectedProfiles),
+      },
+    });
   }
 
   function handleLoginRedirect() {
@@ -474,12 +514,13 @@ export default function SecondAccessScreen() {
                   value={formData.password}
                   onChangeText={text => updateField('password', text)}
                   error={errors.password}
-                  successMessage={
-                    passwordMatch && formData.password ? 'As senhas são iguais' : undefined
-                  }
                   placeholder="Digite sua senha"
                   isPassword
                 />
+
+                {formData.password.length > 0 && (
+                  <PasswordRequirements requirements={passwordRequirements} />
+                )}
 
                 <Input
                   label="Confirmar senha"
@@ -504,10 +545,15 @@ export default function SecondAccessScreen() {
                 style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
+                disabled={isCheckingAvailability}
               >
-                <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-                  Continuar
-                </Text>
+                {isCheckingAvailability ? (
+                  <ActivityIndicator color={colors.buttonText} />
+                ) : (
+                  <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
+                    Continuar
+                  </Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleLoginRedirect} activeOpacity={0.7}>
@@ -634,7 +680,6 @@ const styles = StyleSheet.create({
   },
   cityStateContainer: {
     flexDirection: 'row',
-    marginBottom: 15,
   },
   cityInput: {
     flex: 2,

@@ -34,6 +34,7 @@ export interface ThemeColors {
   cardAlt: string;
   shadowColor: string;
   white: string;
+  modalOverlay: string;
 }
 
 export const lightTheme: ThemeColors = {
@@ -72,6 +73,7 @@ export const lightTheme: ThemeColors = {
   cardAlt: '#F5F5F5',
   shadowColor: '#000',
   white: '#FFFFFF',
+  modalOverlay: 'rgba(0, 0, 0, 0.5)',
 };
 
 export const darkTheme: ThemeColors = {
@@ -110,4 +112,5 @@ export const darkTheme: ThemeColors = {
   cardAlt: '#2A2A2A',
   shadowColor: '#000',
   white: '#FFFFFF',
+  modalOverlay: 'rgba(0, 0, 0, 0.7)',
 };

@@ -36,9 +36,22 @@ export interface ActivitySelection {
   item_id?: number | null;
 }
 
+export interface CheckAvailabilityRequest {
+  email?: string;
+  cpf?: string;
+  cnpj?: string;
+}
+
+export interface CheckAvailabilityResponse {
+  email_available?: boolean;
+  cpf_available?: boolean;
+  cnpj_available?: boolean;
+}
+
 export interface RegisterSellerRequest {
   email: string;
   password: string;
+  nickname?: string | null;
   company: {
     nome_propriedade: string;
     inicio_atividades?: string | null;
@@ -58,6 +71,7 @@ export interface RegisterSellerRequest {
 export interface RegisterServiceProviderRequest {
   email: string;
   password: string;
+  nickname?: string | null;
   service_provider: {
     nome_servico: string;
     descricao?: string | null;
@@ -74,6 +88,15 @@ export interface RegisterServiceProviderRequest {
 }
 
 export const authService = {
+  async checkAvailability(payload: CheckAvailabilityRequest): Promise<CheckAvailabilityResponse> {
+    try {
+      const response = await api.post<CheckAvailabilityResponse>('/auth/check-availability', payload);
+      return response.data;
+    } catch (error: any) {
+      throw buildApiError(error, 'Erro ao verificar disponibilidade');
+    }
+  },
+
   async login(credentials: LoginRequest): Promise<TokenPairResponse> {
     try {
       const formData = new URLSearchParams();
@@ -122,6 +145,7 @@ export const authService = {
         email: payload.email,
         password: payload.password,
         role: 'seller',
+        nickname: payload.nickname,
         company: payload.company,
       });
       return response.data;
@@ -145,6 +169,7 @@ export const authService = {
         email: payload.email,
         password: payload.password,
         role: 'service_provider',
+        nickname: payload.nickname,
         service_provider: payload.service_provider,
       });
       return response.data;
