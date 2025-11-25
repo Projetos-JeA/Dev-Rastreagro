@@ -46,7 +46,7 @@ export default function HomeScreen() {
   }
 
   function handleSocial() {
-    router.push('/(tabs)/social');
+    router.push('/(tabs)/deu-agro');
   }
 
   function handleHerdControl() {
@@ -127,7 +127,7 @@ export default function HomeScreen() {
             iconColor={colors.iconTrackOrder}
           />
           <MenuCard
-            icon="people"
+            icon="storefront"
             title="Deu Agro"
             onPress={handleSocial}
             iconColor={colors.iconSocial}
