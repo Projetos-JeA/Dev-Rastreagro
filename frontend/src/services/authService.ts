@@ -1,4 +1,4 @@
-import api, { setStoredTokens, clearStoredTokens, getStoredRefreshToken } from '../config/api';
+import api, { clearStoredTokens, getStoredRefreshToken, setStoredTokens } from '../config/api';
 import { ApiError, buildApiError } from '../utils/errorMessages';
 
 export interface LoginRequest {
@@ -10,6 +10,12 @@ export interface TokenPairResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  email: string;
+  email_verificado: boolean;
 }
 
 export interface RegisterBuyerRequest {
@@ -90,7 +96,10 @@ export interface RegisterServiceProviderRequest {
 export const authService = {
   async checkAvailability(payload: CheckAvailabilityRequest): Promise<CheckAvailabilityResponse> {
     try {
-      const response = await api.post<CheckAvailabilityResponse>('/auth/check-availability', payload);
+      const response = await api.post<CheckAvailabilityResponse>(
+        '/auth/check-availability',
+        payload
+      );
       return response.data;
     } catch (error: any) {
       throw buildApiError(error, 'Erro ao verificar disponibilidade');
@@ -120,9 +129,9 @@ export const authService = {
     }
   },
 
-  async registerBuyer(payload: RegisterBuyerRequest): Promise<TokenPairResponse> {
+  async registerBuyer(payload: RegisterBuyerRequest): Promise<RegisterResponse> {
     try {
-      const response = await api.post<TokenPairResponse>('/auth/register', {
+      const response = await api.post<RegisterResponse>('/auth/register', {
         email: payload.email,
         password: payload.password,
         role: 'buyer',
@@ -139,9 +148,9 @@ export const authService = {
     }
   },
 
-  async registerSeller(payload: RegisterSellerRequest): Promise<TokenPairResponse> {
+  async registerSeller(payload: RegisterSellerRequest): Promise<RegisterResponse> {
     try {
-      const response = await api.post<TokenPairResponse>('/auth/register', {
+      const response = await api.post<RegisterResponse>('/auth/register', {
         email: payload.email,
         password: payload.password,
         role: 'seller',
@@ -150,7 +159,28 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
-      const apiError = buildApiError(error, 'Erro ao registrar empresa');
+      console.error('🔴 Erro no registerSeller:', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+      });
+      
+      // Extrai mensagem detalhada do backend
+      let errorMessage = 'Erro ao registrar empresa';
+      if (error?.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          const firstError = error.response.data.detail[0];
+          if (firstError?.msg) {
+            errorMessage = `${firstError.loc?.join('.')}: ${firstError.msg}`;
+          } else if (typeof firstError === 'string') {
+            errorMessage = firstError;
+          }
+        } else if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        }
+      }
+      
+      const apiError = buildApiError(error, errorMessage);
       if (error?.response?.status === 409) {
         throw new ApiError('Email já cadastrado', 409);
       }
@@ -163,9 +193,9 @@ export const authService = {
 
   async registerServiceProvider(
     payload: RegisterServiceProviderRequest
-  ): Promise<TokenPairResponse> {
+  ): Promise<RegisterResponse> {
     try {
-      const response = await api.post<TokenPairResponse>('/auth/register', {
+      const response = await api.post<RegisterResponse>('/auth/register', {
         email: payload.email,
         password: payload.password,
         role: 'service_provider',
@@ -206,5 +236,16 @@ export const authService = {
 
   async logout(): Promise<void> {
     await clearStoredTokens();
+  },
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    try {
+      const response = await api.post<{ message: string }>(
+        `/auth/resend-verification?email=${encodeURIComponent(email)}`
+      );
+      return response.data;
+    } catch (error: any) {
+      throw buildApiError(error, 'Erro ao reenviar email de verificação');
+    }
   },
 };

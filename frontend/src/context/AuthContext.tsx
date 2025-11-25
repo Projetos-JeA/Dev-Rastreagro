@@ -7,6 +7,7 @@ import {
   RegisterBuyerRequest,
   RegisterSellerRequest,
   RegisterServiceProviderRequest,
+  RegisterResponse,
 } from '../services/authService';
 import { userService } from '../services/userService';
 
@@ -17,9 +18,9 @@ interface AuthContextType {
   profileImage: string | null;
   updateProfileImage: (uri: string | null) => Promise<void>;
   login: (credentials: LoginRequest) => Promise<void>;
-  registerBuyer: (payload: RegisterBuyerRequest) => Promise<void>;
-  registerSeller: (payload: RegisterSellerRequest) => Promise<void>;
-  registerServiceProvider: (payload: RegisterServiceProviderRequest) => Promise<void>;
+  registerBuyer: (payload: RegisterBuyerRequest) => Promise<RegisterResponse>;
+  registerSeller: (payload: RegisterSellerRequest) => Promise<RegisterResponse>;
+  registerServiceProvider: (payload: RegisterServiceProviderRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
 }
 
@@ -88,19 +89,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function registerBuyer(payload: RegisterBuyerRequest) {
-    await authService.registerBuyer(payload);
+  async function registerBuyer(payload: RegisterBuyerRequest): Promise<RegisterResponse> {
+    const response = await authService.registerBuyer(payload);
     await clearStoredTokens();
+    return response;
   }
 
-  async function registerSeller(payload: RegisterSellerRequest) {
-    await authService.registerSeller(payload);
+  async function registerSeller(payload: RegisterSellerRequest): Promise<RegisterResponse> {
+    const response = await authService.registerSeller(payload);
     await clearStoredTokens();
+    return response;
   }
 
-  async function registerServiceProvider(payload: RegisterServiceProviderRequest) {
-    await authService.registerServiceProvider(payload);
+  async function registerServiceProvider(payload: RegisterServiceProviderRequest): Promise<RegisterResponse> {
+    const response = await authService.registerServiceProvider(payload);
     await clearStoredTokens();
+    return response;
   }
 
   async function logout() {

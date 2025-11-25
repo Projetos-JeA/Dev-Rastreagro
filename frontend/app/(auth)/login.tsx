@@ -1,21 +1,23 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
+  Alert,
+  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ImageBackground,
-  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import Input from '../../src/components/Input';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
-import { useRouter } from 'expo-router';
+import { authService } from '../../src/services/authService';
 import { isValidEmail } from '../../src/utils/validators';
-import Input from '../../src/components/Input';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -29,15 +31,15 @@ export default function LoginScreen() {
   const router = useRouter();
 
   function updateField(field: string, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
     }
-  };
+  }
 
   async function handleLogin() {
     const newErrors: Record<string, string> = {};
@@ -61,10 +63,42 @@ export default function LoginScreen() {
     try {
       await login({ email: formData.email, password: formData.password });
     } catch (error: any) {
-      if (error?.status === 401 || error?.response?.status === 401) {
+      const status = error?.status || error?.response?.status;
+      const detail = error?.response?.data?.detail || error?.message;
+
+      if (status === 403 || detail?.includes('não verificado') || detail?.includes('verificar')) {
+        // Email não verificado
+        Alert.alert(
+          'Email não verificado',
+          detail ||
+            'Verifique sua caixa de entrada e clique no link de verificação. Se não recebeu o email, solicite um novo link.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Reenviar email',
+              onPress: async () => {
+                try {
+                  await authService.resendVerification(formData.email);
+                  Alert.alert(
+                    'Email reenviado',
+                    'Um novo link de verificação foi enviado para seu email. Verifique sua caixa de entrada.'
+                  );
+                } catch (err: any) {
+                  Alert.alert(
+                    'Erro',
+                    err?.response?.data?.message ||
+                      'Não foi possível reenviar o email. Tente novamente mais tarde.'
+                  );
+                }
+              },
+            },
+          ]
+        );
+        setErrors({ email: 'Email não verificado' });
+      } else if (status === 401) {
         setErrors({ password: 'Email ou senha incorretos' });
       } else {
-        setErrors({ password: 'Erro ao fazer login. Tente novamente.' });
+        setErrors({ password: detail || 'Erro ao fazer login. Tente novamente.' });
       }
     } finally {
       setLoading(false);
@@ -100,7 +134,7 @@ export default function LoginScreen() {
               label="E-mail"
               required
               value={formData.email}
-              onChangeText={(text) => updateField('email', text)}
+              onChangeText={text => updateField('email', text)}
               error={errors.email}
               placeholder="Digite seu email"
               keyboardType="email-address"
@@ -111,7 +145,7 @@ export default function LoginScreen() {
               label="Senha"
               required
               value={formData.password}
-              onChangeText={(text) => updateField('password', text)}
+              onChangeText={text => updateField('password', text)}
               error={errors.password}
               placeholder="Digite sua senha"
               isPassword
@@ -119,7 +153,9 @@ export default function LoginScreen() {
             />
 
             <TouchableOpacity style={styles.forgotPasswordButton}>
-              <Text style={[styles.forgotPasswordText, { color: colors.link }]}>Esqueceu a senha</Text>
+              <Text style={[styles.forgotPasswordText, { color: colors.link }]}>
+                Esqueceu a senha
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -134,26 +170,50 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.buttonSocialBackground, borderColor: colors.buttonSocialBorder }]}>
+            <TouchableOpacity
+              style={[
+                styles.socialButton,
+                {
+                  backgroundColor: colors.buttonSocialBackground,
+                  borderColor: colors.buttonSocialBorder,
+                },
+              ]}
+            >
               <Image
                 source={{ uri: 'https://www.google.com/favicon.ico' }}
                 style={styles.socialIcon}
               />
-              <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>Entrar com Google</Text>
+              <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>
+                Entrar com Google
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.buttonSocialBackground, borderColor: colors.buttonSocialBorder }]}>
-              <View style={[styles.facebookIconContainer, { backgroundColor: colors.facebookColor }]}>
+            <TouchableOpacity
+              style={[
+                styles.socialButton,
+                {
+                  backgroundColor: colors.buttonSocialBackground,
+                  borderColor: colors.buttonSocialBorder,
+                },
+              ]}
+            >
+              <View
+                style={[styles.facebookIconContainer, { backgroundColor: colors.facebookColor }]}
+              >
                 <Text style={[styles.facebookIcon, { color: colors.white }]}>f</Text>
               </View>
-              <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>Entrar com facebook</Text>
+              <Text style={[styles.socialButtonText, { color: colors.buttonSocialText }]}>
+                Entrar com facebook
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.registerButton}
               onPress={() => router.push('/(auth)/first-access')}
             >
-              <Text style={[styles.registerButtonText, { color: colors.link }]}>Primeiro acesso</Text>
+              <Text style={[styles.registerButtonText, { color: colors.link }]}>
+                Primeiro acesso
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
