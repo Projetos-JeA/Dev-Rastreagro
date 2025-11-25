@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStoredAccessToken, clearStoredTokens } from '../config/api';
 import {
   authService,
@@ -13,6 +14,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any | null;
+  profileImage: string | null;
+  updateProfileImage: (uri: string | null) => Promise<void>;
   login: (credentials: LoginRequest) => Promise<void>;
   registerBuyer: (payload: RegisterBuyerRequest) => Promise<void>;
   registerSeller: (payload: RegisterSellerRequest) => Promise<void>;
@@ -26,6 +29,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  async function loadProfileImage() {
+    try {
+      const stored = await AsyncStorage.getItem('@profileImage');
+      if (stored) {
+        setProfileImage(stored);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar foto de perfil:', error);
+    }
+  }
+
+  async function updateProfileImage(uri: string | null) {
+    try {
+      if (uri) {
+        await AsyncStorage.setItem('@profileImage', uri);
+      } else {
+        await AsyncStorage.removeItem('@profileImage');
+      }
+      setProfileImage(uri);
+    } catch (error) {
+      console.error('Erro ao salvar foto de perfil:', error);
+    }
+  }
 
   async function loadUser() {
     const userData = await userService.me();
@@ -83,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkAuth();
+    loadProfileImage();
   }, []);
 
   return (
@@ -91,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isLoading,
         user,
+        profileImage,
+        updateProfileImage,
         login,
         registerBuyer,
         registerSeller,

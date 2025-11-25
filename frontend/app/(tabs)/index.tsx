@@ -18,7 +18,7 @@ import MenuCard from '../../src/components/MenuCard';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { user, profileImage } = useAuth();
   const router = useRouter();
 
   const roleLabel: Record<string, string> = {
@@ -84,7 +84,11 @@ export default function HomeScreen() {
           <View style={styles.profileContainer}>
             <Text style={[styles.headerText, { color: colors.text }]}>{userRole}</Text>
             <TouchableOpacity onPress={handleProfile} >
-              <Ionicons name="person-circle-outline" size={32} color={colors.text} />
+              {profileImage ? (
+                <Image source={{ uri: profileImage }} style={styles.profileImage} />
+              ) : (
+                <Ionicons name="person-circle-outline" size={32} color={colors.text} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -164,6 +168,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  profileImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   logoContainer: {
     alignItems: 'center',

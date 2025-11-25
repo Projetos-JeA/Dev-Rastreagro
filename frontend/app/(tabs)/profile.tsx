@@ -6,12 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ImageBackground,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
 import Input from '../../src/components/Input';
@@ -203,6 +205,217 @@ const industrySegmentOptions = [
   { label: 'Processamento de Grãos', value: 'processamento_graos' },
 ];
 
+const segmentProductOptions: Record<string, { label: string; value: string }[]> = {
+  supermercado: [
+    { label: 'Alimentos e Bebidas', value: 'alimentos_bebidas' },
+    { label: 'Produtos de Limpeza', value: 'produtos_limpeza' },
+    { label: 'Higiene Pessoal', value: 'higiene_pessoal' },
+    { label: 'Hortifrúti', value: 'hortifruiti' },
+    { label: 'Açougue', value: 'acougue' },
+  ],
+  produtos_agropecuarios: [
+    { label: 'Sementes', value: 'sementes' },
+    { label: 'Adubos e Fertilizantes', value: 'adubos' },
+    { label: 'Defensivos Agrícolas', value: 'defensivos' },
+    { label: 'Rações', value: 'racoes' },
+    { label: 'Ferramentas', value: 'ferramentas' },
+  ],
+  postos_combustivel: [
+    { label: 'Gasolina', value: 'gasolina' },
+    { label: 'Diesel', value: 'diesel' },
+    { label: 'Etanol', value: 'etanol' },
+    { label: 'GNV', value: 'gnv' },
+    { label: 'Lubrificantes', value: 'lubrificantes' },
+  ],
+  uniforme: [
+    { label: 'Uniformes Profissionais', value: 'uniformes_profissionais' },
+    { label: 'Botas e Calçados', value: 'botas_calcados' },
+    { label: 'Jalecos', value: 'jalecos' },
+    { label: 'Aventais', value: 'aventais' },
+  ],
+  epis: [
+    { label: 'Luvas de Proteção', value: 'luvas' },
+    { label: 'Capacetes', value: 'capacetes' },
+    { label: 'Óculos de Proteção', value: 'oculos' },
+    { label: 'Máscaras', value: 'mascaras' },
+    { label: 'Protetores Auriculares', value: 'protetores_auriculares' },
+  ],
+  implementos_agricolas: [
+    { label: 'Arados', value: 'arados' },
+    { label: 'Grades', value: 'grades' },
+    { label: 'Plantadeiras', value: 'plantadeiras' },
+    { label: 'Pulverizadores', value: 'pulverizadores' },
+    { label: 'Colhedoras', value: 'colhedoras' },
+  ],
+  concessionarias: [
+    { label: 'Tratores', value: 'tratores' },
+    { label: 'Colheitadeiras', value: 'colheitadeiras' },
+    { label: 'Plantadeiras', value: 'plantadeiras' },
+    { label: 'Pulverizadores', value: 'pulverizadores' },
+    { label: 'Caminhões', value: 'caminhoes' },
+  ],
+  distribuidora_pecas: [
+    { label: 'Peças de Reposição', value: 'pecas_reposicao' },
+    { label: 'Filtros', value: 'filtros' },
+    { label: 'Correias', value: 'correias' },
+    { label: 'Rolamentos', value: 'rolamentos' },
+    { label: 'Componentes Hidráulicos', value: 'componentes_hidraulicos' },
+  ],
+  equipamentos: [
+    { label: 'Sistemas de Irrigação', value: 'irrigacao' },
+    { label: 'Silos e Armazéns', value: 'silos_armazens' },
+    { label: 'Secadores', value: 'secadores' },
+    { label: 'Balanças', value: 'balancas' },
+    { label: 'Geradores', value: 'geradores' },
+  ],
+  tecnologia: [
+    { label: 'Softwares de Gestão', value: 'softwares' },
+    { label: 'Sensores e Monitoramento', value: 'sensores' },
+    { label: 'GPS e Telemetria', value: 'gps' },
+    { label: 'Automação', value: 'automacao' },
+    { label: 'Drones', value: 'drones' },
+  ],
+  drones_aviacao: [
+    { label: 'Drones Agrícolas', value: 'drones_agricolas' },
+    { label: 'Aviões Agrícolas', value: 'avioes_agricolas' },
+    { label: 'Peças e Acessórios', value: 'pecas_acessorios' },
+    { label: 'Serviços de Pulverização', value: 'servicos_pulverizacao' },
+  ],
+  drogarias: [
+    { label: 'Medicamentos Veterinários', value: 'medicamentos' },
+    { label: 'Vacinas', value: 'vacinas' },
+    { label: 'Vermífugos', value: 'vermifugos' },
+    { label: 'Suplementos', value: 'suplementos' },
+    { label: 'Material Cirúrgico', value: 'material_cirurgico' },
+  ],
+  racao: [
+    { label: 'Ração para Bovinos', value: 'racao_bovinos' },
+    { label: 'Ração para Suínos', value: 'racao_suinos' },
+    { label: 'Ração para Aves', value: 'racao_aves' },
+    { label: 'Ração para Equinos', value: 'racao_equinos' },
+    { label: 'Premix e Núcleos', value: 'premix_nucleos' },
+  ],
+  frigorifico: [
+    { label: 'Abate de Bovinos', value: 'abate_bovinos' },
+    { label: 'Abate de Suínos', value: 'abate_suinos' },
+    { label: 'Abate de Aves', value: 'abate_aves' },
+    { label: 'Processamento de Carnes', value: 'processamento_carnes' },
+    { label: 'Embutidos', value: 'embutidos' },
+  ],
+  agroenergia: [
+    { label: 'Biodiesel', value: 'biodiesel' },
+    { label: 'Etanol', value: 'etanol' },
+    { label: 'Biomassa', value: 'biomassa' },
+    { label: 'Biogás', value: 'biogas' },
+  ],
+  processamento_graos: [
+    { label: 'Beneficiamento de Soja', value: 'beneficiamento_soja' },
+    { label: 'Beneficiamento de Milho', value: 'beneficiamento_milho' },
+    { label: 'Moagem', value: 'moagem' },
+    { label: 'Armazenagem', value: 'armazenagem' },
+    { label: 'Extração de Óleo', value: 'extracao_oleo' },
+  ],
+};
+
+const serviceSegmentServiceOptions: Record<string, { label: string; value: string }[]> = {
+  manutencao_maquinas: [
+    { label: 'Tratores', value: 'tratores' },
+    { label: 'Colheitadeiras', value: 'colheitadeiras' },
+    { label: 'Plantadeiras', value: 'plantadeiras' },
+    { label: 'Pulverizadores', value: 'pulverizadores' },
+    { label: 'Pá Carregadeira', value: 'pa_carregadeira' },
+    { label: 'Retroescavadeira', value: 'retroescavadeira' },
+  ],
+  manutencao_equipamentos: [
+    { label: 'Sistemas de Irrigação', value: 'irrigacao' },
+    { label: 'Calcareadeira', value: 'calcareadeira' },
+    { label: 'Semeadoras', value: 'semeadoras' },
+    { label: 'Secadores de Grãos', value: 'secadores' },
+    { label: 'Silos', value: 'silos' },
+    { label: 'Ordenhadeiras', value: 'ordenhadeiras' },
+  ],
+  consultoria_tecnica: [
+    { label: 'Manejo de Solo', value: 'manejo_solo' },
+    { label: 'Nutrição Animal', value: 'nutricao_animal' },
+    { label: 'Controle de Pragas e Doenças', value: 'controle_pragas' },
+    { label: 'Reprodução Animal', value: 'reproducao_animal' },
+    { label: 'Irrigação e Drenagem', value: 'irrigacao_drenagem' },
+    { label: 'Planejamento de Safra', value: 'planejamento_safra' },
+  ],
+  consultoria_tecnologia: [
+    { label: 'Agricultura de Precisão', value: 'agricultura_precisao' },
+    { label: 'Automação Rural', value: 'automacao_rural' },
+    { label: 'Software de Gestão', value: 'software_gestao' },
+    { label: 'Telemetria e Monitoramento', value: 'telemetria' },
+    { label: 'Drones e Sensoriamento', value: 'drones_sensoriamento' },
+  ],
+  logistica_armazenagem: [
+    { label: 'Transporte de Grãos', value: 'transporte_graos' },
+    { label: 'Transporte de Insumos', value: 'transporte_insumos' },
+    { label: 'Armazenagem de Grãos', value: 'armazenagem_graos' },
+    { label: 'Gestão de Estoque', value: 'gestao_estoque' },
+    { label: 'Secagem e Beneficiamento', value: 'secagem_beneficiamento' },
+  ],
+  financeiros_seguros: [
+    { label: 'Seguro Rural', value: 'seguro_rural' },
+    { label: 'Crédito Agrícola', value: 'credito_agricola' },
+    { label: 'Gestão de Risco', value: 'gestao_risco' },
+    { label: 'Planejamento Financeiro', value: 'planejamento_financeiro' },
+    { label: 'Seguro de Máquinas', value: 'seguro_maquinas' },
+  ],
+  intermediacao: [
+    { label: 'Compra e Venda de Gado', value: 'compra_venda_gado' },
+    { label: 'Compra e Venda de Grãos', value: 'compra_venda_graos' },
+    { label: 'Comercialização de Terras', value: 'comercializacao_terras' },
+    { label: 'Leilões Rurais', value: 'leiloes_rurais' },
+    { label: 'Negociação de Insumos', value: 'negociacao_insumos' },
+  ],
+  pesquisa_desenvolvimento: [
+    { label: 'Melhoramento Genético Animal', value: 'melhoramento_genetico_animal' },
+    { label: 'Desenvolvimento de Cultivares', value: 'desenvolvimento_cultivares' },
+    { label: 'Pesquisa em Nutrição', value: 'pesquisa_nutricao' },
+    { label: 'Análise de Solo e Foliar', value: 'analise_solo_foliar' },
+    { label: 'Testes de Eficiência', value: 'testes_eficiencia' },
+  ],
+  treinamento_capacitacao: [
+    { label: 'Operação de Máquinas', value: 'operacao_maquinas' },
+    { label: 'Boas Práticas Agrícolas', value: 'boas_praticas' },
+    { label: 'Gestão Rural', value: 'gestao_rural' },
+    { label: 'Segurança do Trabalho', value: 'seguranca_trabalho' },
+    { label: 'Manejo de Pastagens', value: 'manejo_pastagens' },
+    { label: 'Inseminação Artificial', value: 'inseminacao_artificial' },
+  ],
+  servicos_ambientais: [
+    { label: 'Recuperação de Áreas Degradadas', value: 'recuperacao_areas' },
+    { label: 'Licenciamento Ambiental', value: 'licenciamento_ambiental' },
+    { label: 'Gestão de Recursos Hídricos', value: 'gestao_recursos_hidricos' },
+    { label: 'Reflorestamento', value: 'reflorestamento' },
+    { label: 'Cadastro Ambiental Rural (CAR)', value: 'car' },
+  ],
+  despachante_veicular: [
+    { label: 'Licenciamento de Veículos', value: 'licenciamento_veiculos' },
+    { label: 'Transferência de Propriedade', value: 'transferencia_propriedade' },
+    { label: 'Emplacamento', value: 'emplacamento' },
+    { label: 'Segunda Via de Documentos', value: 'segunda_via_documentos' },
+    { label: 'Baixa de Veículos', value: 'baixa_veiculos' },
+  ],
+  autoescola: [
+    { label: 'CNH Categoria A (Moto)', value: 'cnh_a' },
+    { label: 'CNH Categoria B (Carro)', value: 'cnh_b' },
+    { label: 'CNH Categoria C (Caminhão)', value: 'cnh_c' },
+    { label: 'CNH Categoria D (Ônibus)', value: 'cnh_d' },
+    { label: 'CNH Categoria E (Carreta)', value: 'cnh_e' },
+    { label: 'Reciclagem e Renovação', value: 'reciclagem' },
+  ],
+  frete_bovino: [
+    { label: 'Transporte de Gado de Corte', value: 'gado_corte' },
+    { label: 'Transporte de Gado Leiteiro', value: 'gado_leiteiro' },
+    { label: 'Transporte de Reprodutores', value: 'reprodutores' },
+    { label: 'Transporte Intermunicipal', value: 'intermunicipal' },
+    { label: 'Transporte Interestadual', value: 'interestadual' },
+  ],
+};
+
 const serviceSegmentOptions = [
   { label: 'Manutenção de Máquinas', value: 'manutencao_maquinas' },
   { label: 'Manutenção de Equipamentos', value: 'manutencao_equipamentos' },
@@ -222,11 +435,15 @@ const serviceSegmentOptions = [
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, profileImage, updateProfileImage } = useAuth();
 
   const [fullName, setFullName] = useState('João da Silva');
+  const [nickname, setNickname] = useState('João');
   const [birthDate, setBirthDate] = useState('15/05/1985');
   const [cpf, setCpf] = useState('123.456.789-00');
+  const [identity, setIdentity] = useState('12.345.678-9');
+  const [maritalStatus, setMaritalStatus] = useState('Solteiro');
+  const [nationality, setNationality] = useState('São Paulo, SP');
   const [email, setEmail] = useState(user?.email || 'joao.silva@email.com');
   const [phone, setPhone] = useState('+55 11 9 8765-4321');
 
@@ -234,6 +451,14 @@ export default function ProfileScreen() {
   const [companyName, setCompanyName] = useState('Fazenda Silva Ltda');
   const [tradeName, setTradeName] = useState('Fazenda Silva');
   const [stateRegistration, setStateRegistration] = useState('123.456.789.012');
+  const [startDate, setStartDate] = useState('01/01/2020');
+  const [businessActivity, setBusinessActivity] = useState('Agropecuária');
+  const [cnaes, setCnaes] = useState('0111-3/01, 0121-1/01');
+  const [address, setAddress] = useState('Rua Principal, 123');
+  const [cep, setCep] = useState('12345-678');
+  const [city, setCity] = useState('São Paulo');
+  const [state, setState] = useState('SP');
+  const [neighborhood, setNeighborhood] = useState('Centro');
   const [profileTypes, setProfileTypes] = useState<ProfileType[]>(['producer']);
 
   const [producerType, setProducerType] = useState<string>('pecuarista');
@@ -272,9 +497,11 @@ export default function ProfileScreen() {
 
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const [segmentsCustom, setSegmentsCustom] = useState<string[]>([]);
+  const [segmentData, setSegmentData] = useState<Record<string, { products: string[]; productsCustom: string[] }>>({});
 
   const [selectedServiceSegments, setSelectedServiceSegments] = useState<string[]>([]);
   const [serviceSegmentsCustom, setServiceSegmentsCustom] = useState<string[]>([]);
+  const [serviceSegmentData, setServiceSegmentData] = useState<Record<string, { services: string[]; servicesCustom: string[] }>>({});
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>({});
@@ -328,6 +555,93 @@ export default function ProfileScreen() {
     value: string
   ) {
     setCustomValues(currentValues.filter((v) => v !== value));
+  }
+
+  function toggleSegmentProduct(segment: string, product: string) {
+    setSegmentData((prev) => {
+      const currentProducts = prev[segment]?.products || [];
+      const newProducts = currentProducts.includes(product)
+        ? currentProducts.filter((p) => p !== product)
+        : [...currentProducts, product];
+
+      return {
+        ...prev,
+        [segment]: {
+          ...prev[segment],
+          products: newProducts,
+          productsCustom: prev[segment]?.productsCustom || [],
+        },
+      };
+    });
+  }
+
+  function addSegmentCustom(segment: string, value: string) {
+    setSegmentData((prev) => ({
+      ...prev,
+      [segment]: {
+        ...prev[segment],
+        productsCustom: [...(prev[segment]?.productsCustom || []), value],
+      },
+    }));
+  }
+
+  function removeSegmentCustom(segment: string, value: string) {
+    setSegmentData((prev) => ({
+      ...prev,
+      [segment]: {
+        ...prev[segment],
+        productsCustom: (prev[segment]?.productsCustom || []).filter((v) => v !== value),
+      },
+    }));
+  }
+
+  function toggleServiceSegmentService(segment: string, service: string) {
+    setServiceSegmentData((prev) => {
+      const currentServices = prev[segment]?.services || [];
+      const newServices = currentServices.includes(service)
+        ? currentServices.filter((s) => s !== service)
+        : [...currentServices, service];
+
+      return {
+        ...prev,
+        [segment]: {
+          ...prev[segment],
+          services: newServices,
+          servicesCustom: prev[segment]?.servicesCustom || [],
+        },
+      };
+    });
+  }
+
+  function addServiceSegmentCustom(segment: string, value: string) {
+    setServiceSegmentData((prev) => ({
+      ...prev,
+      [segment]: {
+        ...prev[segment],
+        servicesCustom: [...(prev[segment]?.servicesCustom || []), value],
+      },
+    }));
+  }
+
+  function removeServiceSegmentCustom(segment: string, value: string) {
+    setServiceSegmentData((prev) => ({
+      ...prev,
+      [segment]: {
+        ...prev[segment],
+        servicesCustom: (prev[segment]?.servicesCustom || []).filter((v) => v !== value),
+      },
+    }));
+  }
+
+  function getSegmentLabel(segment: string): string {
+    const allSegments = [...commerceSegmentOptions, ...industrySegmentOptions];
+    const found = allSegments.find((s) => s.value === segment);
+    return found ? found.label : segment;
+  }
+
+  function getServiceSegmentLabel(segment: string): string {
+    const found = serviceSegmentOptions.find((s) => s.value === segment);
+    return found ? found.label : segment;
   }
 
   const addAnimal = () => {
@@ -470,6 +784,26 @@ export default function ProfileScreen() {
     setActiveAnimalTabs((prev) => ({ ...prev, [animalId]: tab }));
   };
 
+  async function pickImage() {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert('Permissão necessária', 'É necessário permitir acesso à galeria de fotos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      await updateProfileImage(result.assets[0].uri);
+    }
+  }
+
   const currentSegmentOptions = supplierType === 'comercio' ? commerceSegmentOptions : industrySegmentOptions;
 
   return (
@@ -498,7 +832,19 @@ export default function ProfileScreen() {
             {!isEditing && (
               <>
                 <View style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>
-                  <Ionicons name="person-circle" size={80} color={colors.primary} />
+                  <View style={styles.profileImageContainer}>
+                    {profileImage ? (
+                      <Image source={{ uri: profileImage }} style={styles.profileImage} />
+                    ) : (
+                      <Ionicons name="person-circle" size={120} color={colors.primary} />
+                    )}
+                    <TouchableOpacity
+                      style={[styles.editImageButton, { backgroundColor: colors.primary }]}
+                      onPress={pickImage}
+                    >
+                      <Ionicons name="camera" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
                   <Text style={[styles.userName, { color: colors.text }]}>
                     {fullName}
                   </Text>
@@ -521,6 +867,14 @@ export default function ProfileScreen() {
                   </View>
 
                   <View style={styles.infoItem}>
+                    <Ionicons name="happy-outline" size={20} color={colors.textSecondary} />
+                    <View style={styles.infoTextContainer}>
+                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Apelido</Text>
+                      <Text style={[styles.infoValue, { color: colors.text }]}>{nickname}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
                     <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
                     <View style={styles.infoTextContainer}>
                       <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Data de nascimento</Text>
@@ -533,6 +887,30 @@ export default function ProfileScreen() {
                     <View style={styles.infoTextContainer}>
                       <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>CPF</Text>
                       <Text style={[styles.infoValue, { color: colors.text }]}>{cpf}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Ionicons name="card-outline" size={20} color={colors.textSecondary} />
+                    <View style={styles.infoTextContainer}>
+                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Identidade</Text>
+                      <Text style={[styles.infoValue, { color: colors.text }]}>{identity}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Ionicons name="heart-outline" size={20} color={colors.textSecondary} />
+                    <View style={styles.infoTextContainer}>
+                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Estado Civil</Text>
+                      <Text style={[styles.infoValue, { color: colors.text }]}>{maritalStatus}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Ionicons name="globe-outline" size={20} color={colors.textSecondary} />
+                    <View style={styles.infoTextContainer}>
+                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Naturalidade</Text>
+                      <Text style={[styles.infoValue, { color: colors.text }]}>{nationality}</Text>
                     </View>
                   </View>
 
@@ -558,37 +936,131 @@ export default function ProfileScreen() {
                     Dados da Empresa
                   </Text>
 
-                  <View style={styles.infoItem}>
-                    <Ionicons name="business-outline" size={20} color={colors.textSecondary} />
-                    <View style={styles.infoTextContainer}>
-                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>CNPJ</Text>
-                      <Text style={[styles.infoValue, { color: colors.text }]}>{cnpj}</Text>
-                    </View>
-                  </View>
+                  {profileTypes.includes('producer') && profileTypes.includes('supplier') ? (
+                    <>
+                      {cnpj && (
+                        <View style={styles.infoItem}>
+                          <Ionicons name="business-outline" size={20} color={colors.textSecondary} />
+                          <View style={styles.infoTextContainer}>
+                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>CNPJ</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{cnpj}</Text>
+                          </View>
+                        </View>
+                      )}
 
-                  <View style={styles.infoItem}>
-                    <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
-                    <View style={styles.infoTextContainer}>
-                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Razão Social</Text>
-                      <Text style={[styles.infoValue, { color: colors.text }]}>{companyName}</Text>
-                    </View>
-                  </View>
+                      {companyName && (
+                        <View style={styles.infoItem}>
+                          <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
+                          <View style={styles.infoTextContainer}>
+                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Razão Social</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{companyName}</Text>
+                          </View>
+                        </View>
+                      )}
 
-                  <View style={styles.infoItem}>
-                    <Ionicons name="storefront-outline" size={20} color={colors.textSecondary} />
-                    <View style={styles.infoTextContainer}>
-                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Nome Fantasia</Text>
-                      <Text style={[styles.infoValue, { color: colors.text }]}>{tradeName}</Text>
-                    </View>
-                  </View>
+                      {tradeName && (
+                        <View style={styles.infoItem}>
+                          <Ionicons name="storefront-outline" size={20} color={colors.textSecondary} />
+                          <View style={styles.infoTextContainer}>
+                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Nome Fantasia</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{tradeName}</Text>
+                          </View>
+                        </View>
+                      )}
 
-                  <View style={styles.infoItem}>
-                    <Ionicons name="document-outline" size={20} color={colors.textSecondary} />
-                    <View style={styles.infoTextContainer}>
-                      <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Inscrição Estadual</Text>
-                      <Text style={[styles.infoValue, { color: colors.text }]}>{stateRegistration}</Text>
+                      {stateRegistration && (
+                        <View style={styles.infoItem}>
+                          <Ionicons name="document-outline" size={20} color={colors.textSecondary} />
+                          <View style={styles.infoTextContainer}>
+                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Inscrição Estadual</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{stateRegistration}</Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {cnaes && (
+                        <View style={styles.infoItem}>
+                          <Ionicons name="list-outline" size={20} color={colors.textSecondary} />
+                          <View style={styles.infoTextContainer}>
+                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>CNAEs</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{cnaes}</Text>
+                          </View>
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {(companyName || tradeName) && (
+                        <View style={styles.infoItem}>
+                          <Ionicons name="home-outline" size={20} color={colors.textSecondary} />
+                          <View style={styles.infoTextContainer}>
+                            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Nome da Propriedade</Text>
+                            <Text style={[styles.infoValue, { color: colors.text }]}>{companyName || tradeName}</Text>
+                          </View>
+                        </View>
+                      )}
+                    </>
+                  )}
+
+                  {startDate && (
+                    <View style={styles.infoItem}>
+                      <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Início das Atividades</Text>
+                        <Text style={[styles.infoValue, { color: colors.text }]}>{startDate}</Text>
+                      </View>
                     </View>
-                  </View>
+                  )}
+
+                  {businessActivity && (
+                    <View style={styles.infoItem}>
+                      <Ionicons name="briefcase-outline" size={20} color={colors.textSecondary} />
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Ramo de Atividade</Text>
+                        <Text style={[styles.infoValue, { color: colors.text }]}>{businessActivity}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {cep && (
+                    <View style={styles.infoItem}>
+                      <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>CEP</Text>
+                        <Text style={[styles.infoValue, { color: colors.text }]}>{cep}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {address && (
+                    <View style={styles.infoItem}>
+                      <Ionicons name="home-outline" size={20} color={colors.textSecondary} />
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Endereço</Text>
+                        <Text style={[styles.infoValue, { color: colors.text }]}>{address}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {neighborhood && (
+                    <View style={styles.infoItem}>
+                      <Ionicons name="map-outline" size={20} color={colors.textSecondary} />
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Bairro</Text>
+                        <Text style={[styles.infoValue, { color: colors.text }]}>{neighborhood}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {city && (
+                    <View style={styles.infoItem}>
+                      <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Cidade</Text>
+                        <Text style={[styles.infoValue, { color: colors.text }]}>{city}{state ? ` - ${state}` : ''}</Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
 
                 {profileTypes.includes('producer') && producerType === 'pecuarista' && (
@@ -629,6 +1101,16 @@ export default function ProfileScreen() {
                   value={fullName}
                   onChangeText={setFullName}
                   placeholder="Digite o nome"
+                  autoCapitalize="words"
+                />
+
+                <Input
+                  label="Apelido"
+                  required
+                  value={nickname}
+                  onChangeText={setNickname}
+                  placeholder="Como deseja ser chamado"
+                  autoCapitalize="words"
                 />
 
                 <Input
@@ -649,6 +1131,32 @@ export default function ProfileScreen() {
                   placeholder="xxx.xxx.xxx-xx"
                   mask="cpf"
                   maxLength={14}
+                />
+
+                <Input
+                  label="Identidade"
+                  required
+                  value={identity}
+                  onChangeText={setIdentity}
+                  placeholder="xx.xxx.xxx-x"
+                />
+
+                <Input
+                  label="Estado Civil"
+                  required
+                  value={maritalStatus}
+                  onChangeText={setMaritalStatus}
+                  placeholder="Ex: Solteiro, Casado, etc."
+                  autoCapitalize="words"
+                />
+
+                <Input
+                  label="Naturalidade"
+                  required
+                  value={nationality}
+                  onChangeText={setNationality}
+                  placeholder="Ex: São Paulo, SP"
+                  autoCapitalize="words"
                 />
 
                 <Input
@@ -675,42 +1183,129 @@ export default function ProfileScreen() {
                   Dados da Empresa
                 </Text>
 
+                {profileTypes.includes('producer') && profileTypes.includes('supplier') ? (
+                  <>
+                    <Input
+                      label="CNPJ"
+                      required
+                      value={cnpj}
+                      onChangeText={setCnpj}
+                      placeholder="xx.xxx.xxx/xxxx-xx"
+                      mask="cnpj"
+                      maxLength={18}
+                    />
+
+                    <Input
+                      label="Razão social"
+                      required
+                      value={companyName}
+                      onChangeText={setCompanyName}
+                      placeholder="Digite sua razão social"
+                      autoCapitalize="words"
+                    />
+
+                    <Input
+                      label="Nome Fantasia"
+                      required
+                      value={tradeName}
+                      onChangeText={setTradeName}
+                      placeholder="Digite seu nome fantasia"
+                      autoCapitalize="words"
+                    />
+
+                    <Input
+                      label="Inscrição estadual"
+                      value={stateRegistration}
+                      onChangeText={setStateRegistration}
+                      placeholder="xxx.xxx.xxx.xxx (opcional)"
+                      mask="ie"
+                      maxLength={15}
+                    />
+
+                    <Input
+                      label="CNAEs"
+                      value={cnaes}
+                      onChangeText={setCnaes}
+                      placeholder="Ex: 0111-3/01, 0121-1/01"
+                    />
+                  </>
+                ) : (
+                  <Input
+                    label="Nome da Propriedade"
+                    required
+                    value={companyName || tradeName}
+                    onChangeText={(text) => {
+                      setCompanyName(text);
+                      setTradeName(text);
+                    }}
+                    placeholder="Digite o nome da sua propriedade"
+                    autoCapitalize="words"
+                  />
+                )}
+
                 <Input
-                  label="CNPJ"
+                  label="Início das Atividades"
                   required
-                  value={cnpj}
-                  onChangeText={setCnpj}
-                  placeholder="xx.xxx.xxx/xxxx-xx"
-                  mask="cnpj"
-                  maxLength={18}
+                  value={startDate}
+                  onChangeText={setStartDate}
+                  placeholder="xx/xx/xxxx"
+                  mask="date"
+                  maxLength={10}
                 />
 
                 <Input
-                  label="Razão social"
+                  label="Ramo de Atividade"
                   required
-                  value={companyName}
-                  onChangeText={setCompanyName}
-                  placeholder="Digite sua razão"
+                  value={businessActivity}
+                  onChangeText={setBusinessActivity}
+                  placeholder="Ex: Agropecuária, Comércio, etc."
                   autoCapitalize="words"
                 />
 
                 <Input
-                  label="Nome Fantasia"
+                  label="CEP"
                   required
-                  value={tradeName}
-                  onChangeText={setTradeName}
-                  placeholder="Digite seu nome"
+                  value={cep}
+                  onChangeText={setCep}
+                  placeholder="00000-000"
+                  mask="cep"
+                  maxLength={9}
+                />
+
+                <Input
+                  label="Endereço"
+                  required
+                  value={address}
+                  onChangeText={setAddress}
+                  placeholder="Rua, Avenida, etc."
                   autoCapitalize="words"
                 />
 
                 <Input
-                  label="Inscrição estadual"
+                  label="Bairro"
+                  value={neighborhood}
+                  onChangeText={setNeighborhood}
+                  placeholder="Nome do bairro"
+                  autoCapitalize="words"
+                />
+
+                <Input
+                  label="Cidade"
                   required
-                  value={stateRegistration}
-                  onChangeText={setStateRegistration}
-                  placeholder="xxx.xxx.xxx.xxx"
-                  mask="ie"
-                  maxLength={15}
+                  value={city}
+                  onChangeText={setCity}
+                  placeholder="Nome da cidade"
+                  autoCapitalize="words"
+                />
+
+                <Input
+                  label="Estado (UF)"
+                  required
+                  value={state}
+                  onChangeText={(text) => setState(text.toUpperCase())}
+                  placeholder="SP"
+                  maxLength={2}
+                  autoCapitalize="characters"
                 />
 
                 {profileTypes.includes('producer') && (
@@ -1257,24 +1852,57 @@ export default function ProfileScreen() {
                     />
 
                     {supplierType && (
-                      <MultiSelect
-                        label="Segmentos"
-                        required
-                        options={currentSegmentOptions}
-                        selectedValues={selectedSegments}
-                        onToggle={(value) => {
-                          if (selectedSegments.includes(value)) {
-                            setSelectedSegments(selectedSegments.filter((s) => s !== value));
-                          } else {
-                            setSelectedSegments([...selectedSegments, value]);
-                          }
-                        }}
-                        allowCustom
-                        customValues={segmentsCustom}
-                        onAddCustom={(value) => addCustomValue(setSegmentsCustom, segmentsCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setSegmentsCustom, segmentsCustom, value)}
-                        itemsPerRow={supplierType === 'comercio' ? 2 : 3}
-                      />
+                      <>
+                        <MultiSelect
+                          label="Segmentos"
+                          required
+                          options={currentSegmentOptions}
+                          selectedValues={selectedSegments}
+                          onToggle={(value) => {
+                            if (selectedSegments.includes(value)) {
+                              setSelectedSegments(selectedSegments.filter((s) => s !== value));
+                              setSegmentData((prevData) => {
+                                const { [value]: removed, ...rest } = prevData;
+                                return rest;
+                              });
+                            } else {
+                              setSelectedSegments([...selectedSegments, value]);
+                              setSegmentData((prevData) => ({
+                                ...prevData,
+                                [value]: {
+                                  products: [],
+                                  productsCustom: [],
+                                },
+                              }));
+                            }
+                          }}
+                          allowCustom
+                          customValues={segmentsCustom}
+                          onAddCustom={(value) => addCustomValue(setSegmentsCustom, segmentsCustom, value)}
+                          onRemoveCustom={(value) => removeCustomValue(setSegmentsCustom, segmentsCustom, value)}
+                          itemsPerRow={supplierType === 'comercio' ? 2 : 3}
+                        />
+
+                        {selectedSegments.map((segment) => (
+                          <View key={segment} style={styles.segmentDataContainer}>
+                            <Text style={[styles.segmentDataTitle, { color: colors.text }]}>
+                              {getSegmentLabel(segment)}
+                            </Text>
+
+                            <MultiSelect
+                              label="Produtos/Serviços"
+                              required
+                              options={segmentProductOptions[segment] || []}
+                              selectedValues={segmentData[segment]?.products || []}
+                              onToggle={(value) => toggleSegmentProduct(segment, value)}
+                              allowCustom
+                              customValues={segmentData[segment]?.productsCustom || []}
+                              onAddCustom={(value) => addSegmentCustom(segment, value)}
+                              onRemoveCustom={(value) => removeSegmentCustom(segment, value)}
+                            />
+                          </View>
+                        ))}
+                      </>
                     )}
                   </>
                 )}
@@ -1293,8 +1921,19 @@ export default function ProfileScreen() {
                       onToggle={(value) => {
                         if (selectedServiceSegments.includes(value)) {
                           setSelectedServiceSegments(selectedServiceSegments.filter((s) => s !== value));
+                          setServiceSegmentData((prevData) => {
+                            const { [value]: removed, ...rest } = prevData;
+                            return rest;
+                          });
                         } else {
                           setSelectedServiceSegments([...selectedServiceSegments, value]);
+                          setServiceSegmentData((prevData) => ({
+                            ...prevData,
+                            [value]: {
+                              services: [],
+                              servicesCustom: [],
+                            },
+                          }));
                         }
                       }}
                       allowCustom
@@ -1303,6 +1942,26 @@ export default function ProfileScreen() {
                       onRemoveCustom={(value) => removeCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)}
                       itemsPerRow={2}
                     />
+
+                    {selectedServiceSegments.map((segment) => (
+                      <View key={segment} style={styles.segmentDataContainer}>
+                        <Text style={[styles.segmentDataTitle, { color: colors.text }]}>
+                          {getServiceSegmentLabel(segment)}
+                        </Text>
+
+                        <MultiSelect
+                          label="Serviços"
+                          required
+                          options={serviceSegmentServiceOptions[segment] || []}
+                          selectedValues={serviceSegmentData[segment]?.services || []}
+                          onToggle={(value) => toggleServiceSegmentService(segment, value)}
+                          allowCustom
+                          customValues={serviceSegmentData[segment]?.servicesCustom || []}
+                          onAddCustom={(value) => addServiceSegmentCustom(segment, value)}
+                          onRemoveCustom={(value) => removeServiceSegmentCustom(segment, value)}
+                        />
+                      </View>
+                    ))}
                   </>
                 )}
 
@@ -1370,6 +2029,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
+  },
+  profileImageContainer: {
+    position: 'relative',
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  editImageButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   userName: {
     fontSize: 24,
@@ -1669,5 +2351,13 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  segmentDataContainer: {
+    marginTop: 5,
+  },
+  segmentDataTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 15,
   },
 });
