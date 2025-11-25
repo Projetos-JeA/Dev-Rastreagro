@@ -1,26 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ImageBackground,
+  Alert,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useTheme } from '../../src/context/ThemeContext';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ProfileType } from '../../src/components/ProfileSelector';
-import StepIndicator from '../../src/components/StepIndicator';
-import Select from '../../src/components/Select';
-import MultiSelect from '../../src/components/MultiSelect';
 import Input from '../../src/components/Input';
-import { Ionicons } from '@expo/vector-icons';
+import MultiSelect from '../../src/components/MultiSelect';
+import { ProfileType } from '../../src/components/ProfileSelector';
+import Select from '../../src/components/Select';
+import StepIndicator from '../../src/components/StepIndicator';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
 
 interface Vaccine {
   id: string;
@@ -449,7 +448,9 @@ export default function ThirdAccessScreen() {
   const [selectedSegments, setSelectedSegments] = useState<string[]>([]);
   const [segmentsCustom, setSegmentsCustom] = useState<string[]>([]);
 
-  const [segmentData, setSegmentData] = useState<Record<string, { products: string[]; productsCustom: string[] }>>({});
+  const [segmentData, setSegmentData] = useState<
+    Record<string, { products: string[]; productsCustom: string[] }>
+  >({});
 
   const [activities, setActivities] = useState<string[]>([]);
   const [activitiesCustom, setActivitiesCustom] = useState<string[]>([]);
@@ -467,7 +468,9 @@ export default function ThirdAccessScreen() {
   const [vaccinationDate, setVaccinationDate] = useState<string>('');
 
   const [herdControl, setHerdControl] = useState<HerdAnimal[]>([]);
-  const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>({});
+  const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>(
+    {}
+  );
 
   const [agricultureTypes, setAgricultureTypes] = useState<string[]>([]);
   const [agricultureTypesCustom, setAgricultureTypesCustom] = useState<string[]>([]);
@@ -486,7 +489,9 @@ export default function ThirdAccessScreen() {
 
   const [selectedServiceSegments, setSelectedServiceSegments] = useState<string[]>([]);
   const [serviceSegmentsCustom, setServiceSegmentsCustom] = useState<string[]>([]);
-  const [serviceSegmentData, setServiceSegmentData] = useState<Record<string, { services: string[]; servicesCustom: string[] }>>({});
+  const [serviceSegmentData, setServiceSegmentData] = useState<
+    Record<string, { services: string[]; servicesCustom: string[] }>
+  >({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -497,7 +502,10 @@ export default function ThirdAccessScreen() {
       newErrors.producerType = 'Selecione o tipo de produtor';
     }
 
-    if (selectedProfiles.includes('producer') && (producerType === 'pecuarista' || producerType === 'ambos')) {
+    if (
+      selectedProfiles.includes('producer') &&
+      (producerType === 'pecuarista' || producerType === 'ambos')
+    ) {
       if (activities.length === 0) {
         newErrors.activities = 'Selecione pelo menos uma atividade';
       }
@@ -527,61 +535,73 @@ export default function ThirdAccessScreen() {
 
       herdControl.forEach((animal, index) => {
         if (!animal.tag || animal.tag.trim() === '') {
-          newErrors[`animal_${animal.id}_tag`] = `Animal ${index + 1}: Código (Brinco) é obrigatório`;
+          newErrors[`animal_${animal.id}_tag`] =
+            `Animal ${index + 1}: Código (Brinco) é obrigatório`;
         }
         if (!animal.supplementation || animal.supplementation.trim() === '') {
-          newErrors[`animal_${animal.id}_supplementation`] = `Animal ${index + 1}: Suplementação é obrigatória`;
+          newErrors[`animal_${animal.id}_supplementation`] =
+            `Animal ${index + 1}: Suplementação é obrigatória`;
         }
         if (!animal.weight || animal.weight.trim() === '') {
-          newErrors[`animal_${animal.id}_weight`] = `Animal ${index + 1}: Peso inicial é obrigatório`;
+          newErrors[`animal_${animal.id}_weight`] =
+            `Animal ${index + 1}: Peso inicial é obrigatório`;
         }
         if (!animal.weightDate || animal.weightDate.trim() === '') {
-          newErrors[`animal_${animal.id}_weightDate`] = `Animal ${index + 1}: Data do peso inicial é obrigatória`;
+          newErrors[`animal_${animal.id}_weightDate`] =
+            `Animal ${index + 1}: Data do peso inicial é obrigatória`;
         }
 
         animal.weightControls.forEach((control, cIndex) => {
           if (!control.date || control.date.trim() === '') {
-            newErrors[`animal_${animal.id}_control_${control.id}_date`] = `Animal ${index + 1}, Controle ${cIndex + 1}: Data é obrigatória`;
+            newErrors[`animal_${animal.id}_control_${control.id}_date`] =
+              `Animal ${index + 1}, Controle ${cIndex + 1}: Data é obrigatória`;
           }
           if (!control.gain || control.gain.trim() === '') {
-            newErrors[`animal_${animal.id}_control_${control.id}_gain`] = `Animal ${index + 1}, Controle ${cIndex + 1}: Ganho de peso é obrigatório`;
+            newErrors[`animal_${animal.id}_control_${control.id}_gain`] =
+              `Animal ${index + 1}, Controle ${cIndex + 1}: Ganho de peso é obrigatório`;
           }
         });
 
         animal.vaccines.forEach((vaccine, vIndex) => {
           if (!vaccine.type || vaccine.type.trim() === '') {
-            newErrors[`animal_${animal.id}_vaccine_${vaccine.id}_type`] = `Animal ${index + 1}, Vacina ${vIndex + 1}: Tipo da vacina é obrigatório`;
+            newErrors[`animal_${animal.id}_vaccine_${vaccine.id}_type`] =
+              `Animal ${index + 1}, Vacina ${vIndex + 1}: Tipo da vacina é obrigatório`;
           }
           if (!vaccine.date || vaccine.date.trim() === '') {
-            newErrors[`animal_${animal.id}_vaccine_${vaccine.id}_date`] = `Animal ${index + 1}, Vacina ${vIndex + 1}: Data da vacina é obrigatória`;
+            newErrors[`animal_${animal.id}_vaccine_${vaccine.id}_date`] =
+              `Animal ${index + 1}, Vacina ${vIndex + 1}: Data da vacina é obrigatória`;
           }
           if (!vaccine.seasonality || vaccine.seasonality.trim() === '') {
-            newErrors[`animal_${animal.id}_vaccine_${vaccine.id}_seasonality`] = `Animal ${index + 1}, Vacina ${vIndex + 1}: Sazonalidade é obrigatória`;
+            newErrors[`animal_${animal.id}_vaccine_${vaccine.id}_seasonality`] =
+              `Animal ${index + 1}, Vacina ${vIndex + 1}: Sazonalidade é obrigatória`;
           }
         });
       });
     }
 
-    if (selectedProfiles.includes('producer') && (producerType === 'agricultor' || producerType === 'ambos')) {
-      if (agricultureTypes.length === 0) {
+    if (
+      selectedProfiles.includes('producer') &&
+      (producerType === 'agricultor' || producerType === 'ambos')
+    ) {
+      if (agricultureTypes.length === 0 && agricultureTypesCustom.length === 0) {
         newErrors.agricultureTypes = 'Selecione pelo menos um tipo de agricultura';
       }
-      if (cropTypes.length === 0) {
+      if (cropTypes.length === 0 && cropTypesCustom.length === 0) {
         newErrors.cropTypes = 'Selecione pelo menos um tipo de cultura';
       }
-      if (seedTypes.length === 0) {
+      if (seedTypes.length === 0 && seedTypesCustom.length === 0) {
         newErrors.seedTypes = 'Selecione pelo menos um tipo de semente';
       }
-      if (fertilizerTypes.length === 0) {
+      if (fertilizerTypes.length === 0 && fertilizerTypesCustom.length === 0) {
         newErrors.fertilizerTypes = 'Selecione pelo menos um tipo de adubo';
       }
-      if (fertilizerTypes.includes('organico') && organicFertilizerTypes.length === 0) {
+      if (fertilizerTypes.includes('organico') && organicFertilizerTypes.length === 0 && organicFertilizerTypesCustom.length === 0) {
         newErrors.organicFertilizerTypes = 'Selecione pelo menos um tipo de adubo orgânico';
       }
-      if (defensiveTypes.length === 0) {
+      if (defensiveTypes.length === 0 && defensiveTypesCustom.length === 0) {
         newErrors.defensiveTypes = 'Selecione pelo menos um tipo de defensivo';
       }
-      if (limestoneTypes.length === 0) {
+      if (limestoneTypes.length === 0 && limestoneTypesCustom.length === 0) {
         newErrors.limestoneTypes = 'Selecione pelo menos um tipo de calcário';
       }
     }
@@ -668,15 +688,12 @@ export default function ThirdAccessScreen() {
     console.log('🔵 ===== DADOS COMPLETOS DO CADASTRO =====');
     console.log(JSON.stringify(completeData, null, 2));
 
-
     setIsSubmitting(true);
     try {
       console.log('🔵 Enviando dados para o backend...');
 
-
       if (completeData.profileTypes.includes('producer')) {
         console.log('📤 Cadastrando como PRODUTOR (Seller)...');
-
 
         if (!completeData.email || !completeData.password) {
           Alert.alert('Erro', 'Email e senha são obrigatórios');
@@ -690,18 +707,17 @@ export default function ThirdAccessScreen() {
           return;
         }
 
-
-        const isProducerAndSupplier = completeData.profileTypes?.includes('producer') && completeData.profileTypes?.includes('supplier');
+        const isProducerAndSupplier =
+          completeData.profileTypes?.includes('producer') &&
+          completeData.profileTypes?.includes('supplier');
 
         if (isProducerAndSupplier) {
-
           if (!completeData.cnpj) {
             Alert.alert('Erro', 'CNPJ é obrigatório');
             setIsSubmitting(false);
             return;
           }
         } else {
-
           if (!completeData.cpf) {
             Alert.alert('Erro', 'CPF é obrigatório');
             setIsSubmitting(false);
@@ -709,26 +725,23 @@ export default function ThirdAccessScreen() {
           }
         }
 
-
         const address = completeData.address || '';
         const city = completeData.city || '';
         const state = completeData.state || '';
         const cep = completeData.cep || '';
 
         if (!address || !city || !state || !cep) {
-          Alert.alert('Erro', 'Campos de endereço são obrigatórios. Por favor, preencha todos os campos.');
+          Alert.alert(
+            'Erro',
+            'Campos de endereço são obrigatórios. Por favor, preencha todos os campos.'
+          );
           setIsSubmitting(false);
           return;
         }
 
-
-
         const activities: any[] = [];
 
-
         if (completeData.producerType === 'agricultor' || completeData.producerType === 'ambos') {
-
-
           if (completeData.agricultureData?.cropTypes?.length > 0) {
             activities.push({
               category_id: 1,
@@ -738,16 +751,13 @@ export default function ThirdAccessScreen() {
           }
         }
 
-
         if (completeData.producerType === 'pecuarista' || completeData.producerType === 'ambos') {
-
           activities.push({
             category_id: 2,
             group_id: null,
             item_id: null,
           });
         }
-
 
         if (activities.length === 0) {
           activities.push({
@@ -757,19 +767,24 @@ export default function ThirdAccessScreen() {
           });
         }
 
-
         const documentNumber = isProducerAndSupplier
-          ? (completeData.cnpj || '')
-          : (completeData.cpf || '');
+          ? completeData.cnpj || ''
+          : completeData.cpf || '';
 
         const sellerPayload = {
           email: completeData.email,
           password: completeData.password,
           nickname: completeData.nickname || null,
           company: {
-            nome_propriedade: completeData.companyName || completeData.tradeName || params.fullName || 'Propriedade',
+            nome_propriedade:
+              completeData.companyName ||
+              completeData.tradeName ||
+              params.fullName ||
+              'Propriedade',
             cnpj_cpf: documentNumber,
-            insc_est_identidade: isProducerAndSupplier ? (completeData.stateRegistration || null) : null,
+            insc_est_identidade: isProducerAndSupplier
+              ? completeData.stateRegistration || null
+              : null,
             endereco: address,
             bairro: completeData.neighborhood || null,
             cep: cep,
@@ -781,20 +796,19 @@ export default function ThirdAccessScreen() {
         };
 
         console.log('📤 Payload do produtor (seller):', JSON.stringify(sellerPayload, null, 2));
-        await registerSeller(sellerPayload);
-        console.log('✅ Produtor cadastrado com sucesso!');
-
+        const registerResponse = await registerSeller(sellerPayload);
+        console.log('✅ Produtor cadastrado com sucesso!', registerResponse);
 
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
-          'Sua propriedade foi cadastrada. Redirecionando para login...',
+          'Verifique seu email para ativar sua conta. Um link de verificação foi enviado para ' +
+            registerResponse.email,
           [{ text: 'OK' }]
         );
 
-
         setTimeout(() => {
           router.replace('/(auth)/login');
-        }, 1500);
+        }, 2000);
       } else if (completeData.profileTypes.includes('supplier')) {
         console.log('📤 Cadastrando como FORNECEDOR (Seller)...');
 
@@ -805,7 +819,6 @@ export default function ThirdAccessScreen() {
             item_id: null,
           },
         ];
-
 
         const sellerPayload = {
           email: completeData.email,
@@ -826,20 +839,19 @@ export default function ThirdAccessScreen() {
         };
 
         console.log('📤 Payload do vendedor:', JSON.stringify(sellerPayload, null, 2));
-        await registerSeller(sellerPayload);
-        console.log('✅ Vendedor cadastrado com sucesso!');
-
+        const registerResponse = await registerSeller(sellerPayload);
+        console.log('✅ Vendedor cadastrado com sucesso!', registerResponse);
 
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
-          'Sua empresa foi cadastrada. Redirecionando para login...',
+          'Verifique seu email para ativar sua conta. Um link de verificação foi enviado para ' +
+            registerResponse.email,
           [{ text: 'OK' }]
         );
 
-
         setTimeout(() => {
           router.replace('/(auth)/login');
-        }, 1500);
+        }, 2000);
       } else if (completeData.profileTypes.includes('service_provider')) {
         console.log('📤 Cadastrando como PRESTADOR DE SERVIÇO...');
 
@@ -862,20 +874,19 @@ export default function ThirdAccessScreen() {
         };
 
         console.log('📤 Payload do prestador:', JSON.stringify(servicePayload, null, 2));
-        await registerServiceProvider(servicePayload);
-        console.log('✅ Prestador cadastrado com sucesso!');
-
+        const registerResponse = await registerServiceProvider(servicePayload);
+        console.log('✅ Prestador cadastrado com sucesso!', registerResponse);
 
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
-          'Seu perfil foi criado. Redirecionando para login...',
+          'Verifique seu email para ativar sua conta. Um link de verificação foi enviado para ' +
+            registerResponse.email,
           [{ text: 'OK' }]
         );
 
-
         setTimeout(() => {
           router.replace('/(auth)/login');
-        }, 1500);
+        }, 2000);
       } else {
         Alert.alert('Erro', 'Tipo de perfil não suportado para cadastro automático.');
       }
@@ -886,43 +897,50 @@ export default function ThirdAccessScreen() {
       console.error('Error completo:', JSON.stringify(error, null, 2));
       console.error('Error.message:', error?.message);
       console.error('Error.name:', error?.name);
-      console.error('🔴 DETALHES DO ERRO DO BACKEND:', JSON.stringify(error?.response?.data, null, 2));
-
+      console.error(
+        '🔴 DETALHES DO ERRO DO BACKEND:',
+        JSON.stringify(error?.response?.data, null, 2)
+      );
 
       let errorMessage = 'Não foi possível concluir o cadastro.';
       let errorTitle = '❌ Erro ao cadastrar';
 
-
       const status = error?.response?.status || error?.status;
 
-
       if (status === 422) {
-
+        errorTitle = '❌ Erro de validação';
+        
+        // Tenta extrair mensagem detalhada do backend
         if (error?.response?.data?.detail) {
-
-          if (Array.isArray(error.response.data.detail)) {
-            const firstError = error.response.data.detail[0];
+          const detail = error.response.data.detail;
+          
+          // Se for array de erros (formato FastAPI/Pydantic)
+          if (Array.isArray(detail)) {
+            const firstError = detail[0];
             if (firstError?.msg) {
               const field = firstError.loc?.slice(1).join('.') || 'campo';
               errorMessage = `${field}: ${firstError.msg}`;
-              errorTitle = '❌ Erro de validação';
+            } else if (typeof firstError === 'string') {
+              errorMessage = firstError;
             } else {
-              errorMessage = JSON.stringify(firstError);
+              errorMessage = JSON.stringify(firstError, null, 2);
             }
+          } 
+          // Se for string direta
+          else if (typeof detail === 'string') {
+            errorMessage = detail;
           }
-
-          else if (typeof error.response.data.detail === 'string') {
-            errorMessage = error.response.data.detail;
-            errorTitle = '❌ Erro de validação';
-          }
-
-          else if (error.response.data.detail.errors) {
-            const firstError = Object.values(error.response.data.detail.errors)[0];
+          // Se for objeto com errors
+          else if (detail.errors) {
+            const firstError = Object.values(detail.errors)[0];
             errorMessage = String(firstError);
-            errorTitle = '❌ Erro de validação';
           }
-        }
-
+          // Se for objeto, tenta stringify
+          else {
+            errorMessage = JSON.stringify(detail, null, 2);
+          }
+        } 
+        // Tenta errors direto
         else if (error?.response?.data?.errors) {
           const backendErrors = error.response.data.errors;
           if (Array.isArray(backendErrors)) {
@@ -937,22 +955,22 @@ export default function ThirdAccessScreen() {
             const firstError = Object.values(backendErrors)[0];
             errorMessage = String(firstError);
           }
-          errorTitle = '❌ Erro de validação';
+        }
+        // Se não encontrou nada, mostra o data completo
+        else if (error?.response?.data) {
+          errorMessage = JSON.stringify(error.response.data, null, 2);
         }
       } else if (status === 400) {
-
         errorTitle = '❌ Erro ao cadastrar';
         if (!errorMessage || errorMessage === 'Não foi possível concluir o cadastro.') {
           errorMessage = 'Dados inválidos. Verifique os campos preenchidos.';
         }
       } else if (status === 409) {
-
         errorTitle = '❌ Erro';
         if (!errorMessage || errorMessage === 'Não foi possível concluir o cadastro.') {
           errorMessage = 'Email ou documento já cadastrado';
         }
       }
-
 
       console.log('🔴 Exibindo erro na tela:', errorTitle, errorMessage);
       Alert.alert(errorTitle, errorMessage);
@@ -967,7 +985,7 @@ export default function ThirdAccessScreen() {
 
   function handleProducerTypeChange(type: string) {
     setProducerType(type);
-    setErrors((prev) => {
+    setErrors(prev => {
       const { producerType, ...rest } = prev;
       return rest;
     });
@@ -1008,7 +1026,7 @@ export default function ThirdAccessScreen() {
     setSelectedSegments([]);
     setSegmentsCustom([]);
     setSegmentData({});
-    setErrors((prev) => {
+    setErrors(prev => {
       const { supplierType, segments, ...rest } = prev;
       return rest;
     });
@@ -1020,7 +1038,7 @@ export default function ThirdAccessScreen() {
     value: string
   ) {
     if (currentValues.includes(value)) {
-      setValue(currentValues.filter((v) => v !== value));
+      setValue(currentValues.filter(v => v !== value));
     } else {
       setValue([...currentValues, value]);
     }
@@ -1029,10 +1047,16 @@ export default function ThirdAccessScreen() {
   function addCustomValue(
     setCustomValues: (values: string[]) => void,
     currentValues: string[],
-    value: string
+    value: string,
+    setMainValues?: (values: string[]) => void,
+    mainValues?: string[]
   ) {
     if (!currentValues.includes(value)) {
       setCustomValues([...currentValues, value]);
+      // Se for um campo obrigatório, também adiciona ao array principal para validação
+      if (setMainValues && mainValues && !mainValues.includes(value)) {
+        setMainValues([...mainValues, value]);
+      }
     }
   }
 
@@ -1041,20 +1065,20 @@ export default function ThirdAccessScreen() {
     currentValues: string[],
     value: string
   ) {
-    setCustomValues(currentValues.filter((v) => v !== value));
+    setCustomValues(currentValues.filter(v => v !== value));
   }
 
   function toggleSegment(segment: string) {
-    setSelectedSegments((prev) => {
+    setSelectedSegments(prev => {
       if (prev.includes(segment)) {
-        const newSegments = prev.filter((s) => s !== segment);
-        setSegmentData((prevData) => {
+        const newSegments = prev.filter(s => s !== segment);
+        setSegmentData(prevData => {
           const { [segment]: removed, ...rest } = prevData;
           return rest;
         });
         return newSegments;
       } else {
-        setSegmentData((prevData) => ({
+        setSegmentData(prevData => ({
           ...prevData,
           [segment]: {
             products: [],
@@ -1066,7 +1090,7 @@ export default function ThirdAccessScreen() {
     });
 
     if (errors.segments) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const { segments, ...rest } = prev;
         return rest;
       });
@@ -1074,10 +1098,10 @@ export default function ThirdAccessScreen() {
   }
 
   function toggleSegmentProduct(segment: string, product: string) {
-    setSegmentData((prev) => {
+    setSegmentData(prev => {
       const currentProducts = prev[segment]?.products || [];
       const newProducts = currentProducts.includes(product)
-        ? currentProducts.filter((p) => p !== product)
+        ? currentProducts.filter(p => p !== product)
         : [...currentProducts, product];
 
       return {
@@ -1091,7 +1115,7 @@ export default function ThirdAccessScreen() {
   }
 
   function addSegmentCustom(segment: string, value: string) {
-    setSegmentData((prev) => ({
+    setSegmentData(prev => ({
       ...prev,
       [segment]: {
         ...prev[segment],
@@ -1101,26 +1125,26 @@ export default function ThirdAccessScreen() {
   }
 
   function removeSegmentCustom(segment: string, value: string) {
-    setSegmentData((prev) => ({
+    setSegmentData(prev => ({
       ...prev,
       [segment]: {
         ...prev[segment],
-        productsCustom: (prev[segment]?.productsCustom || []).filter((v) => v !== value),
+        productsCustom: (prev[segment]?.productsCustom || []).filter(v => v !== value),
       },
     }));
   }
 
   function toggleServiceSegment(segment: string) {
-    setSelectedServiceSegments((prev) => {
+    setSelectedServiceSegments(prev => {
       if (prev.includes(segment)) {
-        const newSegments = prev.filter((s) => s !== segment);
-        setServiceSegmentData((prevData) => {
+        const newSegments = prev.filter(s => s !== segment);
+        setServiceSegmentData(prevData => {
           const { [segment]: removed, ...rest } = prevData;
           return rest;
         });
         return newSegments;
       } else {
-        setServiceSegmentData((prevData) => ({
+        setServiceSegmentData(prevData => ({
           ...prevData,
           [segment]: {
             services: [],
@@ -1132,7 +1156,7 @@ export default function ThirdAccessScreen() {
     });
 
     if (errors.serviceSegments) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const { serviceSegments, ...rest } = prev;
         return rest;
       });
@@ -1140,10 +1164,10 @@ export default function ThirdAccessScreen() {
   }
 
   function toggleServiceSegmentService(segment: string, service: string) {
-    setServiceSegmentData((prev) => {
+    setServiceSegmentData(prev => {
       const currentServices = prev[segment]?.services || [];
       const newServices = currentServices.includes(service)
-        ? currentServices.filter((s) => s !== service)
+        ? currentServices.filter(s => s !== service)
         : [...currentServices, service];
 
       return {
@@ -1157,7 +1181,7 @@ export default function ThirdAccessScreen() {
   }
 
   function addServiceSegmentCustom(segment: string, value: string) {
-    setServiceSegmentData((prev) => ({
+    setServiceSegmentData(prev => ({
       ...prev,
       [segment]: {
         ...prev[segment],
@@ -1167,11 +1191,11 @@ export default function ThirdAccessScreen() {
   }
 
   function removeServiceSegmentCustom(segment: string, value: string) {
-    setServiceSegmentData((prev) => ({
+    setServiceSegmentData(prev => ({
       ...prev,
       [segment]: {
         ...prev[segment],
-        servicesCustom: (prev[segment]?.servicesCustom || []).filter((v) => v !== value),
+        servicesCustom: (prev[segment]?.servicesCustom || []).filter(v => v !== value),
       },
     }));
   }
@@ -1187,26 +1211,26 @@ export default function ThirdAccessScreen() {
       vaccines: [],
       supplementation: '',
     };
-    setHerdControl((prev) => [...prev, newAnimal]);
-    setActiveAnimalTabs((prev) => ({ ...prev, [newAnimal.id]: 'weight' }));
+    setHerdControl(prev => [...prev, newAnimal]);
+    setActiveAnimalTabs(prev => ({ ...prev, [newAnimal.id]: 'weight' }));
   }
 
   function removeAnimal(id: string) {
-    setHerdControl((prev) => prev.filter((animal) => animal.id !== id));
-    setActiveAnimalTabs((prev) => {
+    setHerdControl(prev => prev.filter(animal => animal.id !== id));
+    setActiveAnimalTabs(prev => {
       const { [id]: removed, ...rest } = prev;
       return rest;
     });
   }
 
   function updateAnimal(id: string, field: keyof HerdAnimal, value: string) {
-    setHerdControl((prev) =>
-      prev.map((animal) => (animal.id === id ? { ...animal, [field]: value } : animal))
+    setHerdControl(prev =>
+      prev.map(animal => (animal.id === id ? { ...animal, [field]: value } : animal))
     );
 
     const errorKey = `animal_${id}_${field}`;
     if (errors[errorKey]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const { [errorKey]: removed, ...rest } = prev;
         return rest;
       });
@@ -1220,42 +1244,40 @@ export default function ThirdAccessScreen() {
       date: '',
       seasonality: '',
     };
-    setHerdControl((prev) =>
-      prev.map((animal) =>
-        animal.id === animalId
-          ? { ...animal, vaccines: [...animal.vaccines, newVaccine] }
-          : animal
+    setHerdControl(prev =>
+      prev.map(animal =>
+        animal.id === animalId ? { ...animal, vaccines: [...animal.vaccines, newVaccine] } : animal
       )
     );
   }
 
   function removeVaccine(animalId: string, vaccineId: string) {
-    setHerdControl((prev) =>
-      prev.map((animal) =>
+    setHerdControl(prev =>
+      prev.map(animal =>
         animal.id === animalId
-          ? { ...animal, vaccines: animal.vaccines.filter((v) => v.id !== vaccineId) }
+          ? { ...animal, vaccines: animal.vaccines.filter(v => v.id !== vaccineId) }
           : animal
       )
     );
   }
 
   function updateVaccine(animalId: string, vaccineId: string, field: keyof Vaccine, value: string) {
-    setHerdControl((prev) =>
-      prev.map((animal) =>
+    setHerdControl(prev =>
+      prev.map(animal =>
         animal.id === animalId
           ? {
-            ...animal,
-            vaccines: animal.vaccines.map((vaccine) =>
-              vaccine.id === vaccineId ? { ...vaccine, [field]: value } : vaccine
-            ),
-          }
+              ...animal,
+              vaccines: animal.vaccines.map(vaccine =>
+                vaccine.id === vaccineId ? { ...vaccine, [field]: value } : vaccine
+              ),
+            }
           : animal
       )
     );
 
     const errorKey = `animal_${animalId}_vaccine_${vaccineId}_${field}`;
     if (errors[errorKey]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const { [errorKey]: removed, ...rest } = prev;
         return rest;
       });
@@ -1268,8 +1290,8 @@ export default function ThirdAccessScreen() {
       date: '',
       gain: '',
     };
-    setHerdControl((prev) =>
-      prev.map((animal) =>
+    setHerdControl(prev =>
+      prev.map(animal =>
         animal.id === animalId
           ? { ...animal, weightControls: [...animal.weightControls, newControl] }
           : animal
@@ -1278,32 +1300,37 @@ export default function ThirdAccessScreen() {
   }
 
   function removeWeightControl(animalId: string, controlId: string) {
-    setHerdControl((prev) =>
-      prev.map((animal) =>
+    setHerdControl(prev =>
+      prev.map(animal =>
         animal.id === animalId
-          ? { ...animal, weightControls: animal.weightControls.filter((c) => c.id !== controlId) }
+          ? { ...animal, weightControls: animal.weightControls.filter(c => c.id !== controlId) }
           : animal
       )
     );
   }
 
-  function updateWeightControl(animalId: string, controlId: string, field: keyof WeightControl, value: string) {
-    setHerdControl((prev) =>
-      prev.map((animal) =>
+  function updateWeightControl(
+    animalId: string,
+    controlId: string,
+    field: keyof WeightControl,
+    value: string
+  ) {
+    setHerdControl(prev =>
+      prev.map(animal =>
         animal.id === animalId
           ? {
-            ...animal,
-            weightControls: animal.weightControls.map((control) =>
-              control.id === controlId ? { ...control, [field]: value } : control
-            ),
-          }
+              ...animal,
+              weightControls: animal.weightControls.map(control =>
+                control.id === controlId ? { ...control, [field]: value } : control
+              ),
+            }
           : animal
       )
     );
 
     const errorKey = `animal_${animalId}_control_${controlId}_${field}`;
     if (errors[errorKey]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const { [errorKey]: removed, ...rest } = prev;
         return rest;
       });
@@ -1311,15 +1338,15 @@ export default function ThirdAccessScreen() {
   }
 
   function updateWeightExit(animalId: string, field: keyof WeightExit, value: string) {
-    setHerdControl((prev) =>
-      prev.map((animal) =>
+    setHerdControl(prev =>
+      prev.map(animal =>
         animal.id === animalId
           ? {
-            ...animal,
-            weightExit: animal.weightExit
-              ? { ...animal.weightExit, [field]: value }
-              : { date: '', finalWeight: '', [field]: value },
-          }
+              ...animal,
+              weightExit: animal.weightExit
+                ? { ...animal.weightExit, [field]: value }
+                : { date: '', finalWeight: '', [field]: value },
+            }
           : animal
       )
     );
@@ -1337,7 +1364,7 @@ export default function ThirdAccessScreen() {
   }
 
   function setAnimalTab(animalId: string, tab: 'weight' | 'vaccine') {
-    setActiveAnimalTabs((prev) => ({ ...prev, [animalId]: tab }));
+    setActiveAnimalTabs(prev => ({ ...prev, [animalId]: tab }));
   }
 
   function getProfileLabel(profile: ProfileType): string {
@@ -1355,12 +1382,12 @@ export default function ThirdAccessScreen() {
 
   function getSegmentLabel(segment: string): string {
     const allSegments = [...commerceSegmentOptions, ...industrySegmentOptions];
-    const found = allSegments.find((s) => s.value === segment);
+    const found = allSegments.find(s => s.value === segment);
     return found ? found.label : segment;
   }
 
   function getServiceSegmentLabel(segment: string): string {
-    const found = serviceSegmentOptions.find((s) => s.value === segment);
+    const found = serviceSegmentOptions.find(s => s.value === segment);
     return found ? found.label : segment;
   }
 
@@ -1370,10 +1397,7 @@ export default function ThirdAccessScreen() {
   const showHerdControl = producerType === 'pecuarista' || producerType === 'ambos';
 
   return (
-    <ImageBackground
-      source={require('../../assets/background.png')}
-      style={styles.backgroundImage}
-    >
+    <ImageBackground source={require('../../assets/background.png')} style={styles.backgroundImage}>
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -1396,16 +1420,14 @@ export default function ThirdAccessScreen() {
               <StepIndicator
                 currentStep={3}
                 totalSteps={3}
-                onStepPress={(step) => {
+                onStepPress={step => {
                   if (step === 2) {
                     router.back();
                   }
                 }}
               />
 
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Perfil Profissional
-              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Perfil Profissional</Text>
 
               {selectedProfiles.includes('producer') && (
                 <View>
@@ -1437,12 +1459,16 @@ export default function ThirdAccessScreen() {
                         required
                         options={activityOptions}
                         selectedValues={activities}
-                        onToggle={(value) => toggleMultiSelect(activities, setActivities, value)}
+                        onToggle={value => toggleMultiSelect(activities, setActivities, value)}
                         error={errors.activities}
                         allowCustom
                         customValues={activitiesCustom}
-                        onAddCustom={(value) => addCustomValue(setActivitiesCustom, activitiesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setActivitiesCustom, activitiesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setActivitiesCustom, activitiesCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setActivitiesCustom, activitiesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1450,12 +1476,16 @@ export default function ThirdAccessScreen() {
                         required
                         options={categoryOptions}
                         selectedValues={categories}
-                        onToggle={(value) => toggleMultiSelect(categories, setCategories, value)}
+                        onToggle={value => toggleMultiSelect(categories, setCategories, value)}
                         error={errors.categories}
                         allowCustom
                         customValues={categoriesCustom}
-                        onAddCustom={(value) => addCustomValue(setCategoriesCustom, categoriesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setCategoriesCustom, categoriesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setCategoriesCustom, categoriesCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setCategoriesCustom, categoriesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1463,12 +1493,16 @@ export default function ThirdAccessScreen() {
                         required
                         options={herdTypeOptions}
                         selectedValues={herdTypes}
-                        onToggle={(value) => toggleMultiSelect(herdTypes, setHerdTypes, value)}
+                        onToggle={value => toggleMultiSelect(herdTypes, setHerdTypes, value)}
                         error={errors.herdTypes}
                         allowCustom
                         customValues={herdTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setHerdTypesCustom, herdTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setHerdTypesCustom, herdTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setHerdTypesCustom, herdTypesCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setHerdTypesCustom, herdTypesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1476,12 +1510,16 @@ export default function ThirdAccessScreen() {
                         required
                         options={preferenceOptions}
                         selectedValues={preferences}
-                        onToggle={(value) => toggleMultiSelect(preferences, setPreferences, value)}
+                        onToggle={value => toggleMultiSelect(preferences, setPreferences, value)}
                         error={errors.preferences}
                         allowCustom
                         customValues={preferencesCustom}
-                        onAddCustom={(value) => addCustomValue(setPreferencesCustom, preferencesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setPreferencesCustom, preferencesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setPreferencesCustom, preferencesCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setPreferencesCustom, preferencesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1489,12 +1527,18 @@ export default function ThirdAccessScreen() {
                         required
                         options={commonDiseasesOptions}
                         selectedValues={commonDiseases}
-                        onToggle={(value) => toggleMultiSelect(commonDiseases, setCommonDiseases, value)}
+                        onToggle={value =>
+                          toggleMultiSelect(commonDiseases, setCommonDiseases, value)
+                        }
                         error={errors.commonDiseases}
                         allowCustom
                         customValues={commonDiseasesCustom}
-                        onAddCustom={(value) => addCustomValue(setCommonDiseasesCustom, commonDiseasesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setCommonDiseasesCustom, commonDiseasesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setCommonDiseasesCustom, commonDiseasesCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setCommonDiseasesCustom, commonDiseasesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1502,24 +1546,32 @@ export default function ThirdAccessScreen() {
                         required
                         options={livestockSuppliesOptions}
                         selectedValues={livestockSupplies}
-                        onToggle={(value) =>
+                        onToggle={value =>
                           toggleMultiSelect(livestockSupplies, setLivestockSupplies, value)
                         }
                         error={errors.livestockSupplies}
                         allowCustom
                         customValues={livestockSuppliesCustom}
-                        onAddCustom={(value) => addCustomValue(setLivestockSuppliesCustom, livestockSuppliesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setLivestockSuppliesCustom, livestockSuppliesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setLivestockSuppliesCustom, livestockSuppliesCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(
+                            setLivestockSuppliesCustom,
+                            livestockSuppliesCustom,
+                            value
+                          )
+                        }
                       />
 
                       <Input
                         label="Quantidade de animais na fazenda"
                         required
                         value={animalQuantity}
-                        onChangeText={(value) => {
+                        onChangeText={value => {
                           setAnimalQuantity(value);
                           if (errors.animalQuantity) {
-                            setErrors((prev) => {
+                            setErrors(prev => {
                               const { animalQuantity, ...rest } = prev;
                               return rest;
                             });
@@ -1534,10 +1586,10 @@ export default function ThirdAccessScreen() {
                         label="Data estipulada para vacinação"
                         required
                         value={vaccinationDate}
-                        onChangeText={(value) => {
+                        onChangeText={value => {
                           setVaccinationDate(value);
                           if (errors.vaccinationDate) {
-                            setErrors((prev) => {
+                            setErrors(prev => {
                               const { vaccinationDate, ...rest } = prev;
                               return rest;
                             });
@@ -1561,14 +1613,22 @@ export default function ThirdAccessScreen() {
                               activeOpacity={0.7}
                             >
                               <Ionicons name="add" size={20} color={colors.white} />
-                              <Text style={[styles.addButtonText, { color: colors.white }]}>Adicionar animal</Text>
+                              <Text style={[styles.addButtonText, { color: colors.white }]}>
+                                Adicionar animal
+                              </Text>
                             </TouchableOpacity>
                           </View>
 
                           {herdControl.map((animal, index) => (
                             <View
                               key={animal.id}
-                              style={[styles.animalCard, { backgroundColor: colors.surface, shadowColor: colors.shadowColor }]}
+                              style={[
+                                styles.animalCard,
+                                {
+                                  backgroundColor: colors.surface,
+                                  shadowColor: colors.shadowColor,
+                                },
+                              ]}
                             >
                               <View style={styles.animalCardHeader}>
                                 <Text style={[styles.animalCardTitle, { color: colors.text }]}>
@@ -1586,7 +1646,7 @@ export default function ThirdAccessScreen() {
                                 label="Código (Brinco)"
                                 required
                                 value={animal.tag}
-                                onChangeText={(value) => updateAnimal(animal.id, 'tag', value)}
+                                onChangeText={value => updateAnimal(animal.id, 'tag', value)}
                                 placeholder="Digite o código do brinco"
                                 error={errors[`animal_${animal.id}_tag`]}
                               />
@@ -1595,7 +1655,7 @@ export default function ThirdAccessScreen() {
                                 label="Suplementação (kg)"
                                 required
                                 value={animal.supplementation}
-                                onChangeText={(value) =>
+                                onChangeText={value =>
                                   updateAnimal(animal.id, 'supplementation', value)
                                 }
                                 placeholder="Digite o peso da suplementação"
@@ -1603,11 +1663,19 @@ export default function ThirdAccessScreen() {
                                 error={errors[`animal_${animal.id}_supplementation`]}
                               />
 
-                              <View style={[styles.tabContainer, { backgroundColor: colors.cardAlt }]}>
+                              <View
+                                style={[styles.tabContainer, { backgroundColor: colors.cardAlt }]}
+                              >
                                 <TouchableOpacity
                                   style={[
                                     styles.tab,
-                                    (activeAnimalTabs[animal.id] || 'weight') === 'weight' && [styles.tabActive, { backgroundColor: colors.white, shadowColor: colors.shadowColor }],
+                                    (activeAnimalTabs[animal.id] || 'weight') === 'weight' && [
+                                      styles.tabActive,
+                                      {
+                                        backgroundColor: colors.white,
+                                        shadowColor: colors.shadowColor,
+                                      },
+                                    ],
                                     { borderColor: colors.primary },
                                   ]}
                                   onPress={() => setAnimalTab(animal.id, 'weight')}
@@ -1616,16 +1684,22 @@ export default function ThirdAccessScreen() {
                                   <Ionicons
                                     name="fitness"
                                     size={18}
-                                    color={(activeAnimalTabs[animal.id] || 'weight') === 'weight' ? colors.primary : colors.textSecondary}
+                                    color={
+                                      (activeAnimalTabs[animal.id] || 'weight') === 'weight'
+                                        ? colors.primary
+                                        : colors.textSecondary
+                                    }
                                   />
                                   <Text
                                     style={[
                                       styles.tabText,
-                                      (activeAnimalTabs[animal.id] || 'weight') === 'weight' && styles.tabTextActive,
+                                      (activeAnimalTabs[animal.id] || 'weight') === 'weight' &&
+                                        styles.tabTextActive,
                                       {
-                                        color: (activeAnimalTabs[animal.id] || 'weight') === 'weight'
-                                          ? colors.primary
-                                          : colors.textSecondary,
+                                        color:
+                                          (activeAnimalTabs[animal.id] || 'weight') === 'weight'
+                                            ? colors.primary
+                                            : colors.textSecondary,
                                       },
                                     ]}
                                   >
@@ -1636,7 +1710,13 @@ export default function ThirdAccessScreen() {
                                 <TouchableOpacity
                                   style={[
                                     styles.tab,
-                                    (activeAnimalTabs[animal.id] || 'weight') === 'vaccine' && [styles.tabActive, { backgroundColor: colors.white, shadowColor: colors.shadowColor }],
+                                    (activeAnimalTabs[animal.id] || 'weight') === 'vaccine' && [
+                                      styles.tabActive,
+                                      {
+                                        backgroundColor: colors.white,
+                                        shadowColor: colors.shadowColor,
+                                      },
+                                    ],
                                     { borderColor: colors.primary },
                                   ]}
                                   onPress={() => setAnimalTab(animal.id, 'vaccine')}
@@ -1645,16 +1725,22 @@ export default function ThirdAccessScreen() {
                                   <Ionicons
                                     name="medical"
                                     size={18}
-                                    color={(activeAnimalTabs[animal.id] || 'weight') === 'vaccine' ? colors.primary : colors.textSecondary}
+                                    color={
+                                      (activeAnimalTabs[animal.id] || 'weight') === 'vaccine'
+                                        ? colors.primary
+                                        : colors.textSecondary
+                                    }
                                   />
                                   <Text
                                     style={[
                                       styles.tabText,
-                                      (activeAnimalTabs[animal.id] || 'weight') === 'vaccine' && styles.tabTextActive,
+                                      (activeAnimalTabs[animal.id] || 'weight') === 'vaccine' &&
+                                        styles.tabTextActive,
                                       {
-                                        color: (activeAnimalTabs[animal.id] || 'weight') === 'vaccine'
-                                          ? colors.primary
-                                          : colors.textSecondary,
+                                        color:
+                                          (activeAnimalTabs[animal.id] || 'weight') === 'vaccine'
+                                            ? colors.primary
+                                            : colors.textSecondary,
                                       },
                                     ]}
                                   >
@@ -1666,7 +1752,9 @@ export default function ThirdAccessScreen() {
                               {(activeAnimalTabs[animal.id] || 'weight') === 'weight' && (
                                 <View style={styles.weightControlMainSection}>
                                   <View style={styles.weightEntrySection}>
-                                    <Text style={[styles.weightSubsectionTitle, { color: colors.text }]}>
+                                    <Text
+                                      style={[styles.weightSubsectionTitle, { color: colors.text }]}
+                                    >
                                       Entrada
                                     </Text>
 
@@ -1674,7 +1762,9 @@ export default function ThirdAccessScreen() {
                                       label="Peso inicial (kg)"
                                       required
                                       value={animal.weight}
-                                      onChangeText={(value) => updateAnimal(animal.id, 'weight', value)}
+                                      onChangeText={value =>
+                                        updateAnimal(animal.id, 'weight', value)
+                                      }
                                       placeholder="Digite o peso inicial"
                                       keyboardType="numeric"
                                       error={errors[`animal_${animal.id}_weight`]}
@@ -1684,7 +1774,9 @@ export default function ThirdAccessScreen() {
                                       label="Data"
                                       required
                                       value={animal.weightDate}
-                                      onChangeText={(value) => updateAnimal(animal.id, 'weightDate', value)}
+                                      onChangeText={value =>
+                                        updateAnimal(animal.id, 'weightDate', value)
+                                      }
                                       placeholder="xx/xx/xxxx"
                                       mask="date"
                                       maxLength={10}
@@ -1694,33 +1786,62 @@ export default function ThirdAccessScreen() {
 
                                   <View style={styles.weightControlsSubsection}>
                                     <View style={styles.weightControlHeader}>
-                                      <Text style={[styles.weightSubsectionTitle, { color: colors.text }]}>
+                                      <Text
+                                        style={[
+                                          styles.weightSubsectionTitle,
+                                          { color: colors.text },
+                                        ]}
+                                      >
                                         Controles
                                       </Text>
                                       <TouchableOpacity
-                                        style={[styles.addWeightControlButton, { backgroundColor: colors.primary }]}
+                                        style={[
+                                          styles.addWeightControlButton,
+                                          { backgroundColor: colors.primary },
+                                        ]}
                                         onPress={() => addWeightControl(animal.id)}
                                         activeOpacity={0.7}
                                       >
                                         <Ionicons name="add" size={16} color={colors.white} />
-                                        <Text style={[styles.addWeightControlButtonText, { color: colors.white }]}>Adicionar</Text>
+                                        <Text
+                                          style={[
+                                            styles.addWeightControlButtonText,
+                                            { color: colors.white },
+                                          ]}
+                                        >
+                                          Adicionar
+                                        </Text>
                                       </TouchableOpacity>
                                     </View>
 
                                     {animal.weightControls.map((control, cIndex) => (
                                       <View
                                         key={control.id}
-                                        style={[styles.weightControlCard, { borderColor: colors.cardBorder }]}
+                                        style={[
+                                          styles.weightControlCard,
+                                          { borderColor: colors.cardBorder },
+                                        ]}
                                       >
                                         <View style={styles.weightControlCardHeader}>
-                                          <Text style={[styles.weightControlCardTitle, { color: colors.text }]}>
+                                          <Text
+                                            style={[
+                                              styles.weightControlCardTitle,
+                                              { color: colors.text },
+                                            ]}
+                                          >
                                             Controle {cIndex + 1}
                                           </Text>
                                           <TouchableOpacity
-                                            onPress={() => removeWeightControl(animal.id, control.id)}
+                                            onPress={() =>
+                                              removeWeightControl(animal.id, control.id)
+                                            }
                                             activeOpacity={0.7}
                                           >
-                                            <Ionicons name="close-circle" size={20} color={colors.error} />
+                                            <Ionicons
+                                              name="close-circle"
+                                              size={20}
+                                              color={colors.error}
+                                            />
                                           </TouchableOpacity>
                                         </View>
 
@@ -1728,45 +1849,69 @@ export default function ThirdAccessScreen() {
                                           label="Data"
                                           required
                                           value={control.date}
-                                          onChangeText={(value) =>
-                                            updateWeightControl(animal.id, control.id, 'date', value)
+                                          onChangeText={value =>
+                                            updateWeightControl(
+                                              animal.id,
+                                              control.id,
+                                              'date',
+                                              value
+                                            )
                                           }
                                           placeholder="xx/xx/xxxx"
                                           mask="date"
                                           maxLength={10}
-                                          error={errors[`animal_${animal.id}_control_${control.id}_date`]}
+                                          error={
+                                            errors[`animal_${animal.id}_control_${control.id}_date`]
+                                          }
                                         />
 
                                         <Input
                                           label="Ganho de peso (kg)"
                                           required
                                           value={control.gain}
-                                          onChangeText={(value) =>
-                                            updateWeightControl(animal.id, control.id, 'gain', value)
+                                          onChangeText={value =>
+                                            updateWeightControl(
+                                              animal.id,
+                                              control.id,
+                                              'gain',
+                                              value
+                                            )
                                           }
                                           placeholder="Digite o ganho"
                                           keyboardType="numeric"
-                                          error={errors[`animal_${animal.id}_control_${control.id}_gain`]}
+                                          error={
+                                            errors[`animal_${animal.id}_control_${control.id}_gain`]
+                                          }
                                         />
                                       </View>
                                     ))}
 
                                     {animal.weightControls.length === 0 && (
-                                      <Text style={[styles.emptyWeightControlText, { color: colors.textSecondary }]}>
-                                        Nenhum controle cadastrado. Clique em "Adicionar" para incluir.
+                                      <Text
+                                        style={[
+                                          styles.emptyWeightControlText,
+                                          { color: colors.textSecondary },
+                                        ]}
+                                      >
+                                        Nenhum controle cadastrado. Clique em "Adicionar" para
+                                        incluir.
                                       </Text>
                                     )}
                                   </View>
 
                                   <View style={styles.weightExitSection}>
-                                    <Text style={[styles.weightSubsectionTitle, { color: colors.text }]}>
+                                    <Text
+                                      style={[styles.weightSubsectionTitle, { color: colors.text }]}
+                                    >
                                       Saída
                                     </Text>
 
                                     <Input
                                       label="Data de saída"
                                       value={animal.weightExit?.date || ''}
-                                      onChangeText={(value) => updateWeightExit(animal.id, 'date', value)}
+                                      onChangeText={value =>
+                                        updateWeightExit(animal.id, 'date', value)
+                                      }
                                       placeholder="xx/xx/xxxx"
                                       mask="date"
                                       maxLength={10}
@@ -1775,17 +1920,31 @@ export default function ThirdAccessScreen() {
                                     <Input
                                       label="Peso final (kg)"
                                       value={animal.weightExit?.finalWeight || ''}
-                                      onChangeText={(value) => updateWeightExit(animal.id, 'finalWeight', value)}
+                                      onChangeText={value =>
+                                        updateWeightExit(animal.id, 'finalWeight', value)
+                                      }
                                       placeholder="Digite o peso final"
                                       keyboardType="numeric"
                                     />
 
                                     {animal.weightExit?.finalWeight && animal.weight && (
-                                      <View style={[styles.totalGainContainer, { backgroundColor: colors.successLight, borderLeftColor: colors.success }]}>
-                                        <Text style={[styles.totalGainLabel, { color: colors.primary }]}>
+                                      <View
+                                        style={[
+                                          styles.totalGainContainer,
+                                          {
+                                            backgroundColor: colors.successLight,
+                                            borderLeftColor: colors.success,
+                                          },
+                                        ]}
+                                      >
+                                        <Text
+                                          style={[styles.totalGainLabel, { color: colors.primary }]}
+                                        >
                                           Ganho total:
                                         </Text>
-                                        <Text style={[styles.totalGainValue, { color: colors.primary }]}>
+                                        <Text
+                                          style={[styles.totalGainValue, { color: colors.primary }]}
+                                        >
                                           {calculateTotalGain(animal)} kg
                                         </Text>
                                       </View>
@@ -1798,29 +1957,48 @@ export default function ThirdAccessScreen() {
                                 <View style={styles.vaccineSection}>
                                   <View style={styles.vaccineSectionHeaderSingle}>
                                     <TouchableOpacity
-                                      style={[styles.addVaccineButton, { backgroundColor: colors.primary }]}
+                                      style={[
+                                        styles.addVaccineButton,
+                                        { backgroundColor: colors.primary },
+                                      ]}
                                       onPress={() => addVaccine(animal.id)}
                                       activeOpacity={0.7}
                                     >
                                       <Ionicons name="add" size={16} color={colors.white} />
-                                      <Text style={[styles.addVaccineButtonText, { color: colors.white }]}>Adicionar Vacina</Text>
+                                      <Text
+                                        style={[
+                                          styles.addVaccineButtonText,
+                                          { color: colors.white },
+                                        ]}
+                                      >
+                                        Adicionar Vacina
+                                      </Text>
                                     </TouchableOpacity>
                                   </View>
 
                                   {animal.vaccines.map((vaccine, vIndex) => (
                                     <View
                                       key={vaccine.id}
-                                      style={[styles.vaccineCard, { borderColor: colors.cardBorder }]}
+                                      style={[
+                                        styles.vaccineCard,
+                                        { borderColor: colors.cardBorder },
+                                      ]}
                                     >
                                       <View style={styles.vaccineCardHeader}>
-                                        <Text style={[styles.vaccineCardTitle, { color: colors.text }]}>
+                                        <Text
+                                          style={[styles.vaccineCardTitle, { color: colors.text }]}
+                                        >
                                           Vacina {vIndex + 1}
                                         </Text>
                                         <TouchableOpacity
                                           onPress={() => removeVaccine(animal.id, vaccine.id)}
                                           activeOpacity={0.7}
                                         >
-                                          <Ionicons name="close-circle" size={20} color={colors.error} />
+                                          <Ionicons
+                                            name="close-circle"
+                                            size={20}
+                                            color={colors.error}
+                                          />
                                         </TouchableOpacity>
                                       </View>
 
@@ -1828,41 +2006,54 @@ export default function ThirdAccessScreen() {
                                         label="Tipo da vacina"
                                         required
                                         value={vaccine.type}
-                                        onChangeText={(value) =>
+                                        onChangeText={value =>
                                           updateVaccine(animal.id, vaccine.id, 'type', value)
                                         }
                                         placeholder="Digite o tipo da vacina"
-                                        error={errors[`animal_${animal.id}_vaccine_${vaccine.id}_type`]}
+                                        error={
+                                          errors[`animal_${animal.id}_vaccine_${vaccine.id}_type`]
+                                        }
                                       />
 
                                       <Input
                                         label="Data da vacina"
                                         required
                                         value={vaccine.date}
-                                        onChangeText={(value) =>
+                                        onChangeText={value =>
                                           updateVaccine(animal.id, vaccine.id, 'date', value)
                                         }
                                         placeholder="xx/xx/xxxx"
                                         mask="date"
                                         maxLength={10}
-                                        error={errors[`animal_${animal.id}_vaccine_${vaccine.id}_date`]}
+                                        error={
+                                          errors[`animal_${animal.id}_vaccine_${vaccine.id}_date`]
+                                        }
                                       />
 
                                       <Input
                                         label="Sazonalidade (prazo)"
                                         required
                                         value={vaccine.seasonality}
-                                        onChangeText={(value) =>
+                                        onChangeText={value =>
                                           updateVaccine(animal.id, vaccine.id, 'seasonality', value)
                                         }
                                         placeholder="Ex: Anual, 6 meses, etc."
-                                        error={errors[`animal_${animal.id}_vaccine_${vaccine.id}_seasonality`]}
+                                        error={
+                                          errors[
+                                            `animal_${animal.id}_vaccine_${vaccine.id}_seasonality`
+                                          ]
+                                        }
                                       />
                                     </View>
                                   ))}
 
                                   {animal.vaccines.length === 0 && (
-                                    <Text style={[styles.emptyVaccineText, { color: colors.textSecondary }]}>
+                                    <Text
+                                      style={[
+                                        styles.emptyVaccineText,
+                                        { color: colors.textSecondary },
+                                      ]}
+                                    >
                                       Nenhuma vacina cadastrada. Clique em "Adicionar" para incluir.
                                     </Text>
                                   )}
@@ -1893,12 +2084,28 @@ export default function ThirdAccessScreen() {
                         required
                         options={agricultureTypeOptions}
                         selectedValues={agricultureTypes}
-                        onToggle={(value) => toggleMultiSelect(agricultureTypes, setAgricultureTypes, value)}
+                        onToggle={value =>
+                          toggleMultiSelect(agricultureTypes, setAgricultureTypes, value)
+                        }
                         error={errors.agricultureTypes}
                         allowCustom
                         customValues={agricultureTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setAgricultureTypesCustom, agricultureTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setAgricultureTypesCustom, agricultureTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(
+                            setAgricultureTypesCustom,
+                            agricultureTypesCustom,
+                            value,
+                            setAgricultureTypes,
+                            agricultureTypes
+                          )
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(
+                            setAgricultureTypesCustom,
+                            agricultureTypesCustom,
+                            value
+                          )
+                        }
                       />
 
                       <MultiSelect
@@ -1906,12 +2113,22 @@ export default function ThirdAccessScreen() {
                         required
                         options={cropOptions}
                         selectedValues={cropTypes}
-                        onToggle={(value) => toggleMultiSelect(cropTypes, setCropTypes, value)}
+                        onToggle={value => toggleMultiSelect(cropTypes, setCropTypes, value)}
                         error={errors.cropTypes}
                         allowCustom
                         customValues={cropTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setCropTypesCustom, cropTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setCropTypesCustom, cropTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(
+                            setCropTypesCustom,
+                            cropTypesCustom,
+                            value,
+                            setCropTypes,
+                            cropTypes
+                          )
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setCropTypesCustom, cropTypesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1919,12 +2136,22 @@ export default function ThirdAccessScreen() {
                         required
                         options={seedTypeOptions}
                         selectedValues={seedTypes}
-                        onToggle={(value) => toggleMultiSelect(seedTypes, setSeedTypes, value)}
+                        onToggle={value => toggleMultiSelect(seedTypes, setSeedTypes, value)}
                         error={errors.seedTypes}
                         allowCustom
                         customValues={seedTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setSeedTypesCustom, seedTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setSeedTypesCustom, seedTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(
+                            setSeedTypesCustom,
+                            seedTypesCustom,
+                            value,
+                            setSeedTypes,
+                            seedTypes
+                          )
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setSeedTypesCustom, seedTypesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1932,12 +2159,24 @@ export default function ThirdAccessScreen() {
                         required
                         options={fertilizerTypeOptions}
                         selectedValues={fertilizerTypes}
-                        onToggle={(value) => toggleMultiSelect(fertilizerTypes, setFertilizerTypes, value)}
+                        onToggle={value =>
+                          toggleMultiSelect(fertilizerTypes, setFertilizerTypes, value)
+                        }
                         error={errors.fertilizerTypes}
                         allowCustom
                         customValues={fertilizerTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setFertilizerTypesCustom, fertilizerTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setFertilizerTypesCustom, fertilizerTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(
+                            setFertilizerTypesCustom,
+                            fertilizerTypesCustom,
+                            value,
+                            setFertilizerTypes,
+                            fertilizerTypes
+                          )
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setFertilizerTypesCustom, fertilizerTypesCustom, value)
+                        }
                       />
 
                       {fertilizerTypes.includes('organico') && (
@@ -1946,12 +2185,32 @@ export default function ThirdAccessScreen() {
                           required
                           options={organicFertilizerOptions}
                           selectedValues={organicFertilizerTypes}
-                          onToggle={(value) => toggleMultiSelect(organicFertilizerTypes, setOrganicFertilizerTypes, value)}
+                          onToggle={value =>
+                            toggleMultiSelect(
+                              organicFertilizerTypes,
+                              setOrganicFertilizerTypes,
+                              value
+                            )
+                          }
                           error={errors.organicFertilizerTypes}
                           allowCustom
                           customValues={organicFertilizerTypesCustom}
-                          onAddCustom={(value) => addCustomValue(setOrganicFertilizerTypesCustom, organicFertilizerTypesCustom, value)}
-                          onRemoveCustom={(value) => removeCustomValue(setOrganicFertilizerTypesCustom, organicFertilizerTypesCustom, value)}
+                          onAddCustom={value =>
+                            addCustomValue(
+                              setOrganicFertilizerTypesCustom,
+                              organicFertilizerTypesCustom,
+                              value,
+                              setOrganicFertilizerTypes,
+                              organicFertilizerTypes
+                            )
+                          }
+                          onRemoveCustom={value =>
+                            removeCustomValue(
+                              setOrganicFertilizerTypesCustom,
+                              organicFertilizerTypesCustom,
+                              value
+                            )
+                          }
                         />
                       )}
 
@@ -1960,12 +2219,24 @@ export default function ThirdAccessScreen() {
                         required
                         options={defensiveTypeOptions}
                         selectedValues={defensiveTypes}
-                        onToggle={(value) => toggleMultiSelect(defensiveTypes, setDefensiveTypes, value)}
+                        onToggle={value =>
+                          toggleMultiSelect(defensiveTypes, setDefensiveTypes, value)
+                        }
                         error={errors.defensiveTypes}
                         allowCustom
                         customValues={defensiveTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setDefensiveTypesCustom, defensiveTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setDefensiveTypesCustom, defensiveTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(
+                            setDefensiveTypesCustom,
+                            defensiveTypesCustom,
+                            value,
+                            setDefensiveTypes,
+                            defensiveTypes
+                          )
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setDefensiveTypesCustom, defensiveTypesCustom, value)
+                        }
                       />
 
                       <MultiSelect
@@ -1973,12 +2244,24 @@ export default function ThirdAccessScreen() {
                         required
                         options={limestoneTypeOptions}
                         selectedValues={limestoneTypes}
-                        onToggle={(value) => toggleMultiSelect(limestoneTypes, setLimestoneTypes, value)}
+                        onToggle={value =>
+                          toggleMultiSelect(limestoneTypes, setLimestoneTypes, value)
+                        }
                         error={errors.limestoneTypes}
                         allowCustom
                         customValues={limestoneTypesCustom}
-                        onAddCustom={(value) => addCustomValue(setLimestoneTypesCustom, limestoneTypesCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setLimestoneTypesCustom, limestoneTypesCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(
+                            setLimestoneTypesCustom,
+                            limestoneTypesCustom,
+                            value,
+                            setLimestoneTypes,
+                            limestoneTypes
+                          )
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setLimestoneTypesCustom, limestoneTypesCustom, value)
+                        }
                       />
                     </>
                   )}
@@ -2014,12 +2297,16 @@ export default function ThirdAccessScreen() {
                         error={errors.segments}
                         allowCustom
                         customValues={segmentsCustom}
-                        onAddCustom={(value) => addCustomValue(setSegmentsCustom, segmentsCustom, value)}
-                        onRemoveCustom={(value) => removeCustomValue(setSegmentsCustom, segmentsCustom, value)}
+                        onAddCustom={value =>
+                          addCustomValue(setSegmentsCustom, segmentsCustom, value)
+                        }
+                        onRemoveCustom={value =>
+                          removeCustomValue(setSegmentsCustom, segmentsCustom, value)
+                        }
                         itemsPerRow={supplierType === 'comercio' ? 2 : 3}
                       />
 
-                      {selectedSegments.map((segment) => (
+                      {selectedSegments.map(segment => (
                         <View key={segment} style={styles.segmentDataContainer}>
                           <Text style={[styles.segmentDataTitle, { color: colors.text }]}>
                             {getSegmentLabel(segment)}
@@ -2029,11 +2316,11 @@ export default function ThirdAccessScreen() {
                             label="Produtos/Serviços"
                             options={segmentProductOptions[segment] || []}
                             selectedValues={segmentData[segment]?.products || []}
-                            onToggle={(value) => toggleSegmentProduct(segment, value)}
+                            onToggle={value => toggleSegmentProduct(segment, value)}
                             allowCustom
                             customValues={segmentData[segment]?.productsCustom || []}
-                            onAddCustom={(value) => addSegmentCustom(segment, value)}
-                            onRemoveCustom={(value) => removeSegmentCustom(segment, value)}
+                            onAddCustom={value => addSegmentCustom(segment, value)}
+                            onRemoveCustom={value => removeSegmentCustom(segment, value)}
                           />
                         </View>
                       ))}
@@ -2059,12 +2346,16 @@ export default function ThirdAccessScreen() {
                     error={errors.serviceSegments}
                     allowCustom
                     customValues={serviceSegmentsCustom}
-                    onAddCustom={(value) => addCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)}
-                    onRemoveCustom={(value) => removeCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)}
+                    onAddCustom={value =>
+                      addCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)
+                    }
+                    onRemoveCustom={value =>
+                      removeCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)
+                    }
                     itemsPerRow={2}
                   />
 
-                  {selectedServiceSegments.map((segment) => (
+                  {selectedServiceSegments.map(segment => (
                     <View key={segment} style={styles.segmentDataContainer}>
                       <Text style={[styles.segmentDataTitle, { color: colors.text }]}>
                         {getServiceSegmentLabel(segment)}
@@ -2074,11 +2365,11 @@ export default function ThirdAccessScreen() {
                         label="Serviços Oferecidos"
                         options={serviceSegmentServiceOptions[segment] || []}
                         selectedValues={serviceSegmentData[segment]?.services || []}
-                        onToggle={(value) => toggleServiceSegmentService(segment, value)}
+                        onToggle={value => toggleServiceSegmentService(segment, value)}
                         allowCustom
                         customValues={serviceSegmentData[segment]?.servicesCustom || []}
-                        onAddCustom={(value) => addServiceSegmentCustom(segment, value)}
-                        onRemoveCustom={(value) => removeServiceSegmentCustom(segment, value)}
+                        onAddCustom={value => addServiceSegmentCustom(segment, value)}
+                        onRemoveCustom={value => removeServiceSegmentCustom(segment, value)}
                       />
                     </View>
                   ))}
@@ -2086,7 +2377,10 @@ export default function ThirdAccessScreen() {
               )}
 
               <TouchableOpacity
-                style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
+                style={[
+                  styles.continueButton,
+                  { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor },
+                ]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
               >
@@ -2096,9 +2390,7 @@ export default function ThirdAccessScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleLoginRedirect} activeOpacity={0.7}>
-                <Text style={[styles.loginLink, { color: colors.text }]}>
-                  Possuo cadastro
-                </Text>
+                <Text style={[styles.loginLink, { color: colors.text }]}>Possuo cadastro</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
