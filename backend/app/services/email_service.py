@@ -32,6 +32,10 @@ class EmailService:
         """Gera um token único para verificação de email"""
         return str(uuid.uuid4())
 
+    def get_verification_url(self, token: str) -> str:
+        """Retorna a URL de verificação para um token"""
+        return f"{settings.frontend_url}/verify-email?token={token}"
+
     async def send_verification_email(
         self, email: str, token: str, user_name: str = ""
     ) -> bool:

@@ -1,6 +1,6 @@
 """Serviços responsáveis por autenticação e cadastro de usuários"""
 
-from typing import Optional, Tuple
+from datetime import datetime, timedelta
 
 from email_validator import EmailNotValidError, validate_email
 from fastapi import HTTPException, status
@@ -10,32 +10,30 @@ from sqlalchemy.orm import Session
 from app.core.security import (
     create_access_token,
     create_refresh_token,
+    decode_refresh_token,
     get_password_hash,
     verify_password,
-    decode_refresh_token,
 )
-from datetime import datetime, timedelta
-
 from app.models import (
-    User,
-    UserRole,
+    BuyerProfile,
     Company,
     CompanyActivity,
-    ServiceProvider,
-    BuyerProfile,
     EmailVerificationToken,
+    ServiceProvider,
+    User,
+    UserRole,
 )
 from app.repositories.activity_repository import ActivityRepository
-from app.repositories.company_repository import CompanyRepository
-from app.repositories.user_repository import UserRepository
-from app.repositories.service_provider_repository import ServiceProviderRepository
 from app.repositories.buyer_profile_repository import BuyerProfileRepository
+from app.repositories.company_repository import CompanyRepository
 from app.repositories.email_verification_repository import EmailVerificationRepository
-from app.schemas import RegisterRequest, LoginRequest
+from app.repositories.service_provider_repository import ServiceProviderRepository
+from app.repositories.user_repository import UserRepository
+from app.schemas import LoginRequest, RegisterRequest
 from app.schemas.auth import CheckAvailabilityRequest, CheckAvailabilityResponse
-from app.services.nickname_blacklist import BLACKLISTED_NICKNAMES
-from app.services.email_service import EmailService
 from app.services.document_validation_service import DocumentValidationService
+from app.services.email_service import EmailService
+from app.services.nickname_blacklist import BLACKLISTED_NICKNAMES
 
 
 class AuthService:
@@ -64,7 +62,7 @@ class AuthService:
                 detail="Apelido inválido, escolha outro",
             )
 
-    def _build_company(self, user_id: int, company_data) -> Tuple[Company, list[CompanyActivity]]:
+    def _build_company(self, user_id: int, company_data) -> tuple[Company, list[CompanyActivity]]:
         categories = {c.id for c in self.activity_repo.list_categories()}
         for selection in company_data.activities:
             if selection.category_id not in categories:
@@ -159,117 +157,123 @@ class AuthService:
     def _validate_document_duplicates(self, payload: RegisterRequest) -> None:
         """Valida se CPF/CNPJ já está cadastrado"""
         role = UserRole(payload.role)
-        
+
         if role == UserRole.BUYER and payload.buyer_profile and payload.buyer_profile.cpf:
             existing_buyer = self.buyer_profile_repo.get_by_cpf(payload.buyer_profile.cpf)
             if existing_buyer:
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="CPF já cadastrado"
+                    status_code=status.HTTP_409_CONFLICT, detail="CPF já cadastrado"
                 )
-        
+
         elif role == UserRole.SELLER and payload.company:
             existing_company = self.company_repo.get_by_cnpj_cpf(payload.company.cnpj_cpf)
             if existing_company:
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="CNPJ/CPF já cadastrado"
+                    status_code=status.HTTP_409_CONFLICT, detail="CNPJ/CPF já cadastrado"
                 )
-        
-        elif role == UserRole.SERVICE_PROVIDER and payload.service_provider and payload.service_provider.cnpj_cpf:
-            existing_provider = self.service_provider_repo.get_by_cnpj_cpf(payload.service_provider.cnpj_cpf)
+
+        elif (
+            role == UserRole.SERVICE_PROVIDER
+            and payload.service_provider
+            and payload.service_provider.cnpj_cpf
+        ):
+            existing_provider = self.service_provider_repo.get_by_cnpj_cpf(
+                payload.service_provider.cnpj_cpf
+            )
             if existing_provider:
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="CNPJ/CPF já cadastrado"
+                    status_code=status.HTTP_409_CONFLICT, detail="CNPJ/CPF já cadastrado"
                 )
 
     async def _validate_document_external(self, payload: RegisterRequest) -> None:
         """
         Valida documentos na Receita Federal (BrasilAPI)
-        
+
         - CPF: Apenas validação matemática (não há API pública gratuita)
         - CNPJ: Validação matemática + consulta na BrasilAPI
         """
         role = UserRole(payload.role)
-        
+
         # Valida CPF (comprador) - apenas matemática
         if role == UserRole.BUYER and payload.buyer_profile and payload.buyer_profile.cpf:
             is_valid, error_msg = self.document_validator.validate_cpf(payload.buyer_profile.cpf)
             if not is_valid:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=error_msg
-                )
-        
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
         # Valida CNPJ/CPF (vendedor) - matemática + BrasilAPI (apenas se for CNPJ)
         elif role == UserRole.SELLER and payload.company and payload.company.cnpj_cpf:
             import re
-            clean_doc = re.sub(r'[^0-9]', '', payload.company.cnpj_cpf)
-            
+
+            clean_doc = re.sub(r"[^0-9]", "", payload.company.cnpj_cpf)
+
             # Se for CNPJ (14 dígitos), valida formato e consulta BrasilAPI
             if len(clean_doc) == 14:
                 # Valida formato e dígitos verificadores
-                is_valid, error_msg = self.document_validator.validate_cnpj(payload.company.cnpj_cpf)
+                is_valid, error_msg = self.document_validator.validate_cnpj(
+                    payload.company.cnpj_cpf
+                )
                 if not is_valid:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_msg
-                    )
-                
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
                 # Depois valida na Receita Federal via BrasilAPI
-                is_valid_external, error_msg_external = await self.document_validator.validate_with_receita_federal(
+                (
+                    is_valid_external,
+                    error_msg_external,
+                ) = await self.document_validator.validate_with_receita_federal(
                     payload.company.cnpj_cpf, "cnpj"
                 )
                 if is_valid_external is False:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_msg_external or "CNPJ inválido na Receita Federal"
+                        detail=error_msg_external or "CNPJ inválido na Receita Federal",
                     )
-            
+
             # Se for CPF (11 dígitos), apenas validação matemática
             elif len(clean_doc) == 11:
                 is_valid, error_msg = self.document_validator.validate_cpf(payload.company.cnpj_cpf)
                 if not is_valid:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_msg
-                    )
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
             # Se não for nem CPF nem CNPJ, o validator do schema já vai pegar
-        
+
         # Valida CNPJ/CPF (prestador) - matemática + BrasilAPI (se for CNPJ)
-        elif role == UserRole.SERVICE_PROVIDER and payload.service_provider and payload.service_provider.cnpj_cpf:
+        elif (
+            role == UserRole.SERVICE_PROVIDER
+            and payload.service_provider
+            and payload.service_provider.cnpj_cpf
+        ):
             import re
-            clean_doc = re.sub(r'[^0-9]', '', payload.service_provider.cnpj_cpf)
-            
+
+            clean_doc = re.sub(r"[^0-9]", "", payload.service_provider.cnpj_cpf)
+
             # Se for CNPJ (14 dígitos), valida formato e consulta BrasilAPI
             if len(clean_doc) == 14:
                 # Valida formato e dígitos verificadores
-                is_valid, error_msg = self.document_validator.validate_cnpj(payload.service_provider.cnpj_cpf)
+                is_valid, error_msg = self.document_validator.validate_cnpj(
+                    payload.service_provider.cnpj_cpf
+                )
                 if not is_valid:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_msg
-                    )
-                
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
                 # Valida na Receita Federal via BrasilAPI
-                is_valid_external, error_msg_external = await self.document_validator.validate_with_receita_federal(
+                (
+                    is_valid_external,
+                    error_msg_external,
+                ) = await self.document_validator.validate_with_receita_federal(
                     payload.service_provider.cnpj_cpf, "cnpj"
                 )
                 if is_valid_external is False:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_msg_external or "CNPJ inválido na Receita Federal"
+                        detail=error_msg_external or "CNPJ inválido na Receita Federal",
                     )
-            
+
             # Se for CPF (11 dígitos), apenas validação matemática
             elif len(clean_doc) == 11:
-                is_valid, error_msg = self.document_validator.validate_cpf(payload.service_provider.cnpj_cpf)
+                is_valid, error_msg = self.document_validator.validate_cpf(
+                    payload.service_provider.cnpj_cpf
+                )
                 if not is_valid:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_msg
-                    )
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
     async def _create_and_send_verification_email(self, user: User) -> None:
         """Cria token de verificação e envia email"""
@@ -277,31 +281,43 @@ class AuthService:
         existing_token = self.email_verification_repo.get_by_user_id(user.id)
         if existing_token:
             self.email_verification_repo.delete(existing_token)
-        
+
         # Gera novo token
         token = self.email_service.generate_verification_token()
         expires_at = datetime.utcnow() + timedelta(hours=48)  # Token expira em 48 horas
-        
+
         verification_token = EmailVerificationToken(
-            user_id=user.id,
-            token=token,
-            expires_at=expires_at
+            user_id=user.id, token=token, expires_at=expires_at
         )
-        
+
         self.email_verification_repo.create(verification_token)
-        
+
         # Envia email de verificação
         user_name = user.nickname or user.email.split("@")[0]
         try:
             await self.email_service.send_verification_email(user.email, token, user_name)
-        except HTTPException:
+        except HTTPException as e:
             # Se falhar ao enviar email, não bloqueia o cadastro
             # O usuário pode solicitar reenvio depois
+            # Em desenvolvimento, mostra o token no log
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("=" * 60)
+            logger.warning("⚠️  EMAIL NÃO ENVIADO (Resend não configurado)")
+            logger.warning("=" * 60)
+            logger.warning(f"Email: {user.email}")
+            logger.warning(f"Token de verificação: {token}")
+            logger.warning(f"URL de verificação: {self.email_service.get_verification_url(token)}")
+            logger.warning("=" * 60)
+            logger.warning("Para desenvolvimento, use este token para verificar o email manualmente")
+            logger.warning("ou configure RESEND_API_KEY no .env")
+            logger.warning("=" * 60)
             pass
 
     def check_availability(self, payload: CheckAvailabilityRequest) -> CheckAvailabilityResponse:
         import re
-        from app.utils.validators import format_cpf, format_cnpj
+
+        from app.utils.validators import format_cnpj, format_cpf
 
         response = CheckAvailabilityResponse()
 
@@ -310,41 +326,39 @@ class AuthService:
             response.email_available = existing is None
 
         if payload.cpf:
-            cpf_clean = re.sub(r'[^0-9]', '', payload.cpf)
+            cpf_clean = re.sub(r"[^0-9]", "", payload.cpf)
             if len(cpf_clean) == 11:
                 cpf_formatted = format_cpf(payload.cpf)
                 existing_buyer = self.buyer_profile_repo.get_by_cpf(cpf_formatted)
                 existing_company = self.company_repo.get_by_cnpj_cpf(cpf_formatted)
                 existing_provider = self.service_provider_repo.get_by_cnpj_cpf(cpf_formatted)
                 response.cpf_available = (
-                    existing_buyer is None and
-                    existing_company is None and
-                    existing_provider is None
+                    existing_buyer is None
+                    and existing_company is None
+                    and existing_provider is None
                 )
 
         if payload.cnpj:
-            cnpj_clean = re.sub(r'[^0-9]', '', payload.cnpj)
+            cnpj_clean = re.sub(r"[^0-9]", "", payload.cnpj)
             if len(cnpj_clean) == 14:
                 cnpj_formatted = format_cnpj(payload.cnpj)
                 existing_company = self.company_repo.get_by_cnpj_cpf(cnpj_formatted)
                 existing_provider = self.service_provider_repo.get_by_cnpj_cpf(cnpj_formatted)
-                response.cnpj_available = (
-                    existing_company is None and
-                    existing_provider is None
-                )
+                response.cnpj_available = existing_company is None and existing_provider is None
 
         return response
 
     async def register(self, payload: RegisterRequest) -> User:
         import logging
+
         logger = logging.getLogger(__name__)
-        
+
         logger.info("=" * 60)
         logger.info("INICIANDO CADASTRO DE USUÁRIO")
         logger.info(f"Email: {payload.email}")
         logger.info(f"Role: {payload.role}")
         logger.info("=" * 60)
-        
+
         self._validate_email(payload.email)
         logger.info("✅ Email validado")
 
@@ -358,7 +372,7 @@ class AuthService:
         logger.info("🔵 Validando documentos duplicados...")
         self._validate_document_duplicates(payload)
         logger.info("✅ Documentos não duplicados")
-        
+
         # Valida documentos na Receita Federal (BrasilAPI para CNPJ)
         logger.info("🔵 Validando documentos na Receita Federal...")
         await self._validate_document_external(payload)
@@ -379,7 +393,7 @@ class AuthService:
             password_hash=get_password_hash(payload.password),
             role=role,
             nickname=nickname,
-            email_verificado=True,  # Temporariamente verificado automaticamente
+            email_verificado=False,  # Email precisa ser verificado
         )
 
         try:
@@ -434,7 +448,8 @@ class AuthService:
                 logger.error(f"❌ Erro ao salvar comprador: {exc}")
                 self.db.rollback()
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao salvar perfil do comprador"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Erro ao salvar perfil do comprador",
                 ) from exc
         else:
             logger.info("🔵 Fazendo commit do usuário...")
@@ -442,23 +457,35 @@ class AuthService:
             self.db.refresh(user)
             logger.info("✅ Commit realizado")
 
-        # TODO: Reativar verificação de email no futuro
-        # Por enquanto, criamos o usuário com email já verificado
-        # await self._create_and_send_verification_email(user)
+        # Envia email de verificação
+        try:
+            await self._create_and_send_verification_email(user)
+            logger.info("✅ Email de verificação enviado")
+        except Exception as exc:
+            logger.error(f"❌ Erro ao enviar email de verificação: {exc}")
+            # Não bloqueia o cadastro se falhar ao enviar email
+            # O usuário pode solicitar reenvio depois
 
         logger.info("=" * 60)
         logger.info("✅ CADASTRO CONCLUÍDO COM SUCESSO")
         logger.info(f"User ID: {user.id}")
         logger.info(f"Email: {user.email}")
         logger.info("=" * 60)
-        
+
         return user
 
-    def authenticate(self, payload: LoginRequest) -> Tuple[str, str, User]:
+    def authenticate(self, payload: LoginRequest) -> tuple[str, str, User]:
         user = self.user_repo.get_by_email(payload.email)
         if not user or not verify_password(payload.password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas"
+            )
+
+        # Verifica se o email foi verificado
+        if not user.email_verificado:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email não verificado. Verifique sua caixa de entrada e clique no link de verificação. Se não recebeu o email, solicite um novo link.",
             )
 
         access_token = create_access_token(str(user.id), {"role": user.role.value})
