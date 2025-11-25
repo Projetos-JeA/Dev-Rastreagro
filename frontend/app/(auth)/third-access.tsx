@@ -891,15 +891,19 @@ export default function ThirdAccessScreen() {
         Alert.alert('Erro', 'Tipo de perfil não suportado para cadastro automático.');
       }
     } catch (error: any) {
+      // Log completo do erro
       console.error('❌ ERRO NO CADASTRO:', error);
-      console.error('Status:', error?.response?.status);
-      console.error('Data:', error?.response?.data);
-      console.error('Error completo:', JSON.stringify(error, null, 2));
+      console.error('Status:', error?.response?.status || error?.status);
+      console.error('Response Data:', error?.response?.data);
+      console.error('Error.responseData (ApiError):', error?.responseData);
       console.error('Error.message:', error?.message);
       console.error('Error.name:', error?.name);
+      
+      // Tenta pegar responseData de várias fontes
+      const responseData = error?.response?.data || error?.responseData || error?.data;
       console.error(
         '🔴 DETALHES DO ERRO DO BACKEND:',
-        JSON.stringify(error?.response?.data, null, 2)
+        JSON.stringify(responseData, null, 2)
       );
 
       let errorMessage = 'Não foi possível concluir o cadastro.';
@@ -910,9 +914,12 @@ export default function ThirdAccessScreen() {
       if (status === 422) {
         errorTitle = '❌ Erro de validação';
         
+        // Tenta pegar responseData de várias fontes
+        const responseData = error?.response?.data || error?.responseData || error?.data;
+        
         // Tenta extrair mensagem detalhada do backend
-        if (error?.response?.data?.detail) {
-          const detail = error.response.data.detail;
+        if (responseData?.detail) {
+          const detail = responseData.detail;
           
           // Se for array de erros (formato FastAPI/Pydantic)
           if (Array.isArray(detail)) {
@@ -941,8 +948,8 @@ export default function ThirdAccessScreen() {
           }
         } 
         // Tenta errors direto
-        else if (error?.response?.data?.errors) {
-          const backendErrors = error.response.data.errors;
+        else if (responseData?.errors) {
+          const backendErrors = responseData.errors;
           if (Array.isArray(backendErrors)) {
             const firstError = backendErrors[0];
             if (firstError?.msg) {
@@ -957,8 +964,16 @@ export default function ThirdAccessScreen() {
           }
         }
         // Se não encontrou nada, mostra o data completo
-        else if (error?.response?.data) {
-          errorMessage = JSON.stringify(error.response.data, null, 2);
+        else if (responseData) {
+          errorMessage = JSON.stringify(responseData, null, 2);
+        } else {
+          // Último recurso: mostra tudo que tem no erro
+          errorMessage = `Erro 422: ${JSON.stringify({ 
+            status, 
+            message: error?.message,
+            response: error?.response,
+            responseData: error?.responseData 
+          }, null, 2)}`;
         }
       } else if (status === 400) {
         errorTitle = '❌ Erro ao cadastrar';

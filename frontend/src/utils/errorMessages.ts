@@ -2,11 +2,13 @@ import { Alert } from 'react-native';
 
 export class ApiError extends Error {
   status?: number;
+  responseData?: any;
 
-  constructor(message: string, status?: number) {
+  constructor(message: string, status?: number, responseData?: any) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.responseData = responseData;
   }
 }
 
@@ -39,9 +41,10 @@ function normalizeDetail(detail: unknown): string {
 
 export function buildApiError(error: any, fallbackMessage: string): ApiError {
   const status = error?.response?.status as number | undefined;
-  const detail = normalizeDetail(error?.response?.data?.detail);
+  const responseData = error?.response?.data;
+  const detail = normalizeDetail(responseData?.detail);
   const message = detail || fallbackMessage;
-  return new ApiError(message, status);
+  return new ApiError(message, status, responseData);
 }
 
 export function showApiError(error: unknown, fallbackMessage: string): void {

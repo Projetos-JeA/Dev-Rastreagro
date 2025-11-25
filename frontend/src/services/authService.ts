@@ -159,33 +159,42 @@ export const authService = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('🔴 Erro no registerSeller:', {
+      // Log completo do erro ANTES de processar
+      console.error('🔴 Erro no registerSeller - DADOS COMPLETOS:', {
         status: error?.response?.status,
+        statusText: error?.response?.statusText,
         data: error?.response?.data,
+        headers: error?.response?.headers,
         message: error?.message,
+        error: error,
       });
+      
+      // Preserva response.data para uso posterior
+      const responseData = error?.response?.data;
       
       // Extrai mensagem detalhada do backend
       let errorMessage = 'Erro ao registrar empresa';
-      if (error?.response?.data?.detail) {
-        if (Array.isArray(error.response.data.detail)) {
-          const firstError = error.response.data.detail[0];
+      if (responseData?.detail) {
+        if (Array.isArray(responseData.detail)) {
+          const firstError = responseData.detail[0];
           if (firstError?.msg) {
-            errorMessage = `${firstError.loc?.join('.')}: ${firstError.msg}`;
+            const field = firstError.loc?.slice(1).join('.') || 'campo';
+            errorMessage = `${field}: ${firstError.msg}`;
           } else if (typeof firstError === 'string') {
             errorMessage = firstError;
+          } else {
+            errorMessage = JSON.stringify(firstError, null, 2);
           }
-        } else if (typeof error.response.data.detail === 'string') {
-          errorMessage = error.response.data.detail;
+        } else if (typeof responseData.detail === 'string') {
+          errorMessage = responseData.detail;
+        } else {
+          errorMessage = JSON.stringify(responseData.detail, null, 2);
         }
       }
       
       const apiError = buildApiError(error, errorMessage);
       if (error?.response?.status === 409) {
-        throw new ApiError('Email já cadastrado', 409);
-      }
-      if (error?.response?.status) {
-        apiError.status = error.response.status;
+        throw new ApiError('Email já cadastrado', 409, responseData);
       }
       throw apiError;
     }
