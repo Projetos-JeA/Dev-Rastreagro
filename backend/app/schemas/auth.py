@@ -151,3 +151,19 @@ class CheckAvailabilityResponse(BaseModel):
     email_available: Optional[bool] = None
     cpf_available: Optional[bool] = None
     cnpj_available: Optional[bool] = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    @validator("new_password")
+    def validate_password(cls, v):
+        is_valid, error_msg = validate_senha(v)
+        if not is_valid:
+            raise ValueError(error_msg)
+        return v

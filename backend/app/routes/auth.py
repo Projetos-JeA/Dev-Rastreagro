@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
 from app.schemas import LoginRequest, RefreshRequest, RegisterRequest, TokenPair
-from app.schemas.auth import CheckAvailabilityRequest, CheckAvailabilityResponse
+from app.schemas.auth import (
+    CheckAvailabilityRequest,
+    CheckAvailabilityResponse,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -171,3 +176,37 @@ async def resend_verification_email(
         return {
             "message": "Se o email estiver cadastrado, um novo link de verificação será enviado"
         }
+
+
+@router.post("/forgot-password", summary="Solicitar recuperação de senha")
+async def forgot_password(
+    payload: ForgotPasswordRequest, db: Session = Depends(get_db)
+):
+    """
+    Solicita recuperação de senha.
+    Envia email com link para redefinir senha.
+    Por segurança, sempre retorna mensagem de sucesso mesmo se o email não existir.
+    """
+    service = AuthService(db)
+    await service.request_password_reset(payload.email)
+    
+    # Por segurança, sempre retorna sucesso
+    return {
+        "message": "Se o email estiver cadastrado, um link de recuperação de senha será enviado."
+    }
+
+
+@router.post("/reset-password", summary="Redefinir senha com token")
+async def reset_password(
+    payload: ResetPasswordRequest, db: Session = Depends(get_db)
+):
+    """
+    Redefine a senha do usuário usando token de recuperação.
+    Token deve ser válido, não expirado e não ter sido usado anteriormente.
+    """
+    service = AuthService(db)
+    await service.reset_password(payload.token, payload.new_password)
+    
+    return {
+        "message": "Senha redefinida com sucesso! Você já pode fazer login com a nova senha."
+    }

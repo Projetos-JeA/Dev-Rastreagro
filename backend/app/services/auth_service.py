@@ -19,6 +19,7 @@ from app.models import (
     Company,
     CompanyActivity,
     EmailVerificationToken,
+    PasswordResetToken,
     ServiceProvider,
     User,
     UserRole,
@@ -27,6 +28,7 @@ from app.repositories.activity_repository import ActivityRepository
 from app.repositories.buyer_profile_repository import BuyerProfileRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.email_verification_repository import EmailVerificationRepository
+from app.repositories.password_reset_repository import PasswordResetTokenRepository
 from app.repositories.service_provider_repository import ServiceProviderRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas import LoginRequest, RegisterRequest
@@ -45,6 +47,7 @@ class AuthService:
         self.service_provider_repo = ServiceProviderRepository(db)
         self.buyer_profile_repo = BuyerProfileRepository(db)
         self.email_verification_repo = EmailVerificationRepository(db)
+        self.password_reset_repo = PasswordResetTokenRepository(db)
         self.email_service = EmailService()
         self.document_validator = DocumentValidationService()
 
@@ -509,3 +512,93 @@ class AuthService:
             )
 
         return create_access_token(str(user.id), {"role": user.role.value})
+
+    async def request_password_reset(self, email: str) -> None:
+        """
+        Solicita recuperação de senha para um email.
+        Gera token e envia email de recuperação.
+        Por segurança, sempre retorna sucesso mesmo se email não existir.
+        """
+        from datetime import datetime, timedelta
+
+        user = self.user_repo.get_by_email(email)
+        
+        # Por segurança, não revela se o email existe
+        if not user:
+            return
+
+        # Remove token anterior se existir
+        existing_token = self.password_reset_repo.get_by_user_id(user.id)
+        if existing_token:
+            self.password_reset_repo.delete(existing_token)
+
+        # Gera novo token
+        token = self.email_service.generate_verification_token()
+        expires_at = datetime.utcnow() + timedelta(hours=1)  # Token expira em 1 hora
+
+        reset_token = PasswordResetToken(
+            user_id=user.id, token=token, expires_at=expires_at, used=False
+        )
+
+        self.password_reset_repo.create(reset_token)
+
+        # Envia email de recuperação
+        user_name = user.nickname or user.email.split("@")[0]
+        try:
+            await self.email_service.send_password_reset_email(user.email, token, user_name)
+        except HTTPException:
+            # Se falhar ao enviar email, não bloqueia (usuário pode tentar novamente)
+            pass
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        """
+        Redefine a senha do usuário usando token de recuperação.
+        
+        Args:
+            token: Token de recuperação de senha
+            new_password: Nova senha do usuário
+            
+        Raises:
+            HTTPException: Se token inválido, expirado ou já usado
+        """
+        from datetime import datetime
+
+        reset_token = self.password_reset_repo.get_by_token(token)
+
+        if not reset_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Token de recuperação inválido ou expirado",
+            )
+
+        if reset_token.expires_at < datetime.utcnow():
+            self.password_reset_repo.delete(reset_token)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token de recuperação expirado. Solicite um novo token.",
+            )
+
+        if reset_token.used:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token de recuperação já foi utilizado. Solicite um novo token.",
+            )
+
+        # Busca usuário
+        user = self.user_repo.get_by_id(reset_token.user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
+            )
+
+        # Atualiza senha
+        user.password_hash = get_password_hash(new_password)
+        self.db.commit()
+        self.db.refresh(user)
+
+        # Marca token como usado
+        reset_token.used = True
+        self.db.commit()
+
+        # Remove token usado (opcional, pode manter para auditoria)
+        self.password_reset_repo.delete(reset_token)
