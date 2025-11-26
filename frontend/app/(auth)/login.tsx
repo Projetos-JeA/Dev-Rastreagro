@@ -152,7 +152,10 @@ export default function LoginScreen() {
               autoCapitalize="none"
             />
 
-            <TouchableOpacity style={styles.forgotPasswordButton}>
+            <TouchableOpacity
+              style={styles.forgotPasswordButton}
+              onPress={() => router.push('/(auth)/forgot-password')}
+            >
               <Text style={[styles.forgotPasswordText, { color: colors.link }]}>
                 Esqueceu a senha
               </Text>

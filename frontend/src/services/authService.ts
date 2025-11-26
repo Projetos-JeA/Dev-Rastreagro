@@ -257,4 +257,25 @@ export const authService = {
       throw buildApiError(error, 'Erro ao reenviar email de verificação');
     }
   },
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    try {
+      const response = await api.post<{ message: string }>('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error: any) {
+      throw buildApiError(error, 'Erro ao solicitar recuperação de senha');
+    }
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    try {
+      const response = await api.post<{ message: string }>('/auth/reset-password', {
+        token,
+        new_password: newPassword,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw buildApiError(error, 'Erro ao redefinir senha');
+    }
+  },
 };
