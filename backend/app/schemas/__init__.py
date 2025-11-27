@@ -25,6 +25,14 @@ from app.schemas.activity import (
     ActivityItemList,
 )
 from app.schemas.service_provider import ServiceProviderData, ServiceProviderResponse
+from app.schemas.quotation import (
+    QuotationBase,
+    QuotationCreate,
+    QuotationUpdate,
+    QuotationResponse,
+    QuotationWithScore,
+)
+from app.schemas.match import MatchBase, MatchCreate, MatchUpdate, MatchResponse
 
 __all__ = [
     "CompanyActivitySelection",
@@ -48,4 +56,13 @@ __all__ = [
     "ActivityItemList",
     "ServiceProviderData",
     "ServiceProviderResponse",
+    "QuotationBase",
+    "QuotationCreate",
+    "QuotationUpdate",
+    "QuotationResponse",
+    "QuotationWithScore",
+    "MatchBase",
+    "MatchCreate",
+    "MatchUpdate",
+    "MatchResponse",
 ]

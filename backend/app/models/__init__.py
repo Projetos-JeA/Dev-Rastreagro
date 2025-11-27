@@ -7,6 +7,8 @@ from app.models.service_provider import ServiceProvider
 from app.models.buyer_profile import BuyerProfile
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.password_reset_token import PasswordResetToken
+from app.models.quotation import Quotation, QuotationStatus, QuotationCategory
+from app.models.match import Match, MatchStatus
 
 __all__ = [
     "User",
@@ -20,4 +22,9 @@ __all__ = [
     "BuyerProfile",
     "EmailVerificationToken",
     "PasswordResetToken",
+    "Quotation",
+    "QuotationStatus",
+    "QuotationCategory",
+    "Match",
+    "MatchStatus",
 ]

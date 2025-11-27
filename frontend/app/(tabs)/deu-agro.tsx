@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ImageBackground,
-  Image,
-  TouchableOpacity,
-  Platform,
-  TextInput,
-  Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../src/context/ThemeContext';
-import { useAuth } from '../../src/context/AuthContext';
-import ProductCard from '../../src/components/ProductCard';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Header from '../../src/components/Header';
+import ProductCard from '../../src/components/ProductCard';
+import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/context/ThemeContext';
+import { quotationService, QuotationResponse } from '../../src/services/quotationService';
 
 interface Seller {
   id: string;
@@ -71,7 +71,8 @@ const mockProducts: Product[] = [
       rating: 4.8,
       totalSales: 127,
     },
-    description: 'Touro Nelore PO, 3 anos, excelente genética para reprodução. Certificado de registro, vacinação em dia. Animal dócil e com ótimo histórico reprodutivo.',
+    description:
+      'Touro Nelore PO, 3 anos, excelente genética para reprodução. Certificado de registro, vacinação em dia. Animal dócil e com ótimo histórico reprodutivo.',
     specifications: [
       { label: 'Raça', value: 'Nelore PO' },
       { label: 'Idade', value: '3 anos' },
@@ -100,7 +101,8 @@ const mockProducts: Product[] = [
       rating: 4.9,
       totalSales: 352,
     },
-    description: 'Arame farpado galvanizado de alta resistência, ideal para cercas de pasto. Produto novo com garantia.',
+    description:
+      'Arame farpado galvanizado de alta resistência, ideal para cercas de pasto. Produto novo com garantia.',
     specifications: [
       { label: 'Comprimento', value: '500 metros' },
       { label: 'Material', value: 'Aço galvanizado' },
@@ -128,7 +130,8 @@ const mockProducts: Product[] = [
       rating: 4.7,
       totalSales: 89,
     },
-    description: 'Sementes de Capim Mombaça de alta qualidade e germinação. Ideal para formação e recuperação de pastagens.',
+    description:
+      'Sementes de Capim Mombaça de alta qualidade e germinação. Ideal para formação e recuperação de pastagens.',
     specifications: [
       { label: 'Peso', value: '20 kg' },
       { label: 'Germinação', value: '85%' },
@@ -156,7 +159,8 @@ const mockProducts: Product[] = [
       rating: 4.9,
       totalSales: 456,
     },
-    description: 'Ração balanceada premium para bovinos de corte e leite. Formulação completa com vitaminas e minerais.',
+    description:
+      'Ração balanceada premium para bovinos de corte e leite. Formulação completa com vitaminas e minerais.',
     specifications: [
       { label: 'Peso', value: '50 kg' },
       { label: 'Proteína', value: '18%' },
@@ -184,7 +188,8 @@ const mockProducts: Product[] = [
       rating: 4.6,
       totalSales: 203,
     },
-    description: 'Pulverizador costal manual 20L com bomba de pressão, ideal para aplicação de defensivos e fertilizantes.',
+    description:
+      'Pulverizador costal manual 20L com bomba de pressão, ideal para aplicação de defensivos e fertilizantes.',
     specifications: [
       { label: 'Capacidade', value: '20 litros' },
       { label: 'Material', value: 'Plástico reforçado' },
@@ -212,7 +217,8 @@ const mockProducts: Product[] = [
       rating: 4.8,
       totalSales: 127,
     },
-    description: 'Sal mineral enriquecido para bovinos, formulação balanceada com macro e microelementos essenciais.',
+    description:
+      'Sal mineral enriquecido para bovinos, formulação balanceada com macro e microelementos essenciais.',
     specifications: [
       { label: 'Peso', value: '25 kg' },
       { label: 'Cálcio', value: '120 g/kg' },
@@ -229,9 +235,21 @@ export default function DeuAgroScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [showRelevantOnly, setShowRelevantOnly] = useState(true); // TEMPORÁRIO: Toggle para comparar
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const categories = ['Todos', 'Favoritos', 'Animais', 'Insumos', 'Forragem', 'Ração', 'Equipamentos', 'Suplementos'];
+  const categories = [
+    'Todos',
+    'Favoritos',
+    'Animais',
+    'Insumos',
+    'Forragem',
+    'Ração',
+    'Equipamentos',
+    'Suplementos',
+  ];
 
   const roleLabel: Record<string, string> = {
     buyer: 'Comprador',
@@ -241,6 +259,83 @@ export default function DeuAgroScreen() {
 
   const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
 
+  // Função para converter QuotationResponse para Product
+  function quotationToProduct(quotation: QuotationResponse): Product {
+    const originalPrice = quotation.price ? Math.round(quotation.price * 100) : 0;
+    const price = quotation.discount_percentage
+      ? Math.round(originalPrice * (1 - quotation.discount_percentage / 100))
+      : originalPrice;
+    const discount = quotation.discount_percentage || 0;
+    const installments = quotation.installments || 1;
+    const installmentValue = Math.round(price / installments);
+
+    // Mapeia categoria da API para categoria do frontend
+    const categoryMap: Record<string, string> = {
+      livestock: 'Animais',
+      agriculture: 'Insumos',
+      service: 'Equipamentos',
+      both: 'Insumos',
+    };
+
+    return {
+      id: String(quotation.id),
+      name: quotation.title,
+      image: quotation.image_url || 'https://via.placeholder.com/400',
+      images: quotation.images || [],
+      originalPrice,
+      price,
+      discount,
+      installments,
+      installmentValue,
+      freeShipping: quotation.free_shipping,
+      category: categoryMap[quotation.category] || 'Insumos',
+      seller: {
+        id: String(quotation.seller_id),
+        name: quotation.seller_nickname || 'Vendedor',
+        nickname: quotation.seller_nickname || 'Vendedor',
+        location: quotation.location_city
+          ? `${quotation.location_city}, ${quotation.location_state}`
+          : 'Localização não informada',
+        rating: 4.5,
+        totalSales: 0,
+      },
+      description: quotation.description || '',
+      stock: quotation.stock || 0,
+    };
+  }
+
+  // Busca cotações da API
+  useEffect(() => {
+    async function loadQuotations() {
+      if (!user) return;
+
+      setLoading(true);
+      try {
+        let quotations: QuotationResponse[];
+        if (showRelevantOnly) {
+          quotations = await quotationService.getRelevantQuotations();
+        } else {
+          quotations = await quotationService.getAllQuotations();
+        }
+
+        const convertedProducts = quotations.map(quotationToProduct);
+        setProducts(convertedProducts);
+      } catch (error: any) {
+        console.error('Erro ao carregar cotações:', error);
+        // Fallback para mockProducts se API falhar
+        setProducts(mockProducts);
+        Alert.alert(
+          'Aviso',
+          'Não foi possível carregar cotações da API. Mostrando dados de exemplo.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadQuotations();
+  }, [user, showRelevantOnly]);
+
   function handleBack() {
     router.push('/(tabs)/');
   }
@@ -249,20 +344,22 @@ export default function DeuAgroScreen() {
     router.push('/(tabs)/profile');
   }
 
-  const filteredProducts = mockProducts.filter((product) => {
+  function toggleRelevantMode() {
+    setShowRelevantOnly(!showRelevantOnly);
+  }
+
+  const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === 'Todos' ||
-      selectedCategory === 'Favoritos' && favorites.includes(product.id) ||
+      (selectedCategory === 'Favoritos' && favorites.includes(product.id)) ||
       product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   function toggleFavorite(productId: string) {
-    setFavorites((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
+    setFavorites(prev =>
+      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
     );
   }
 
@@ -271,6 +368,11 @@ export default function DeuAgroScreen() {
       pathname: '/(tabs)/product-detail',
       params: { productId },
     });
+  }
+
+  function handleAddToCart(productId: string) {
+    Alert.alert('Carrinho', `Produto ${productId} adicionado ao carrinho!`);
+    // TODO: Implementar adicionar ao carrinho via API
   }
 
   return (
@@ -295,6 +397,48 @@ export default function DeuAgroScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentContainer}>
+          {/* TEMPORÁRIO: Botão para comparar cotações relevantes vs todas */}
+          <View
+            style={[
+              styles.comparisonBanner,
+              {
+                backgroundColor: showRelevantOnly ? colors.successLight : colors.warning + '20',
+                borderColor: showRelevantOnly ? colors.success : colors.warning,
+              },
+            ]}
+          >
+            <View style={styles.comparisonInfo}>
+              <Ionicons
+                name={showRelevantOnly ? 'checkmark-circle' : 'alert-circle'}
+                size={20}
+                color={showRelevantOnly ? colors.success : colors.warning}
+              />
+              <Text
+                style={[
+                  styles.comparisonText,
+                  { color: showRelevantOnly ? colors.success : colors.warning },
+                ]}
+              >
+                {showRelevantOnly
+                  ? `✅ Mostrando ${products.length} cotações RELEVANTES (filtradas por seu perfil)`
+                  : `⚠️ Mostrando ${products.length} cotações TODAS (incluindo não relevantes)`}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                {
+                  backgroundColor: showRelevantOnly ? colors.success : colors.warning,
+                },
+              ]}
+              onPress={toggleRelevantMode}
+            >
+              <Text style={styles.toggleButtonText}>
+                {showRelevantOnly ? 'Ver Todas' : 'Ver Relevantes'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
             <TextInput
@@ -311,13 +455,14 @@ export default function DeuAgroScreen() {
             showsHorizontalScrollIndicator={false}
             style={styles.categoriesContainer}
           >
-            {categories.map((category) => (
+            {categories.map(category => (
               <TouchableOpacity
                 key={category}
                 style={[
                   styles.categoryChip,
                   {
-                    backgroundColor: selectedCategory === category ? colors.primary : colors.cardBackground,
+                    backgroundColor:
+                      selectedCategory === category ? colors.primary : colors.cardBackground,
                   },
                 ]}
                 onPress={() => setSelectedCategory(category)}
@@ -336,19 +481,29 @@ export default function DeuAgroScreen() {
             ))}
           </ScrollView>
 
-          <View style={styles.productsContainer}>
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                isFavorite={favorites.includes(product.id)}
-                onToggleFavorite={() => toggleFavorite(product.id)}
-                onPress={() => handleProductPress(product.id)}
-              />
-            ))}
-          </View>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Carregando cotações...
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.productsContainer}>
+              {filteredProducts.map(product => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  isFavorite={favorites.includes(product.id)}
+                  onToggleFavorite={() => toggleFavorite(product.id)}
+                  onPress={() => handleProductPress(product.id)}
+                  onAddToCart={() => handleAddToCart(product.id)}
+                />
+              ))}
+            </View>
+          )}
 
-          {filteredProducts.length === 0 && (
+          {!loading && filteredProducts.length === 0 && (
             <View style={styles.emptyContainer}>
               <View style={[styles.emptyCard, { backgroundColor: colors.cardBackground }]}>
                 <Ionicons name="search-outline" size={80} color={colors.textSecondary} />
@@ -380,6 +535,46 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     gap: 12,
+  },
+  comparisonBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    marginBottom: 12,
+  },
+  comparisonInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  comparisonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
+  },
+  toggleButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  toggleButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
   },
   searchContainer: {
     flexDirection: 'row',

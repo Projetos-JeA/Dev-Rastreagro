@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routes import activities, auth, companies, health, users, viacep, cnpj
+from app.routes import activities, auth, companies, health, users, viacep, cnpj, quotations, matches
 from app.utils.validation_errors import validation_exception_handler
 
 # Configurar logging
@@ -56,6 +56,9 @@ app.include_router(activities.router)
 app.include_router(viacep.router)
 # Rota CNPJ para busca de dados de empresa
 app.include_router(cnpj.router)
+# Rotas de cotações e matches (Deu Agro)
+app.include_router(quotations.router)
+app.include_router(matches.router)
 
 
 @app.get("/")

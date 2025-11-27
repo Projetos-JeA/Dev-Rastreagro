@@ -5,7 +5,7 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.service_provider_repository import ServiceProviderRepository
 from app.repositories.buyer_profile_repository import BuyerProfileRepository
-from app.schemas.user import UserWithCompany
+from app.schemas.user import UserWithCompany, UserProfilesResponse
 from app.models.user import UserRole
 
 
@@ -27,12 +27,63 @@ class UserService:
         service_profile = None
         buyer_profile = None
 
-        if user.role.value == UserRole.SELLER.value:
-            company = self.company_repo.get_by_user_id(user.id)
-        elif user.role.value == UserRole.SERVICE_PROVIDER.value:
-            service_profile = self.service_repo.get_by_user_id(user.id)
-        elif user.role.value == UserRole.BUYER.value:
-            buyer_profile = self.buyer_profile_repo.get_by_user_id(user.id)
+        # Tenta buscar perfil independente do role (usuário pode ter múltiplos perfis)
+        company_obj = self.company_repo.get_by_user_id(user.id)
+        service_obj = self.service_repo.get_by_user_id(user.id)
+        buyer_obj = self.buyer_profile_repo.get_by_user_id(user.id)
+
+        if company_obj:
+            # Converte objeto SQLAlchemy para dict
+            company = {
+                "id": company_obj.id,
+                "user_id": company_obj.user_id,
+                "nome_propriedade": company_obj.nome_propriedade,
+                "cnpj_cpf": company_obj.cnpj_cpf,
+                "insc_est_identidade": company_obj.insc_est_identidade,
+                "endereco": company_obj.endereco,
+                "bairro": company_obj.bairro,
+                "cep": company_obj.cep,
+                "cidade": company_obj.cidade,
+                "estado": company_obj.estado,
+                "email": company_obj.email,
+            }
+
+        if service_obj:
+            # Converte objeto SQLAlchemy para dict
+            service_profile = {
+                "id": service_obj.id,
+                "user_id": service_obj.user_id,
+                "nome_servico": service_obj.nome_servico,
+                "descricao": service_obj.descricao,
+                "telefone": service_obj.telefone,
+                "email_contato": service_obj.email_contato,
+                "cidade": service_obj.cidade,
+                "estado": service_obj.estado,
+                "tipo_servico": service_obj.tipo_servico,
+                "endereco": service_obj.endereco,
+                "bairro": service_obj.bairro,
+                "cep": service_obj.cep,
+                "cnpj_cpf": service_obj.cnpj_cpf,
+                "insc_est_identidade": service_obj.insc_est_identidade,
+            }
+
+        if buyer_obj:
+            # Converte objeto SQLAlchemy para dict
+            buyer_profile = {
+                "id": buyer_obj.id,
+                "user_id": buyer_obj.user_id,
+                "nome_completo": buyer_obj.nome_completo,
+                "data_nascimento": buyer_obj.data_nascimento.isoformat() if buyer_obj.data_nascimento else None,
+                "cpf": buyer_obj.cpf,
+                "identidade": buyer_obj.identidade,
+                "estado_civil": buyer_obj.estado_civil,
+                "naturalidade": buyer_obj.naturalidade,
+                "endereco": buyer_obj.endereco,
+                "bairro": buyer_obj.bairro,
+                "cep": buyer_obj.cep,
+                "cidade": buyer_obj.cidade,
+                "estado": buyer_obj.estado,
+            }
 
         data = {
             "id": user.id,
@@ -47,3 +98,33 @@ class UserService:
         }
 
         return UserWithCompany.model_validate(data)
+
+    def get_available_profiles(self, user_id: int) -> UserProfilesResponse:
+        """Retorna os perfis disponíveis do usuário"""
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
+            )
+
+        available_profiles = []
+
+        # Verifica se tem buyer_profile
+        buyer_profile = self.buyer_profile_repo.get_by_user_id(user_id)
+        if buyer_profile:
+            available_profiles.append({"role": "buyer", "has_profile": True, "label": "Comprador"})
+
+        # Verifica se tem company (seller)
+        company = self.company_repo.get_by_user_id(user_id)
+        if company:
+            available_profiles.append({"role": "seller", "has_profile": True, "label": "Vendedor/Produtor"})
+
+        # Verifica se tem service_provider
+        service_profile = self.service_repo.get_by_user_id(user_id)
+        if service_profile:
+            available_profiles.append({"role": "service_provider", "has_profile": True, "label": "Prestador"})
+
+        return UserProfilesResponse(
+            current_role=user.role,
+            available_profiles=available_profiles,
+        )

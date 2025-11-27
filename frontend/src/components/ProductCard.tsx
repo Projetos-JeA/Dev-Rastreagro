@@ -21,6 +21,7 @@ interface ProductCardProps {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onPress: () => void;
+  onAddToCart?: () => void;
 }
 
 export default function ProductCard({

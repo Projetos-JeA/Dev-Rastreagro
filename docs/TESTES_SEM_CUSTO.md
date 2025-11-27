@@ -3,6 +3,7 @@
 ## 🎯 OBJETIVO
 
 Implementar e testar todo o sistema "Deu Agro" + fluxo de compra **sem pagar nada**, usando:
+
 - Versões gratuitas/sandbox dos serviços
 - Créditos iniciais
 - Ambientes de teste
@@ -14,12 +15,14 @@ Implementar e testar todo o sistema "Deu Agro" + fluxo de compra **sem pagar nad
 ### Opção A: Crédito Inicial Gratuito ($5)
 
 **Como obter**:
+
 1. Criar conta em https://platform.openai.com
 2. Adicionar método de pagamento (não cobra nada)
 3. Recebe **$5 de crédito gratuito** automaticamente
 4. Crédito expira em 3 meses
 
 **O que dá para testar com $5**:
+
 - Embeddings: $5 ÷ $0.00002 = **250.000 embeddings**
 - GPT-3.5-turbo: ~2.500 requisições
 - **Suficiente para meses de desenvolvimento!**
@@ -31,6 +34,7 @@ Implementar e testar todo o sistema "Deu Agro" + fluxo de compra **sem pagar nad
 ### Opção B: Ollama (100% Gratuito - Local)
 
 **Como instalar**:
+
 ```bash
 # Windows (PowerShell)
 winget install Ollama.Ollama
@@ -39,6 +43,7 @@ winget install Ollama.Ollama
 ```
 
 **Como usar**:
+
 ```python
 # Em vez de OpenAI, usar Ollama local
 import requests
@@ -55,11 +60,13 @@ def generate_embedding_ollama(text: str):
 ```
 
 **Vantagens**:
+
 - ✅ 100% gratuito
 - ✅ Dados não saem do servidor
 - ✅ Sem limites
 
 **Desvantagens**:
+
 - ⚠️ Precisa instalar e rodar localmente
 - ⚠️ Pode ser mais lento
 - ⚠️ Embeddings podem ser menos precisos
@@ -71,12 +78,14 @@ def generate_embedding_ollama(text: str):
 ### Opção C: Hugging Face (Gratuito com limites)
 
 **Como usar**:
+
 1. Criar conta em https://huggingface.co
 2. Obter token de API (gratuito)
 3. Usar modelos gratuitos:
    - `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (português)
 
 **Limites**:
+
 - 1.000 requisições/hora (gratuito)
 - Suficiente para testes
 
@@ -91,11 +100,13 @@ def generate_embedding_ollama(text: str):
 **Passo 1**: Criar conta em https://www.mercadopago.com.br
 
 **Passo 2**: Acessar Credenciais de Teste
+
 - Dashboard → Desenvolvedores → Suas integrações
 - Criar aplicação de teste
 - Copiar **Access Token** de teste
 
 **Passo 3**: Usar Ambiente Sandbox
+
 ```python
 # backend/.env
 MERCADOPAGO_ACCESS_TOKEN=TEST-xxxxx  # Token de teste
@@ -104,6 +115,7 @@ MERCADOPAGO_USE_SANDBOX=true          # Usar ambiente de teste
 ```
 
 **O que funciona no Sandbox**:
+
 - ✅ Criar pagamentos
 - ✅ Gerar QR Code PIX (fake)
 - ✅ Processar cartões (números de teste)
@@ -111,12 +123,14 @@ MERCADOPAGO_USE_SANDBOX=true          # Usar ambiente de teste
 - ✅ Todas as funcionalidades
 
 **Cartões de Teste**:
+
 - Crédito aprovado: `5031 4332 1540 6351`
 - Débito aprovado: `5031 4332 1540 6351`
 - CVV: `123`
 - Data: qualquer data futura
 
 **PIX de Teste**:
+
 - Gera QR Code fake
 - Pode simular pagamento manualmente
 
@@ -127,6 +141,7 @@ MERCADOPAGO_USE_SANDBOX=true          # Usar ambiente de teste
 ## 📧 3. RESEND (EMAIL) - JÁ GRATUITO
 
 **Plano Free**:
+
 - 3.000 emails/mês grátis
 - Suficiente para desenvolvimento e testes iniciais
 
@@ -137,6 +152,7 @@ MERCADOPAGO_USE_SANDBOX=true          # Usar ambiente de teste
 ## 🗄️ 4. BANCO DE DADOS - LOCAL (GRATUITO)
 
 **SQL Server Express**:
+
 - Já está instalado e rodando localmente
 - Sem custos
 
@@ -175,6 +191,7 @@ MERCADOPAGO_USE_SANDBOX=true          # Usar ambiente de teste
 ### 1. Configurar Ollama (IA Local)
 
 **Instalar**:
+
 ```bash
 # Windows
 winget install Ollama.Ollama
@@ -183,11 +200,13 @@ winget install Ollama.Ollama
 ```
 
 **Baixar modelo**:
+
 ```bash
 ollama pull nomic-embed-text
 ```
 
 **Código Python**:
+
 ```python
 # backend/app/services/ai_matching_service.py
 import requests
@@ -198,7 +217,7 @@ class AIMatchingService:
     def __init__(self):
         self.ollama_url = "http://localhost:11434/api/embeddings"
         self.model = "nomic-embed-text"
-    
+
     def generate_embedding(self, text: str) -> List[float]:
         """Gera embedding usando Ollama (gratuito)"""
         response = requests.post(
@@ -207,7 +226,7 @@ class AIMatchingService:
             timeout=30
         )
         return response.json()["embedding"]
-    
+
     def cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
         """Calcula similaridade de cosseno"""
         vec1 = np.array(vec1)
@@ -222,12 +241,14 @@ class AIMatchingService:
 ### 2. Configurar Mercado Pago Sandbox
 
 **Instalar SDK**:
+
 ```bash
 cd backend
 pip install mercadopago
 ```
 
 **Configurar**:
+
 ```python
 # backend/app/core/config.py
 mercadopago_access_token: str = Field(default="", alias="MERCADOPAGO_ACCESS_TOKEN")
@@ -236,6 +257,7 @@ mercadopago_use_sandbox: bool = Field(default=True, alias="MERCADOPAGO_USE_SANDB
 ```
 
 **Service de Pagamento**:
+
 ```python
 # backend/app/services/payment_service.py
 import mercadopago
@@ -244,7 +266,7 @@ class PaymentService:
     def __init__(self):
         access_token = settings.mercadopago_access_token
         self.mp = mercadopago.SDK(access_token)
-    
+
     def create_pix_payment(self, amount: float, description: str):
         """Cria pagamento PIX (sandbox)"""
         payment_data = {
@@ -297,6 +319,7 @@ AI_PROVIDER=ollama  # ou openai
 ## 📝 CHECKLIST DE IMPLEMENTAÇÃO SEM CUSTOS
 
 ### Setup Inicial:
+
 - [ ] Instalar Ollama localmente
 - [ ] Baixar modelo `nomic-embed-text`
 - [ ] Criar conta Mercado Pago (sandbox)
@@ -304,6 +327,7 @@ AI_PROVIDER=ollama  # ou openai
 - [ ] Configurar `.env` com tokens de teste
 
 ### Backend:
+
 - [ ] Criar `AIMatchingService` com suporte a Ollama
 - [ ] Criar `PaymentService` com Mercado Pago Sandbox
 - [ ] Criar models: Quotation, Match, Cart, Order, Payment
@@ -312,6 +336,7 @@ AI_PROVIDER=ollama  # ou openai
 - [ ] Criar script de dados de teste
 
 ### Testes:
+
 - [ ] Testar geração de embeddings (Ollama)
 - [ ] Testar matching de cotações
 - [ ] Testar criação de pagamento PIX (sandbox)
@@ -324,17 +349,20 @@ AI_PROVIDER=ollama  # ou openai
 ## 🎯 QUANDO MIGRAR PARA PRODUÇÃO
 
 ### IA:
+
 - **Ollama**: Continuar usando se funcionar bem
 - **OpenAI**: Migrar se precisar de mais precisão
   - Custo: ~R$ 305/mês (100 usuários)
   - Pode começar com crédito de $5
 
 ### Pagamento:
+
 - **Mercado Pago**: Migrar de sandbox para produção
   - Mesma API, só trocar tokens
   - Custo: Só taxas por transação (vendedor paga)
 
 ### Email:
+
 - **Resend**: Continuar free até 3.000 emails/mês
   - Upgrade quando necessário
 
@@ -343,15 +371,18 @@ AI_PROVIDER=ollama  # ou openai
 ## 💡 DICAS IMPORTANTES
 
 ### 1. Ollama pode ser mais lento
+
 - Embeddings podem levar 1-2 segundos
 - Para produção, considerar OpenAI se velocidade for crítica
 
 ### 2. Mercado Pago Sandbox
+
 - Pagamentos não são reais
 - Use cartões de teste fornecidos
 - Webhooks funcionam normalmente
 
 ### 3. Testar tudo antes de ir para produção
+
 - Validar matching com Ollama
 - Testar todos os fluxos de pagamento
 - Garantir que webhooks funcionam
@@ -360,14 +391,14 @@ AI_PROVIDER=ollama  # ou openai
 
 ## 📊 RESUMO: CUSTOS PARA TESTES
 
-| Serviço | Versão de Teste | Custo |
-|---------|----------------|-------|
-| **IA (Ollama)** | Local | **GRÁTIS** |
-| **IA (OpenAI)** | $5 crédito | **GRÁTIS** (dentro do crédito) |
-| **Mercado Pago** | Sandbox | **GRÁTIS** |
-| **Resend** | Free (3K emails) | **GRÁTIS** |
-| **Banco de Dados** | Local | **GRÁTIS** |
-| **TOTAL** | | **R$ 0,00** |
+| Serviço            | Versão de Teste  | Custo                          |
+| ------------------ | ---------------- | ------------------------------ |
+| **IA (Ollama)**    | Local            | **GRÁTIS**                     |
+| **IA (OpenAI)**    | $5 crédito       | **GRÁTIS** (dentro do crédito) |
+| **Mercado Pago**   | Sandbox          | **GRÁTIS**                     |
+| **Resend**         | Free (3K emails) | **GRÁTIS**                     |
+| **Banco de Dados** | Local            | **GRÁTIS**                     |
+| **TOTAL**          |                  | **R$ 0,00**                    |
 
 ---
 
@@ -382,4 +413,3 @@ AI_PROVIDER=ollama  # ou openai
 ---
 
 **Documento criado para implementação sem custos**
-
