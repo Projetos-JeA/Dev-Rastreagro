@@ -6,7 +6,7 @@ from datetime import datetime
 
 # revision identifiers, used by Alembic.
 revision = "20251122_03_password_reset"
-down_revision = "20251122_02_add_bairro_to_service_provider"
+down_revision = "20251122_02_add_bairro_sp"
 branch_labels = None
 depends_on = None
 
