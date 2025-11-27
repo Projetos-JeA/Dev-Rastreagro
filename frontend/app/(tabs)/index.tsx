@@ -5,20 +5,20 @@ import {
   StyleSheet,
   ScrollView,
   ImageBackground,
-  Image,
   TouchableOpacity,
-  Alert,
-  Platform,
+  ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
-import MenuCard from '../../src/components/MenuCard';
+import { useTheme } from '../../src/context/ThemeContext';
+import { useWeather } from '../../src/hooks/useWeather';
+import Header from '../../src/components/Header';
 
 export default function HomeScreen() {
-  const { colors } = useTheme();
   const { user, profileImage } = useAuth();
+  const { colors } = useTheme();
+  const weather = useWeather();
   const router = useRouter();
 
   const roleLabel: Record<string, string> = {
@@ -57,14 +57,6 @@ export default function HomeScreen() {
     router.push('/(tabs)/profile');
   }
 
-  function handleMoreOptions() {
-    Alert.alert(
-      'Em Desenvolvimento',
-      'Novas funcionalidades e configurações estarão disponíveis em breve!',
-      [{ text: 'OK' }]
-    );
-  }
-
   const isProducer = user?.role === 'seller';
   const isPecuarista = user?.producer_type === 'pecuarista' || user?.producer_type === 'ambos';
   const showHerdControl = isProducer && isPecuarista;
@@ -75,70 +67,103 @@ export default function HomeScreen() {
       style={styles.container}
       resizeMode="cover"
     >
-      <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={[styles.header, { marginTop: Platform.OS === 'ios' ? 30 : 20 }]}>
-          <TouchableOpacity onPress={handleMoreOptions}>
-            <Ionicons name="ellipsis-horizontal" size={28} color={colors.text} />
+      <Header
+        userName={user?.nickname}
+        userRole={userRole}
+        profileImage={profileImage}
+        showBackButton={false}
+        onProfilePress={handleProfile}
+      />
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.weatherCard, { backgroundColor: colors.surfaceOverlay }]}>
+          {weather.loading ? (
+            <View style={styles.weatherLoading}>
+              <ActivityIndicator size="large" color={colors.white} />
+              <Text style={[styles.weatherLoadingText, { color: colors.white }]}>
+                Carregando clima...
+              </Text>
+            </View>
+          ) : weather.error ? (
+            <View style={styles.weatherError}>
+              <Ionicons name="alert-circle-outline" size={40} color={colors.error} />
+              <Text style={[styles.weatherErrorText, { color: colors.white }]}>
+                {weather.error}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.weatherHeader}>
+                <View>
+                  <View style={styles.weatherLocationRow}>
+                    <Ionicons name={weather.icon as any} size={40} color={colors.white} />
+                    <View style={styles.weatherLocationInfo}>
+                      <Text style={[styles.weatherCity, { color: colors.white }]}>
+                        {weather.city}
+                      </Text>
+                      <Text style={[styles.weatherDate, { color: colors.white }]}>
+                        {weather.description}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <Text style={[styles.weatherTemp, { color: colors.white }]}>
+                  {weather.temperature}°C
+                </Text>
+              </View>
+              <View style={styles.weatherDetails}>
+                <View style={styles.weatherDetailItem}>
+                  <Ionicons name="water" size={20} color={colors.blue} />
+                  <Text style={[styles.weatherDetailText, { color: colors.white }]}>
+                    {weather.humidity}%{'\n'}Umidade
+                  </Text>
+                </View>
+                <View style={styles.weatherDetailItem}>
+                  <MaterialCommunityIcons name="weather-windy" size={20} color={colors.success} />
+                  <Text style={[styles.weatherDetailText, { color: colors.white }]}>
+                    {weather.windSpeed} km/h{'\n'}Vento
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.navigationSection}>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCreateQuotation}>
+            <Ionicons name="add-circle-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Nova{'\n'}Cotação</Text>
           </TouchableOpacity>
-          <View style={styles.profileContainer}>
-            <Text style={[styles.headerText, { color: colors.text }]}>{userRole}</Text>
-            <TouchableOpacity onPress={handleProfile} >
-              {profileImage ? (
-                <Image source={{ uri: profileImage }} style={styles.profileImage} />
-              ) : (
-                <Ionicons name="person-circle-outline" size={32} color={colors.text} />
-              )}
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMyQuotations}>
+            <Ionicons name="checkmark-circle-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Minhas{'\n'}Cotações</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCart}>
+            <Ionicons name="cart-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Carrinho</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.navigationSection}>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleTrackOrder}>
+            <Ionicons name="cube-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleSocial}>
+            <Ionicons name="storefront-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
+          </TouchableOpacity>
+          {showHerdControl ? (
+            <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleHerdControl}>
+              <Ionicons name="stats-chart-outline" size={40} color={colors.white} />
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Controle de{'\n'}Rebanho</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        <View style={styles.menuContainer}>
-          <MenuCard
-            icon="document-text"
-            title="Realizar Cotação"
-            onPress={handleCreateQuotation}
-            iconColor={colors.iconQuotation}
-          />
-          <MenuCard
-            icon="receipt"
-            title="Minhas Cotações"
-            onPress={handleMyQuotations}
-            iconColor={colors.iconMyQuotations}
-          />
-          <MenuCard
-            icon="cart"
-            title="Carrinho"
-            onPress={handleCart}
-            iconColor={colors.iconCart}
-          />
-          <MenuCard
-            icon="cube"
-            title="Acompanhar Pedido"
-            onPress={handleTrackOrder}
-            iconColor={colors.iconTrackOrder}
-          />
-          <MenuCard
-            icon="storefront"
-            title="Deu Agro"
-            onPress={handleSocial}
-            iconColor={colors.iconSocial}
-          />
-          {showHerdControl && (
-            <MenuCard
-              icon="stats-chart"
-              title="Controle de Rebanho"
-              onPress={handleHerdControl}
-              iconColor={colors.iconHerdControl}
-            />
+          ) : (
+            <View style={styles.navButton} />
           )}
         </View>
       </ScrollView>
@@ -150,47 +175,113 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  content: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-    paddingTop: 20,
+    padding: 16,
+    paddingBottom: 30,
   },
-  header: {
+  weatherCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  weatherLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 12,
+  },
+  weatherLoadingText: {
+    fontSize: 14,
+  },
+  weatherError: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 12,
+  },
+  weatherErrorText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  weatherHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  weatherLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    gap: 12,
   },
-  profileContainer: {
+  weatherLocationInfo: {
+    gap: 4,
+  },
+  weatherCity: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  weatherDate: {
+    fontSize: 12,
+  },
+  weatherTemp: {
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  weatherDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 20,
+    marginVertical: 12,
+  },
+  weatherDetailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  profileImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  weatherDetailText: {
+    fontSize: 12,
   },
-  logoContainer: {
+  weatherForecastButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
   },
-  logo: {
-    width: 136,
-    height: 136,
+  weatherForecastText: {
+    fontSize: 13,
   },
-  headerIcon: {
-    marginRight: 10,
+  viewMoreButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
   },
-  headerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  viewMoreText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
-  menuContainer: {
-    gap: 16,
-    paddingBottom: 30,
+  navigationSection: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  navButton: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 100,
+    maxWidth: '31%',
+  },
+  navButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });

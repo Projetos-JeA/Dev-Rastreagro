@@ -2,6 +2,7 @@ export interface ThemeColors {
   background: string;
   backgroundOverlay: string;
   surface: string;
+  surfaceOverlay: string;
   text: string;
   textSecondary: string;
   textPlaceholder: string;
@@ -23,6 +24,8 @@ export interface ThemeColors {
   successLight: string;
   warning: string;
   info: string;
+  blue: string;
+  gray: string;
   iconQuotation: string;
   iconMyQuotations: string;
   iconCart: string;
@@ -41,6 +44,7 @@ export const lightTheme: ThemeColors = {
   background: 'rgba(255, 255, 255, 0.7)',
   backgroundOverlay: 'rgba(255, 255, 255, 0.7)',
   surface: '#FFFFFF',
+  surfaceOverlay: 'rgba(85, 85, 85, 0.85)',
   text: '#000000',
   textSecondary: '#555555',
   textPlaceholder: '#555555',
@@ -62,6 +66,8 @@ export const lightTheme: ThemeColors = {
   successLight: '#E8F5E9',
   warning: '#FF9800',
   info: '#2196F3',
+  blue: '#2196F3',
+  gray: 'rgba(96, 125, 139, 0.9)',
   iconQuotation: '#FFB300',
   iconMyQuotations: '#0288D1',
   iconCart: '#388E3C',
@@ -80,6 +86,7 @@ export const darkTheme: ThemeColors = {
   background: 'rgba(18, 18, 18, 0.95)',
   backgroundOverlay: 'rgba(18, 18, 18, 0.95)',
   surface: '#1E1E1E',
+  surfaceOverlay: 'rgba(170, 170, 170, 0.85)',
   text: '#FFFFFF',
   textSecondary: '#AAAAAA',
   textPlaceholder: '#888888',
@@ -101,6 +108,8 @@ export const darkTheme: ThemeColors = {
   successLight: 'rgba(102, 187, 106, 0.2)',
   warning: '#FFA726',
   info: '#42A5F5',
+  blue: '#42A5F5',
+  gray: 'rgba(120, 144, 156, 0.9)',
   iconQuotation: '#FFD54F',
   iconMyQuotations: '#29B6F6',
   iconCart: '#66BB6A',

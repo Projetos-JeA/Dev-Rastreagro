@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useAuth } from '../../src/context/AuthContext';
+import Header from '../../src/components/Header';
 
 const { width } = Dimensions.get('window');
 
@@ -224,25 +226,66 @@ const mockProducts: Product[] = [
 
 export default function ProductDetailScreen() {
   const { colors } = useTheme();
+  const { user, profileImage } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const product = mockProducts.find((p) => p.id === params.productId);
+  const roleLabel: Record<string, string> = {
+    buyer: 'Comprador',
+    seller: 'Produtor',
+    service_provider: 'Prestador',
+  };
 
-  if (!product) {
+  const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
+
+  const foundProduct = mockProducts.find((p) => p.id === params.productId);
+
+  if (!foundProduct) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.text }]}>Produto não encontrado</Text>
-      </View>
+      <ImageBackground
+        source={require('../../assets/background.png')}
+        style={styles.container}
+        resizeMode="cover"
+      >
+        <Header
+          userName={user?.nickname}
+          userRole={userRole}
+          profileImage={profileImage}
+          showBackButton={true}
+          screenTitle="Produto"
+          onBackPress={() => router.back()}
+          onProfilePress={() => router.push('/(tabs)/profile')}
+        />
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={80} color={colors.textSecondary} />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>
+            Produto não encontrado
+          </Text>
+          <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>
+            O produto que você está procurando não existe ou foi removido
+          </Text>
+          <TouchableOpacity
+            style={[styles.errorButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.errorButtonText, { color: colors.white }]}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </ImageBackground>
     );
   }
 
+  const product: Product = foundProduct;
   const images = product.images || [product.image];
 
   function handleBack() {
     router.back();
+  }
+
+  function handleProfile() {
+    router.push('/(tabs)/profile');
   }
 
   function handleToggleFavorite() {
@@ -274,16 +317,16 @@ export default function ProductDetailScreen() {
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<Ionicons key={`full-${i}`} name="star" size={16} color="#FFB800" />);
+      stars.push(<Ionicons key={`full-${i}`} name="star" size={16} color={colors.warning} />);
     }
 
     if (hasHalfStar) {
-      stars.push(<Ionicons key="half" name="star-half" size={16} color="#FFB800" />);
+      stars.push(<Ionicons key="half" name="star-half" size={16} color={colors.warning} />);
     }
 
     const emptyStars = 5 - Math.ceil(rating);
     for (let i = 0; i < emptyStars; i++) {
-      stars.push(<Ionicons key={`empty-${i}`} name="star-outline" size={16} color="#FFB800" />);
+      stars.push(<Ionicons key={`empty-${i}`} name="star-outline" size={16} color={colors.warning} />);
     }
 
     return stars;
@@ -295,23 +338,29 @@ export default function ProductDetailScreen() {
       style={styles.container}
       resizeMode="cover"
     >
-      <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
+      <Header
+        userName={user?.nickname}
+        userRole={userRole}
+        profileImage={profileImage}
+        showBackButton={true}
+        screenTitle={'Detalhes'}
+        onBackPress={handleBack}
+        onProfilePress={handleProfile}
+      />
 
-      <View style={[styles.header, { marginTop: Platform.OS === 'ios' ? 50 : 20 }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-          <Ionicons name="arrow-back" size={28} color={colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleToggleFavorite} style={styles.headerButton}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <TouchableOpacity onPress={handleToggleFavorite} style={[styles.favoriteButton, { backgroundColor: colors.surfaceOverlay }]}>
           <Ionicons
             name={isFavorite ? 'heart' : 'heart-outline'}
             size={28}
-            color={isFavorite ? colors.error : colors.text}
+            color={isFavorite ? colors.error : colors.white}
           />
         </TouchableOpacity>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Image Gallery */}
         <View style={styles.imageGalleryContainer}>
           <ScrollView
             horizontal
@@ -327,7 +376,7 @@ export default function ProductDetailScreen() {
               <Image
                 key={index}
                 source={{ uri: img }}
-                style={[styles.productImage, { width }]}
+                style={[styles.productImage, { width, backgroundColor: colors.cardAlt }]}
                 resizeMode="cover"
               />
             ))}
@@ -351,7 +400,6 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={[styles.contentCard, { backgroundColor: colors.cardBackground }]}>
-          {/* Product Info */}
           <View style={styles.productInfoContainer}>
             <Text style={[styles.productName, { color: colors.text }]}>{product.name}</Text>
             <Text style={[styles.category, { color: colors.textSecondary }]}>{product.category}</Text>
@@ -384,22 +432,21 @@ export default function ProductDetailScreen() {
               <Ionicons
                 name={product.stock > 10 ? 'checkmark-circle' : 'alert-circle'}
                 size={16}
-                color={product.stock > 10 ? colors.success : '#FF9800'}
+                color={product.stock > 10 ? colors.success : colors.warning}
               />
               <Text style={[styles.stockText, { color: colors.textSecondary }]}>
                 {product.stock > 10
                   ? `${product.stock} unidades disponíveis`
                   : product.stock > 0
-                  ? `Apenas ${product.stock} unidades restantes!`
-                  : 'Produto esgotado'}
+                    ? `Apenas ${product.stock} unidades restantes!`
+                    : 'Produto esgotado'}
               </Text>
             </View>
           </View>
 
-          {/* Seller Card */}
           <View style={[styles.sellerCard, { backgroundColor: colors.background }]}>
             <View style={styles.sellerHeader}>
-              <View style={styles.sellerAvatar}>
+              <View style={[styles.sellerAvatar, { backgroundColor: colors.cardAlt }]}>
                 {product.seller.avatar ? (
                   <Image source={{ uri: product.seller.avatar }} style={styles.sellerAvatarImage} />
                 ) : (
@@ -441,12 +488,11 @@ export default function ProductDetailScreen() {
               style={[styles.contactButton, { backgroundColor: colors.primary }]}
               onPress={handleContactSeller}
             >
-              <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
-              <Text style={styles.contactButtonText}>Contatar Vendedor</Text>
+              <Ionicons name="chatbubble-ellipses" size={20} color={colors.white} />
+              <Text style={[styles.contactButtonText, { color: colors.white }]}>Contatar Vendedor</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Description */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Descrição</Text>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
@@ -454,7 +500,6 @@ export default function ProductDetailScreen() {
             </Text>
           </View>
 
-          {/* Specifications */}
           {product.specifications && product.specifications.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Especificações</Text>
@@ -464,7 +509,6 @@ export default function ProductDetailScreen() {
                     key={index}
                     style={[
                       styles.specRow,
-                      { borderBottomColor: colors.border },
                       index === product.specifications!.length - 1 && styles.specRowLast,
                     ]}
                   >
@@ -480,15 +524,14 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Action Bar */}
       <View style={[styles.bottomBar, { backgroundColor: colors.cardBackground }]}>
         <TouchableOpacity
           style={[styles.addToCartButton, { backgroundColor: colors.primary }]}
           onPress={handleAddToCart}
           disabled={product.stock === 0}
         >
-          <Ionicons name="cart" size={20} color="#fff" />
-          <Text style={styles.addToCartText}>
+          <Ionicons name="cart" size={20} color={colors.white} />
+          <Text style={[styles.addToCartText, { color: colors.white }]}>
             {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Produto Esgotado'}
           </Text>
         </TouchableOpacity>
@@ -501,34 +544,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    zIndex: 10,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  content: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
     paddingBottom: 100,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   imageGalleryContainer: {
     position: 'relative',
   },
   productImage: {
     height: 300,
-    backgroundColor: '#f0f0f0',
   },
   imageIndicatorContainer: {
     position: 'absolute',
@@ -620,7 +657,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -674,7 +710,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   contactButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -716,7 +751,6 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: -2,
@@ -734,13 +768,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addToCartText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  errorText: {
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  errorSubtitle: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 100,
+    lineHeight: 24,
+  },
+  errorButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  errorButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

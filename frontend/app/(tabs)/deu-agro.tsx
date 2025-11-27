@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
 import ProductCard from '../../src/components/ProductCard';
+import Header from '../../src/components/Header';
 
 interface Seller {
   id: string;
@@ -278,33 +279,22 @@ export default function DeuAgroScreen() {
       style={styles.container}
       resizeMode="cover"
     >
-      <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
+      <Header
+        userName={user?.nickname}
+        userRole={userRole}
+        profileImage={profileImage}
+        showBackButton={true}
+        screenTitle="Deu Agro"
+        onBackPress={handleBack}
+        onProfilePress={handleProfile}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={[styles.header, { marginTop: Platform.OS === 'ios' ? 30 : 20 }]}>
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="arrow-back" size={28} color={colors.text} />
-          </TouchableOpacity>
-          <View style={styles.profileContainer}>
-            <Text style={[styles.headerText, { color: colors.text }]}>{userRole}</Text>
-            <TouchableOpacity onPress={handleProfile}>
-              {profileImage ? (
-                <Image source={{ uri: profileImage }} style={styles.profileImage} />
-              ) : (
-                <Ionicons name="person-circle-outline" size={32} color={colors.text} />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.contentContainer}>
-          <View style={styles.titleContainer}>
-            <Text style={[styles.title, { color: colors.text }]}>DEU AGRO</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Inspirado em suas preferências de cadastro
-            </Text>
-          </View>
-
           <View style={[styles.searchContainer, { backgroundColor: colors.cardBackground }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
             <TextInput
@@ -336,7 +326,7 @@ export default function DeuAgroScreen() {
                   style={[
                     styles.categoryText,
                     {
-                      color: selectedCategory === category ? '#fff' : colors.text,
+                      color: selectedCategory === category ? colors.white : colors.text,
                     },
                   ]}
                 >
@@ -360,10 +350,15 @@ export default function DeuAgroScreen() {
 
           {filteredProducts.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Ionicons name="sad-outline" size={64} color={colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                Nenhum produto encontrado
-              </Text>
+              <View style={[styles.emptyCard, { backgroundColor: colors.cardBackground }]}>
+                <Ionicons name="search-outline" size={80} color={colors.textSecondary} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                  Nenhum produto encontrado
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  Tente ajustar os filtros ou buscar por outros termos
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -376,50 +371,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  content: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-    paddingTop: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  profileContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  profileImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  headerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    padding: 16,
+    paddingBottom: 30,
   },
   contentContainer: {
-    gap: 20,
-  },
-  titleContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: 'center',
+    gap: 12,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -427,7 +387,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
@@ -455,8 +415,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
   },
-  emptyText: {
+  emptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    gap: 12,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  emptySubtitle: {
     fontSize: 16,
-    marginTop: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });

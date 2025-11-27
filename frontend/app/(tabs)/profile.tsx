@@ -13,13 +13,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
+import { ProfileType } from '../../src/components/ProfileSelector';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
 import Input from '../../src/components/Input';
 import Select from '../../src/components/Select';
 import MultiSelect from '../../src/components/MultiSelect';
-import { ProfileType } from '../../src/components/ProfileSelector';
+import Header from '../../src/components/Header';
+import * as ImagePicker from 'expo-image-picker';
+
 
 interface Vaccine {
   id: string;
@@ -812,26 +814,39 @@ export default function ProfileScreen() {
       style={styles.container}
       resizeMode="cover"
     >
-      <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
+      <Header
+        userName={user?.nickname}
+        userRole={userRole}
+        profileImage={profileImage}
+        showBackButton={true}
+        screenTitle="Perfil"
+        onBackPress={() => router.back()}
+        onProfilePress={() => { }}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={[styles.header, { marginTop: Platform.OS === 'ios' ? 30 : 20 }]}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={28} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.headerText, { color: colors.text }]}>Perfil</Text>
-            <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
-              <Ionicons name={isEditing ? 'close' : 'create-outline'} size={28} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.content}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View>
             {!isEditing && (
               <>
                 <View style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setIsEditing(true)}
+                  >
+                    <Ionicons
+                      name="create-outline"
+                      size={24}
+                      color={colors.text}
+                    />
+                  </TouchableOpacity>
                   <View style={styles.profileImageContainer}>
                     {profileImage ? (
                       <Image source={{ uri: profileImage }} style={styles.profileImage} />
@@ -1091,6 +1106,16 @@ export default function ProfileScreen() {
 
             {isEditing && (
               <View style={[styles.editContainer, { backgroundColor: colors.cardBackground }]}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => setIsEditing(false)}
+                >
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={colors.text}
+                  />
+                </TouchableOpacity>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
                   Dados Pessoais
                 </Text>
@@ -1995,33 +2020,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  content: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 30,
-  },
-  backButton: {
-    paddingTop: 8,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  content: {
+    padding: 16,
+    paddingBottom: 30,
     gap: 20,
   },
   card: {
+    position: 'relative',
     borderRadius: 16,
     padding: 30,
     alignItems: 'center',
+    marginBottom: 20,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -2029,6 +2041,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
+  },
+  editButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 1,
   },
   profileImageContainer: {
     position: 'relative',
@@ -2065,6 +2083,7 @@ const styles = StyleSheet.create({
   infoContainer: {
     borderRadius: 16,
     padding: 20,
+    marginBottom: 20,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -2074,6 +2093,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   editContainer: {
+    position: 'relative',
     borderRadius: 16,
     padding: 20,
     shadowOffset: {
