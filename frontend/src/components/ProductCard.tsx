@@ -29,6 +29,7 @@ export default function ProductCard({
   isFavorite,
   onToggleFavorite,
   onPress,
+  onAddToCart,
 }: ProductCardProps) {
   const { colors } = useTheme();
 
@@ -93,6 +94,21 @@ export default function ProductCard({
               Envio grátis
             </Text>
           </View>
+        )}
+
+        {onAddToCart && (
+          <TouchableOpacity
+            style={[styles.addToCartButton, { backgroundColor: colors.primary }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onAddToCart();
+            }}
+          >
+            <Ionicons name="cart-outline" size={16} color={colors.white} />
+            <Text style={[styles.addToCartText, { color: colors.white }]}>
+              Adicionar
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     </TouchableOpacity>
@@ -169,6 +185,20 @@ const styles = StyleSheet.create({
   },
   shippingText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  addToCartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  addToCartText: {
+    fontSize: 13,
     fontWeight: '600',
   },
 });

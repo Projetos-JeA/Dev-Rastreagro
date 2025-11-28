@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider } from '../src/context/ThemeContext';
+import { CartProvider } from '../src/context/CartContext';
 import * as SplashScreen from 'expo-splash-screen';
 import CustomSplashScreen from '../src/components/SplashScreen';
 
@@ -50,7 +51,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <CartProvider>
+          <RootLayoutNav />
+        </CartProvider>
       </AuthProvider>
     </ThemeProvider>
   );
