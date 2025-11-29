@@ -26,7 +26,39 @@ export interface QuotationResponse {
   seller_nickname?: string;
 }
 
+export interface QuotationCreateRequest {
+  title: string;
+  description?: string;
+  category: 'agriculture' | 'livestock' | 'service' | 'both';
+  product_type?: string;
+  location_city?: string;
+  location_state?: string;
+  price?: number;
+  quantity?: number;
+  unit?: string;
+  expires_at?: string;
+  image_url?: string;
+  images?: string[];
+  free_shipping?: boolean;
+  discount_percentage?: number;
+  installments?: number;
+  stock?: number;
+}
+
 export const quotationService = {
+  /**
+   * Cria uma nova cotação
+   */
+  async createQuotation(data: QuotationCreateRequest): Promise<QuotationResponse> {
+    try {
+      const response = await api.post<QuotationResponse>('/quotations', data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Erro ao criar cotação:', error);
+      throw error;
+    }
+  },
+
   /**
    * Busca cotações relevantes para o comprador logado
    * Filtra baseado nas atividades do produtor

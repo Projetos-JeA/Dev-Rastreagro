@@ -32,11 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
-  async function loadProfileImage() {
+  async function loadProfileImage(userId?: number) {
     try {
-      const stored = await AsyncStorage.getItem('@profileImage');
+      if (!userId) return;
+      const stored = await AsyncStorage.getItem(`@profileImage_${userId}`);
       if (stored) {
         setProfileImage(stored);
+      } else {
+        setProfileImage(null);
       }
     } catch (error) {
       console.error('Erro ao carregar foto de perfil:', error);
@@ -45,10 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function updateProfileImage(uri: string | null) {
     try {
+      if (!user?.id) return;
+
       if (uri) {
-        await AsyncStorage.setItem('@profileImage', uri);
+        await AsyncStorage.setItem(`@profileImage_${user.id}`, uri);
       } else {
-        await AsyncStorage.removeItem('@profileImage');
+        await AsyncStorage.removeItem(`@profileImage_${user.id}`);
       }
       setProfileImage(uri);
     } catch (error) {
@@ -60,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userData = await userService.me();
     setUser(userData);
     setIsAuthenticated(true);
+    await loadProfileImage(userData.id);
   }
 
   async function checkAuth() {
@@ -111,11 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authService.logout();
     setIsAuthenticated(false);
     setUser(null);
+    setProfileImage(null);
   }
 
   useEffect(() => {
     checkAuth();
-    loadProfileImage();
   }, []);
 
   return (

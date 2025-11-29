@@ -233,9 +233,9 @@ export default function ProductDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const roleLabel: Record<string, string> = {
-    buyer: 'Comprador',
-    seller: 'Produtor',
-    service_provider: 'Prestador',
+    buyer: 'Produtor',
+    seller: 'Fornecedor',
+    service_provider: 'Prestador de Serviço',
   };
 
   const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
