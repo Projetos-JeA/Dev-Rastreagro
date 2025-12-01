@@ -47,17 +47,29 @@ export default function Header({
           />
         </TouchableOpacity>
         {showBackButton && screenTitle && (
-          <Text style={[styles.screenTitle, { color: colors.white }]}>
+          <Text
+            style={[styles.screenTitle, { color: colors.white }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {screenTitle}
           </Text>
         )}
       </View>
       <View style={styles.profileContainer}>
-        <View>
-          <Text style={[styles.greetingText, { color: colors.white }]}>
+        <View style={styles.textContainer}>
+          <Text
+            style={[styles.greetingText, { color: colors.white }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Olá, {userName || 'Usuário'}
           </Text>
-          <Text style={[styles.subGreetingText, { color: colors.white }]}>
+          <Text
+            style={[styles.subGreetingText, { color: colors.white }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {userRole}
           </Text>
         </View>
@@ -88,15 +100,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    marginRight: 12,
   },
   screenTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    flexShrink: 1,
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flexShrink: 0,
+  },
+  textContainer: {
+    alignItems: 'flex-end',
+    maxWidth: 150,
   },
   greetingText: {
     fontSize: 18,

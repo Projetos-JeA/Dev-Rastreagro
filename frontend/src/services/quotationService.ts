@@ -98,5 +98,30 @@ export const quotationService = {
       throw error;
     }
   },
+
+  /**
+   * Busca minhas cotações (cotações criadas pelo usuário logado)
+   */
+  async getMyQuotations(): Promise<QuotationResponse[]> {
+    try {
+      const response = await api.get<QuotationResponse[]>('/quotations/my');
+      return response.data;
+    } catch (error: any) {
+      console.error('Erro ao buscar minhas cotações:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deleta uma cotação
+   */
+  async deleteQuotation(quotationId: number): Promise<void> {
+    try {
+      await api.delete(`/quotations/${quotationId}`);
+    } catch (error: any) {
+      console.error('Erro ao deletar cotação:', error);
+      throw error;
+    }
+  },
 };
 
