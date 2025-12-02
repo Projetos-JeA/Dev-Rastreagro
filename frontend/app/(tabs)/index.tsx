@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
@@ -157,7 +157,7 @@ export default function HomeScreen() {
                 <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleSocial}>
-                <Ionicons name="storefront-outline" size={40} color={colors.white} />
+                <FontAwesome5 name="handshake" size={40} color={colors.white} />
                 <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
               </TouchableOpacity>
               {showHerdControl ? (
@@ -182,7 +182,7 @@ export default function HomeScreen() {
                 <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleSocial}>
-                <Ionicons name="storefront-outline" size={40} color={colors.white} />
+                <FontAwesome5 name="handshake" size={40} color={colors.white} />
                 <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
               </TouchableOpacity>
             </View>

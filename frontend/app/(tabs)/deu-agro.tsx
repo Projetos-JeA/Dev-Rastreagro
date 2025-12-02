@@ -53,7 +53,6 @@ export default function DeuAgroScreen() {
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [showRelevantOnly, setShowRelevantOnly] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,7 +60,6 @@ export default function DeuAgroScreen() {
 
   const categories = [
     'Todos',
-    'Favoritos',
     'Animais',
     'Insumos',
     'Forragem',
@@ -166,16 +164,9 @@ export default function DeuAgroScreen() {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory =
       selectedCategory === 'Todos' ||
-      (selectedCategory === 'Favoritos' && favorites.includes(product.id)) ||
       product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  function toggleFavorite(productId: string) {
-    setFavorites(prev =>
-      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
-    );
-  }
 
   function handleProductPress(productId: string) {
     router.push({
@@ -332,8 +323,6 @@ export default function DeuAgroScreen() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  isFavorite={favorites.includes(product.id)}
-                  onToggleFavorite={() => toggleFavorite(product.id)}
                   onPress={() => handleProductPress(product.id)}
                   onAddToCart={() => handleAddToCart(product.id)}
                 />

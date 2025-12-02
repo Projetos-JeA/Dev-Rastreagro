@@ -230,7 +230,6 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
 
   const roleLabel: Record<string, string> = {
     buyer: 'Produtor',
@@ -286,10 +285,6 @@ export default function ProductDetailScreen() {
 
   function handleProfile() {
     router.push('/(tabs)/profile');
-  }
-
-  function handleToggleFavorite() {
-    setIsFavorite(!isFavorite);
   }
 
   function handleAddToCart() {
@@ -353,14 +348,6 @@ export default function ProductDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity onPress={handleToggleFavorite} style={[styles.favoriteButton, { backgroundColor: colors.surfaceOverlay }]}>
-          <Ionicons
-            name={isFavorite ? 'heart' : 'heart-outline'}
-            size={28}
-            color={isFavorite ? colors.error : colors.white}
-          />
-        </TouchableOpacity>
-
         <View style={styles.imageGalleryContainer}>
           <ScrollView
             horizontal
@@ -549,17 +536,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
   },
   imageGalleryContainer: {
     position: 'relative',

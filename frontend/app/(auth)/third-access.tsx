@@ -199,17 +199,16 @@ const activityOptions = [
   { label: 'Cria', value: 'cria' },
   { label: 'Recria', value: 'recria' },
   { label: 'Engorda', value: 'engorda' },
-  { label: 'Gado de corte', value: 'gado_corte' },
   { label: 'Vaca leiteira', value: 'vaca_leiteira' },
 ];
 
 const categoryOptions = [
-  { label: 'Bovinos (bois)', value: 'bovinos' },
-  { label: 'Suínos (porcos)', value: 'suinos' },
-  { label: 'Ovinos (ovelhas)', value: 'ovinos' },
-  { label: 'Caprinos (cabras)', value: 'caprinos' },
-  { label: 'Equinos (cavalos)', value: 'equinos' },
-  { label: 'Bufalinos (búfalos)', value: 'bufalinos' },
+  { label: 'Bovinos', value: 'bovinos' },
+  { label: 'Suínos', value: 'suinos' },
+  { label: 'Ovinos', value: 'ovinos' },
+  { label: 'Caprinos', value: 'caprinos' },
+  { label: 'Equinos', value: 'equinos' },
+  { label: 'Bufalinos', value: 'bufalinos' },
   { label: 'Aves', value: 'aves' },
 ];
 
@@ -1442,7 +1441,7 @@ export default function ThirdAccessScreen() {
                 }}
               />
 
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Perfil Profissional</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados Profissionais</Text>
 
               {selectedProfiles.includes('producer') && (
                 <View>

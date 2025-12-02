@@ -18,16 +18,12 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
   onPress: () => void;
   onAddToCart?: () => void;
 }
 
 export default function ProductCard({
   product,
-  isFavorite,
-  onToggleFavorite,
   onPress,
   onAddToCart,
 }: ProductCardProps) {
@@ -59,18 +55,6 @@ export default function ProductCard({
               {formatPrice(product.originalPrice)}
             </Text>
           </View>
-
-          <TouchableOpacity
-            onPress={onToggleFavorite}
-            style={styles.favoriteButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={24}
-              color={isFavorite ? colors.error : colors.text}
-            />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.priceContainer}>
@@ -153,9 +137,6 @@ const styles = StyleSheet.create({
   originalPrice: {
     fontSize: 12,
     textDecorationLine: 'line-through',
-  },
-  favoriteButton: {
-    padding: 4,
   },
   priceContainer: {
     flexDirection: 'row',
