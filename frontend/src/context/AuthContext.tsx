@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStoredAccessToken, clearStoredTokens } from '../config/api';
 import {
@@ -16,21 +17,37 @@ interface AuthContextType {
   isLoading: boolean;
   user: any | null;
   profileImage: string | null;
+  availableRoles: string[];
+  activeRole: string | null;
+  hasMultipleRoles: boolean;
+  needsProfileSelection: boolean;
+  roleLabel: Record<string, string>;
+  currentRoleLabel: string;
   updateProfileImage: (uri: string | null) => Promise<void>;
   login: (credentials: LoginRequest) => Promise<void>;
   registerBuyer: (payload: RegisterBuyerRequest) => Promise<RegisterResponse>;
   registerSeller: (payload: RegisterSellerRequest) => Promise<RegisterResponse>;
   registerServiceProvider: (payload: RegisterServiceProviderRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
+  setActiveRole: (role: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const roleLabel: Record<string, string> = {
+  buyer: 'Produtor',
+  seller: 'Fornecedor',
+  service_provider: 'Prestador de Serviço',
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [activeRole, setActiveRoleState] = useState<string | null>(null);
+  const [needsProfileSelection, setNeedsProfileSelection] = useState(false);
 
   async function loadProfileImage(userId?: number) {
     try {
@@ -42,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileImage(null);
       }
     } catch (error) {
-      console.error('Erro ao carregar foto de perfil:', error);
+      Alert.alert('Erro', 'Não foi possível carregar a foto de perfil.');
     }
   }
 
@@ -57,15 +74,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfileImage(uri);
     } catch (error) {
-      console.error('Erro ao salvar foto de perfil:', error);
+      Alert.alert('Erro', 'Não foi possível salvar a foto de perfil.');
     }
+  }
+
+  async function extractRoles(userData: any): Promise<string[]> {
+    if (Array.isArray(userData.roles)) {
+      return userData.roles;
+    }
+    if (userData.role) {
+      return [userData.role];
+    }
+    return [];
   }
 
   async function loadUser() {
     const userData = await userService.me();
+    const roles = await extractRoles(userData);
+
     setUser(userData);
+    setAvailableRoles(roles);
     setIsAuthenticated(true);
     await loadProfileImage(userData.id);
+
+    if (roles.length === 1) {
+      setActiveRoleState(roles[0]);
+      setNeedsProfileSelection(false);
+      await AsyncStorage.setItem(`@activeRole_${userData.id}`, roles[0]);
+    } else if (roles.length > 1) {
+      setActiveRoleState(null);
+      setNeedsProfileSelection(true);
+      await AsyncStorage.removeItem(`@activeRole_${userData.id}`);
+    }
   }
 
   async function checkAuth() {
@@ -114,15 +154,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
+    if (user?.id) {
+      await AsyncStorage.removeItem(`@activeRole_${user.id}`);
+    }
     await authService.logout();
     setIsAuthenticated(false);
     setUser(null);
     setProfileImage(null);
+    setAvailableRoles([]);
+    setActiveRoleState(null);
+    setNeedsProfileSelection(false);
+  }
+
+  async function setActiveRole(role: string) {
+    if (!user?.id) return;
+    if (!availableRoles.includes(role)) return;
+
+    setActiveRoleState(role);
+    setNeedsProfileSelection(false);
+    await AsyncStorage.setItem(`@activeRole_${user.id}`, role);
   }
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  const hasMultipleRoles = availableRoles.length > 1;
+  const currentRoleLabel = activeRole ? roleLabel[activeRole] || 'Usuário' : 'Usuário';
 
   return (
     <AuthContext.Provider
@@ -131,12 +189,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         user,
         profileImage,
+        availableRoles,
+        activeRole,
+        hasMultipleRoles,
+        needsProfileSelection,
+        roleLabel,
+        currentRoleLabel,
         updateProfileImage,
         login,
         registerBuyer,
         registerSeller,
         registerServiceProvider,
         logout,
+        setActiveRole,
       }}
     >
       {children}

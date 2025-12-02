@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'expo-router';
 
 interface HeaderProps {
   userName?: string | null;
@@ -23,6 +25,8 @@ export default function Header({
   onProfilePress,
 }: HeaderProps) {
   const { colors } = useTheme();
+  const { hasMultipleRoles } = useAuth();
+  const router = useRouter();
 
   function handleLeftIconPress() {
     if (showBackButton && onBackPress) {
@@ -34,6 +38,10 @@ export default function Header({
         [{ text: 'OK' }]
       );
     }
+  }
+
+  function handleSwitchProfile() {
+    router.push('/(tabs)/select-profile');
   }
 
   return (
@@ -57,6 +65,14 @@ export default function Header({
         )}
       </View>
       <View style={styles.profileContainer}>
+        {hasMultipleRoles && (
+          <TouchableOpacity
+            onPress={handleSwitchProfile}
+            style={[styles.switchButton, { backgroundColor: colors.textSecondary }]}
+          >
+            <Ionicons name="swap-horizontal-outline" size={20} color={colors.white} />
+          </TouchableOpacity>
+        )}
         <View style={styles.textContainer}>
           <Text
             style={[styles.greetingText, { color: colors.white }]}
@@ -139,5 +155,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
+  },
+  switchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

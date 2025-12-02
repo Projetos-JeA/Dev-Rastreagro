@@ -49,7 +49,7 @@ interface Product {
 
 export default function DeuAgroScreen() {
   const { colors } = useTheme();
-  const { user, profileImage } = useAuth();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
@@ -67,14 +67,6 @@ export default function DeuAgroScreen() {
     'Equipamentos',
     'Suplementos',
   ];
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
 
   // Função para converter QuotationResponse para Product
   function quotationToProduct(quotation: QuotationResponse): Product {
@@ -199,7 +191,7 @@ export default function DeuAgroScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
         screenTitle="Deu Agro"

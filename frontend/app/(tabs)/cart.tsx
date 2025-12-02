@@ -18,7 +18,7 @@ import Header from '../../src/components/Header';
 
 export default function CartScreen() {
   const { colors } = useTheme();
-  const { user, profileImage } = useAuth();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const router = useRouter();
   const {
     items,
@@ -30,14 +30,6 @@ export default function CartScreen() {
     removeItem,
     clearCart,
   } = useCart();
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
 
   function formatPrice(price: number): string {
     return `R$ ${(price / 100).toFixed(2).replace('.', ',')}`;
@@ -113,7 +105,7 @@ export default function CartScreen() {
       >
         <Header
           userName={user?.nickname}
-          userRole={userRole}
+          userRole={currentRoleLabel}
           profileImage={profileImage}
           showBackButton={true}
           screenTitle="Carrinho"
@@ -153,7 +145,7 @@ export default function CartScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
         screenTitle="Carrinho"

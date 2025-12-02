@@ -16,18 +16,10 @@ import { useWeather } from '../../src/hooks/useWeather';
 import Header from '../../src/components/Header';
 
 export default function HomeScreen() {
-  const { user, profileImage } = useAuth();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const { colors } = useTheme();
   const weather = useWeather();
   const router = useRouter();
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[String(user.role)] ?? 'Usuário' : 'Usuário';
 
   function handleCreateQuotation() {
     router.push('/(tabs)/create-quotation');
@@ -70,7 +62,7 @@ export default function HomeScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={false}
         onProfilePress={handleProfile}

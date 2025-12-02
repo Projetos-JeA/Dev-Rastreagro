@@ -22,7 +22,7 @@ import { quotationService, QuotationCreateRequest } from '../../src/services/quo
 
 export default function CreateQuotationScreen() {
   const { colors } = useTheme();
-  const { user, profileImage } = useAuth();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -44,14 +44,6 @@ export default function CreateQuotationScreen() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
 
   const categories = [
     { label: 'Agricultura', value: 'agriculture' },
@@ -194,7 +186,7 @@ export default function CreateQuotationScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
         screenTitle="Nova Cotação"

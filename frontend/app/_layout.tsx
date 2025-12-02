@@ -9,7 +9,7 @@ import CustomSplashScreen from '../src/components/SplashScreen';
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, needsProfileSelection } = useAuth();
   const [appReady, setAppReady] = useState(false);
   const segments = useSegments();
   const router = useRouter();
@@ -32,13 +32,20 @@ function RootLayoutNav() {
     if (!appReady) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inSelectProfile = segments[0] === '(tabs)' && segments[1] === 'select-profile';
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
+      if (needsProfileSelection) {
+        router.replace('/(tabs)/select-profile');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } else if (isAuthenticated && needsProfileSelection && !inSelectProfile) {
+      router.replace('/(tabs)/select-profile');
     }
-  }, [isAuthenticated, appReady, segments]);
+  }, [isAuthenticated, appReady, segments, needsProfileSelection]);
 
   if (!appReady) {
     return <CustomSplashScreen />;

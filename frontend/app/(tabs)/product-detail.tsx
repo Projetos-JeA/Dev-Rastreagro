@@ -226,18 +226,10 @@ const mockProducts: Product[] = [
 
 export default function ProductDetailScreen() {
   const { colors } = useTheme();
-  const { user, profileImage } = useAuth();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
 
   const foundProduct = mockProducts.find((p) => p.id === params.productId);
 
@@ -250,7 +242,7 @@ export default function ProductDetailScreen() {
       >
         <Header
           userName={user?.nickname}
-          userRole={userRole}
+          userRole={currentRoleLabel}
           profileImage={profileImage}
           showBackButton={true}
           screenTitle="Produto"

@@ -437,7 +437,7 @@ const serviceSegmentOptions = [
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { user, logout, profileImage, updateProfileImage } = useAuth();
+  const { user, logout, profileImage, updateProfileImage, currentRoleLabel } = useAuth();
 
   const [fullName, setFullName] = useState('João da Silva');
   const [nickname, setNickname] = useState('João');
@@ -507,14 +507,6 @@ export default function ProfileScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>({});
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[String(user.role)] ?? 'Usuário' : 'Usuário';
 
   const handleLogout = async () => {
     await logout();
@@ -816,7 +808,7 @@ export default function ProfileScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
         screenTitle="Perfil"
@@ -864,7 +856,7 @@ export default function ProfileScreen() {
                     {fullName}
                   </Text>
                   <Text style={[styles.userRole, { color: colors.textSecondary }]}>
-                    {userRole}
+                    {currentRoleLabel}
                   </Text>
                 </View>
 

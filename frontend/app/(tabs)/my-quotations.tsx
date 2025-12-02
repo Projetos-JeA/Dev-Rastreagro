@@ -20,19 +20,11 @@ import { quotationService, QuotationResponse } from '../../src/services/quotatio
 
 export default function MyQuotationsScreen() {
   const { colors } = useTheme();
-  const { user, profileImage } = useAuth();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const router = useRouter();
   const [quotations, setQuotations] = useState<QuotationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const roleLabel: Record<string, string> = {
-    buyer: 'Produtor',
-    seller: 'Fornecedor',
-    service_provider: 'Prestador de Serviço',
-  };
-
-  const userRole = user?.role ? roleLabel[user.role] || 'Usuário' : 'Usuário';
 
   const statusLabel: Record<string, { label: string; color: string }> = {
     active: { label: 'Ativa', color: colors.success },
@@ -237,7 +229,7 @@ export default function MyQuotationsScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
         screenTitle="Minhas Cotações"
