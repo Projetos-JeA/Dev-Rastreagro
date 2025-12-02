@@ -1,0 +1,14 @@
+backend/app/models/buyer_profile.py
+backend/app/models/company.py
+backend/app/models/service_provider.py
+backend/app/routes/__init__.py
+backend/app/schemas/auth.py
+backend/app/schemas/buyer_profile.py
+backend/app/schemas/service_provider.py
+backend/app/services/auth_service.py
+backend/app/services/document_validation_service.py
+backend/main.py
+frontend/app/(auth)/register.tsx
+frontend/app/(auth)/second-access.tsx
+frontend/app/(auth)/third-access.tsx
+frontend/src/services/authService.ts

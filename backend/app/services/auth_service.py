@@ -546,9 +546,25 @@ class AuthService:
         user_name = user.nickname or user.email.split("@")[0]
         try:
             await self.email_service.send_password_reset_email(user.email, token, user_name)
-        except HTTPException:
+        except Exception as e:
+            # Log do erro para debug
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erro ao enviar email de recuperação de senha: {str(e)}")
             # Se falhar ao enviar email, não bloqueia (usuário pode tentar novamente)
-            pass
+            # Mas em desenvolvimento, mostra o erro
+            if "testing emails" in str(e).lower() or "verify a domain" in str(e).lower():
+                logger.warning("=" * 60)
+                logger.warning("⚠️  RESEND: Limitação de domínio de teste")
+                logger.warning("=" * 60)
+                logger.warning(f"Email tentado: {user.email}")
+                logger.warning(f"Token gerado: {token}")
+                logger.warning(f"URL: {self.email_service.get_password_reset_url(token)}")
+                logger.warning("=" * 60)
+                logger.warning("Para enviar para outros emails, verifique um domínio na Resend")
+                logger.warning("ou use o email cadastrado na conta Resend para testes")
+                logger.warning("=" * 60)
+            raise
 
     async def reset_password(self, token: str, new_password: str) -> None:
         """

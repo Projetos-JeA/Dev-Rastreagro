@@ -10,7 +10,8 @@ from app.models.user import User, UserRole
 from app.repositories.quotation_repository import QuotationRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.company_repository import CompanyRepository
-from app.schemas.quotation import QuotationCreate, QuotationUpdate, QuotationResponse, QuotationWithScore
+from app.schemas.quotation import QuotationCreate, QuotationUpdate, QuotationResponse
+from app.services.ai.matching_service import MatchingService
 import json
 
 
@@ -20,6 +21,7 @@ class QuotationService:
         self.quotation_repo = QuotationRepository(db)
         self.user_repo = UserRepository(db)
         self.company_repo = CompanyRepository(db)
+        self.matching_service = MatchingService(db)
 
     def create_quotation(self, seller_id: int, payload: QuotationCreate) -> Quotation:
         """Cria uma nova cotação"""
@@ -121,66 +123,62 @@ class QuotationService:
 
     def get_relevant_quotations(self, buyer_id: int, limit: int = 100, offset: int = 0) -> List[Quotation]:
         """
-        Retorna cotações relevantes para um comprador baseado em suas atividades.
-        Se o comprador também é produtor (tem company), usa as atividades da empresa.
+        Retorna cotações relevantes para um comprador usando IA.
+        
+        Lógica:
+        - 70% baseado em comportamento (interações do usuário)
+        - 30% baseado em perfil (atividades, localização)
+        - Ordena por score de relevância (maior primeiro)
+        - 90% das cotações com score >= 90 aparecem primeiro
+        - 10% das cotações com score 50-89 aparecem depois
         """
         user = self.user_repo.get_by_id(buyer_id)
         if not user:
             return []
 
-        # Busca atividades do comprador (se for produtor)
-        relevant_categories = set()
+        # Busca todas as cotações ativas
+        all_quotations = self.quotation_repo.list_active(limit=1000, offset=0)
         
-        # Se o usuário tem perfil de produtor (seller), busca atividades da empresa
-        if user.role == UserRole.SELLER:
-            company = self.company_repo.get_by_user_id(user.id)
-            if company and company.activities:
-                # Mapeia categorias de atividades para categorias de cotações
-                for activity in company.activities:
-                    if activity.category:
-                        category_name = activity.category.name.lower()
-                        # Mapeia categorias de atividades para categorias de cotações
-                        if "pecuária" in category_name or "pecuaria" in category_name:
-                            # Pecuária: mostra livestock, both, e também agriculture (ração, sal, sementes de pastagem)
-                            relevant_categories.add(QuotationCategory.LIVESTOCK)
-                            relevant_categories.add(QuotationCategory.BOTH)
-                            relevant_categories.add(QuotationCategory.AGRICULTURE)  # Ração, sal mineral, sementes são úteis
-                        elif "agricultura" in category_name:
-                            # Agricultura: mostra agriculture, both, e também livestock (animais para trabalho)
-                            relevant_categories.add(QuotationCategory.AGRICULTURE)
-                            relevant_categories.add(QuotationCategory.BOTH)
-                            relevant_categories.add(QuotationCategory.LIVESTOCK)  # Animais podem ser úteis
-                        elif "integração" in category_name or "integracao" in category_name:
-                            # Integração: mostra todas as categorias
-                            relevant_categories.add(QuotationCategory.BOTH)
-                            relevant_categories.add(QuotationCategory.AGRICULTURE)
-                            relevant_categories.add(QuotationCategory.LIVESTOCK)
-                            relevant_categories.add(QuotationCategory.SERVICE)  # Serviços também podem ser úteis
-                        elif "serviço" in category_name or "servico" in category_name:
-                            # Serviços: mostra service e both
-                            relevant_categories.add(QuotationCategory.SERVICE)
-                            relevant_categories.add(QuotationCategory.BOTH)
+        if not all_quotations:
+            return []
 
-        # Se não encontrou atividades específicas, retorna todas (fallback)
-        if not relevant_categories:
-            return self.quotation_repo.list_active(limit, offset)
+        # Calcula score para cada cotação usando IA
+        quotations_with_scores = []
+        for quotation in all_quotations:
+            try:
+                score = self.matching_service.calculate_relevance_score(buyer_id, quotation)
+                quotations_with_scores.append({
+                    "quotation": quotation,
+                    "score": score
+                })
+            except Exception as e:
+                # Em caso de erro, usa score mínimo
+                print(f"Erro ao calcular score para cotação {quotation.id}: {e}")
+                quotations_with_scores.append({
+                    "quotation": quotation,
+                    "score": 0.0
+                })
 
-        # Filtra cotações por categorias relevantes
-        quotations = (
-            self.db.query(Quotation)
-            .filter(
-                and_(
-                    Quotation.status == QuotationStatus.ACTIVE,
-                    Quotation.category.in_(list(relevant_categories))
-                )
-            )
-            .order_by(Quotation.created_at.desc())
-            .limit(limit)
-            .offset(offset)
-            .all()
-        )
+        # Ordena por score (maior primeiro)
+        quotations_with_scores.sort(key=lambda x: x["score"], reverse=True)
 
-        return quotations
+        # Separa: 90% acima (score >= 90) e resto (score < 90)
+        high_relevance = [q for q in quotations_with_scores if q["score"] >= 90]
+        medium_relevance = [q for q in quotations_with_scores if 50 <= q["score"] < 90]
+        low_relevance = [q for q in quotations_with_scores if q["score"] < 50]
+
+        # Combina: 90% relevantes primeiro, depois 10% menos relevantes
+        # Limita a 90% de high_relevance + 10% de medium_relevance
+        high_limit = int(limit * 0.9)
+        medium_limit = limit - high_limit
+
+        result = high_relevance[:high_limit] + medium_relevance[:medium_limit]
+        
+        # Remove scores baixos (menor que 50)
+        result = [q for q in result if q["score"] >= 50]
+
+        # Retorna apenas as cotações (sem score) para manter compatibilidade
+        return [q["quotation"] for q in result[:limit]]
 
     def to_response(self, quotation: Quotation, include_seller: bool = True) -> QuotationResponse:
         """Converte Quotation para QuotationResponse"""

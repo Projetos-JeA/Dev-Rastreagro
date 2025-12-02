@@ -90,6 +90,29 @@ export const clearStoredTokens = async (): Promise<void> => {
   }
 };
 
+// Função auxiliar para adicionar header de perfil ativo
+async function _addActiveRoleHeader(config: RetryAxiosRequestConfig): Promise<void> {
+  try {
+    const storage = getStorage();
+    const userId = await storage.getItem('@rastreagro:user_id');
+    if (userId) {
+      const activeRole = await storage.getItem(`@activeRole_${userId}`);
+      if (activeRole) {
+        const headers = config.headers ?? new AxiosHeaders();
+        if (headers instanceof AxiosHeaders) {
+          headers.set('X-Active-Role', activeRole);
+        } else {
+          (headers as Record<string, string>)['X-Active-Role'] = activeRole;
+        }
+        config.headers = headers;
+      }
+    }
+  } catch (error) {
+    // Ignora erros ao buscar perfil ativo (não é crítico)
+    console.debug('Não foi possível adicionar perfil ativo:', error);
+  }
+}
+
 api.interceptors.request.use(
   async (config: RetryAxiosRequestConfig) => {
     const token = await getStoredAccessToken();
@@ -102,6 +125,10 @@ api.interceptors.request.use(
       }
       config.headers = headers;
     }
+
+    // Adiciona perfil ativo do usuário (se disponível)
+    await _addActiveRoleHeader(config);
+
     return config;
   },
   error => Promise.reject(error)
@@ -126,6 +153,8 @@ api.interceptors.response.use(
           .then(token => {
             if (token && originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
+              // Re-adiciona perfil ativo após refresh
+              _addActiveRoleHeader(originalRequest);
             }
             return api(originalRequest);
           })
@@ -141,6 +170,8 @@ api.interceptors.response.use(
         processQueue(null, newAccessToken);
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          // Re-adiciona perfil ativo após refresh
+          _addActiveRoleHeader(originalRequest);
         }
         return api(originalRequest);
       } catch (refreshError) {

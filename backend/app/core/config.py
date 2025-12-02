@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # Configurações para Resend (verificação de email)
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
     resend_from_email: str = Field(
-        default="noreply@rastreagro.com", alias="RESEND_FROM_EMAIL"
+        default="noreply@rastreagro.app", alias="RESEND_FROM_EMAIL"
     )
     frontend_url: str = Field(
         default="http://localhost:8081", alias="FRONTEND_URL"

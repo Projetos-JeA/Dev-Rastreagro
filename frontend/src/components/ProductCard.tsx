@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 interface Product {
@@ -35,15 +35,28 @@ export default function ProductCard({
 
   return (
     <TouchableOpacity
-      style={[styles.container, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}
+      style={[
+        styles.container,
+        { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor },
+      ]}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Image
-        source={{ uri: product.image }}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
+        {onAddToCart && (
+          <TouchableOpacity
+            style={[styles.cartButton, { backgroundColor: colors.primary }]}
+            onPress={e => {
+              e.stopPropagation();
+              onAddToCart();
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="cart" size={20} color={colors.white} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.content}>
         <View style={styles.header}>
@@ -58,9 +71,7 @@ export default function ProductCard({
         </View>
 
         <View style={styles.priceContainer}>
-          <Text style={[styles.price, { color: colors.text }]}>
-            {formatPrice(product.price)}
-          </Text>
+          <Text style={[styles.price, { color: colors.text }]}>{formatPrice(product.price)}</Text>
           <View style={[styles.discountBadge, { backgroundColor: colors.success + '20' }]}>
             <Text style={[styles.discountText, { color: colors.success }]}>
               {product.discount}% OFF
@@ -74,9 +85,7 @@ export default function ProductCard({
 
         {product.freeShipping && (
           <View style={styles.shippingContainer}>
-            <Text style={[styles.shippingText, { color: colors.success }]}>
-              Envio grátis
-            </Text>
+            <Text style={[styles.shippingText, { color: colors.success }]}>Envio grátis</Text>
           </View>
         )}
 
@@ -111,10 +120,31 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+  },
   image: {
     width: '100%',
     height: 140,
     backgroundColor: '#f0f0f0',
+  },
+  cartButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   content: {
     padding: 12,

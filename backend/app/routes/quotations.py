@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db, get_current_user
+from app.core.dependencies import get_db, get_current_user, get_active_role
 from app.models.user import User
 from app.schemas.quotation import (
     QuotationCreate,
@@ -45,15 +45,22 @@ def list_quotations(
 @router.get("/relevant", response_model=List[QuotationResponse], summary="Cotações relevantes para o comprador")
 def get_relevant_quotations(
     current_user: User = Depends(get_current_user),
+    active_role: str = Depends(get_active_role),
     limit: int = Query(100, ge=1, le=100, description="Limite de resultados"),
     offset: int = Query(0, ge=0, description="Offset para paginação"),
     db: Session = Depends(get_db),
 ):
     """
     Retorna cotações relevantes baseadas nas atividades do comprador.
+    Usa o perfil ativo (active_role) para determinar qual perfil usar.
     Se o comprador também é produtor, usa as atividades cadastradas na empresa.
     Filtra apenas cotações de interesse (agricultura, pecuária, serviços relacionados).
     """
+    # Só retorna cotações relevantes se o perfil ativo for 'buyer'
+    if active_role != "buyer":
+        # Se não for buyer, retorna lista vazia ou cotações próprias
+        return []
+    
     service = QuotationService(db)
     quotations = service.get_relevant_quotations(current_user.id, limit=limit, offset=offset)
     return [service.to_response(q, include_seller=True) for q in quotations]
@@ -62,9 +69,17 @@ def get_relevant_quotations(
 @router.get("/my", response_model=List[QuotationResponse], summary="Minhas cotações")
 def list_my_quotations(
     current_user: User = Depends(get_current_user),
+    active_role: str = Depends(get_active_role),
     db: Session = Depends(get_db),
 ):
-    """Lista cotações do usuário logado"""
+    """
+    Lista cotações do usuário logado.
+    Filtra baseado no perfil ativo (seller ou service_provider).
+    """
+    # Só retorna cotações próprias se o perfil ativo for 'seller' ou 'service_provider'
+    if active_role not in ["seller", "service_provider"]:
+        return []
+    
     service = QuotationService(db)
     quotations = service.list_my_quotations(current_user.id)
     return [service.to_response(q, include_seller=True) for q in quotations]

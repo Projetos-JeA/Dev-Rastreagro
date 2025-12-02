@@ -79,12 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function extractRoles(userData: any): Promise<string[]> {
-    if (Array.isArray(userData.roles)) {
+    // Prioridade: usa array 'roles' se disponível (perfis reais no banco)
+    if (Array.isArray(userData.roles) && userData.roles.length > 0) {
+      console.log('📋 Perfis encontrados (roles):', userData.roles);
       return userData.roles;
     }
+    // Fallback: usa role principal se array não estiver disponível
     if (userData.role) {
+      console.log('⚠️ Usando role principal (fallback):', userData.role);
       return [userData.role];
     }
+    console.warn('❌ Nenhum perfil encontrado!');
     return [];
   }
 
@@ -97,14 +102,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(true);
     await loadProfileImage(userData.id);
 
+    // Salva user_id para uso no interceptor HTTP
+    await AsyncStorage.setItem('@rastreagro:user_id', String(userData.id));
+
     if (roles.length === 1) {
       setActiveRoleState(roles[0]);
       setNeedsProfileSelection(false);
       await AsyncStorage.setItem(`@activeRole_${userData.id}`, roles[0]);
     } else if (roles.length > 1) {
-      setActiveRoleState(null);
-      setNeedsProfileSelection(true);
-      await AsyncStorage.removeItem(`@activeRole_${userData.id}`);
+      // Tenta carregar perfil ativo salvo anteriormente
+      const savedRole = await AsyncStorage.getItem(`@activeRole_${userData.id}`);
+      if (savedRole && roles.includes(savedRole)) {
+        setActiveRoleState(savedRole);
+        setNeedsProfileSelection(false);
+      } else {
+        setActiveRoleState(null);
+        setNeedsProfileSelection(true);
+      }
     }
   }
 
@@ -157,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.id) {
       await AsyncStorage.removeItem(`@activeRole_${user.id}`);
     }
+    await AsyncStorage.removeItem('@rastreagro:user_id');
     await authService.logout();
     setIsAuthenticated(false);
     setUser(null);

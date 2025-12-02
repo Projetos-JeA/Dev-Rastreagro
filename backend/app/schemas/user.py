@@ -21,6 +21,7 @@ class UserWithCompany(UserBase):
     company: Optional[dict] = None
     service_profile: Optional[dict] = None
     buyer_profile: Optional[dict] = None
+    roles: Optional[list[str]] = None  # Array de perfis disponíveis (buyer, seller, service_provider)
 
 
 class UserProfilesResponse(BaseModel):

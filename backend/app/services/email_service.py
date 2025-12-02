@@ -11,10 +11,13 @@ settings = get_settings()
 
 # Importa Resend apenas se a chave estiver configurada
 try:
-    from resend import Resend
+    import resend
+    from resend import Emails
     RESEND_AVAILABLE = bool(settings.resend_api_key)
 except ImportError:
     RESEND_AVAILABLE = False
+    resend = None
+    Emails = None
 
 
 class EmailService:
@@ -22,10 +25,11 @@ class EmailService:
 
     def __init__(self):
         if RESEND_AVAILABLE and settings.resend_api_key:
-            self.resend = Resend(api_key=settings.resend_api_key)
+            resend.api_key = settings.resend_api_key
+            self.emails = Emails()
             self.from_email = settings.resend_from_email
         else:
-            self.resend = None
+            self.emails = None
             self.from_email = None
 
     def generate_verification_token(self) -> str:
@@ -57,7 +61,7 @@ class EmailService:
         Raises:
             HTTPException: Se Resend não estiver configurado ou houver erro
         """
-        if not self.resend:
+        if not self.emails:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Serviço de email não configurado. Configure RESEND_API_KEY no .env"
@@ -108,6 +112,8 @@ class EmailService:
         """
 
         try:
+            import asyncio
+            
             params = {
                 "from": self.from_email,
                 "to": [email],
@@ -115,15 +121,19 @@ class EmailService:
                 "html": html_content,
             }
             
-            self.resend.emails.send(params)
+            # Resend SDK é síncrono, então executamos em thread pool
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, self.emails.send, params)
             return True
             
         except Exception as e:
             # Log do erro (em produção, usar logging adequado)
-            print(f"Erro ao enviar email: {str(e)}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erro ao enviar email de verificação: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro ao enviar email de verificação. Tente novamente mais tarde."
+                detail=f"Erro ao enviar email de verificação: {str(e)}"
             )
 
     async def send_password_reset_email(
@@ -143,7 +153,7 @@ class EmailService:
         Raises:
             HTTPException: Se Resend não estiver configurado ou houver erro
         """
-        if not self.resend:
+        if not self.emails:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Serviço de email não configurado. Configure RESEND_API_KEY no .env"
@@ -201,6 +211,8 @@ class EmailService:
         """
 
         try:
+            import asyncio
+            
             params = {
                 "from": self.from_email,
                 "to": [email],
@@ -208,13 +220,17 @@ class EmailService:
                 "html": html_content,
             }
             
-            self.resend.emails.send(params)
+            # Resend SDK é síncrono, então executamos em thread pool
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, self.emails.send, params)
             return True
             
         except Exception as e:
-            print(f"Erro ao enviar email de recuperação de senha: {str(e)}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erro ao enviar email de recuperação de senha: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro ao enviar email de recuperação de senha. Tente novamente mais tarde."
+                detail=f"Erro ao enviar email de recuperação de senha: {str(e)}"
             )
 

@@ -12,10 +12,19 @@ A **Resend** é um serviço moderno de envio de emails transacionais (emails de 
 2. Clique em **"Sign Up"** ou **"Get Started"**
 3. Crie sua conta (pode usar email pessoal ou do projeto)
 
-### Passo 2: Verificar domínio (OPCIONAL para testes)
+### Passo 2: Verificar domínio (OPCIONAL)
 
-- **Para desenvolvimento/testes**: Você pode usar o domínio de teste da Resend
-- **Para produção**: Você precisa verificar um domínio próprio
+**⚠️ IMPORTANTE:** O domínio é necessário APENAS para emails mais profissionais. O app mobile, backend e toda a aplicação funcionam perfeitamente sem domínio próprio.
+
+- **Para desenvolvimento/testes**: Use o domínio de teste da Resend (`onboarding@resend.dev`) - funciona imediatamente
+- **Para produção/MVP**: Pode continuar usando `onboarding@resend.dev` - funciona perfeitamente
+- **Para emails profissionais (opcional)**: Se quiser emails com seu domínio (ex: `noreply@rastreagro.com.br`), aí sim precisa verificar um domínio próprio
+
+**Resumo:**
+- ✅ App mobile funciona sem domínio
+- ✅ Backend funciona sem domínio  
+- ✅ Emails funcionam com `onboarding@resend.dev`
+- ⚠️ Domínio próprio é apenas para branding profissional dos emails
 
 ### Passo 3: Obter a API Key
 

@@ -85,6 +85,26 @@ class UserService:
                 "estado": buyer_obj.estado,
             }
 
+        # Determina perfis disponíveis baseado nos dados existentes
+        # IMPORTANTE: Verifica se os perfis EXISTEM no banco, não apenas o role principal
+        available_roles = []
+        if buyer_obj:
+            available_roles.append("buyer")
+        if company_obj:
+            available_roles.append("seller")
+        if service_obj:
+            available_roles.append("service_provider")
+        
+        # Log para debug (pode remover depois)
+        if len(available_roles) > 1:
+            print(f"🔍 [DEBUG] Usuário {user.email} tem {len(available_roles)} perfis: {available_roles}")
+        
+        # Se não encontrou nenhum perfil, usa o role principal como fallback
+        # (caso raro, mas pode acontecer)
+        if not available_roles:
+            available_roles.append(user.role.value)
+            print(f"⚠️  [DEBUG] Usuário {user.email} não tem perfis, usando role principal: {user.role.value}")
+
         data = {
             "id": user.id,
             "email": user.email,
@@ -95,6 +115,7 @@ class UserService:
             "company": company,
             "service_profile": service_profile,
             "buyer_profile": buyer_profile,
+            "roles": available_roles,  # Array de perfis disponíveis (sempre retorna array)
         }
 
         return UserWithCompany.model_validate(data)
