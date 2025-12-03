@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.routes import activities, auth, companies, health, users, viacep, cnpj, quotations, matches, interactions
+from app.routes import activities, auth, companies, health, users, viacep, cnpj, quotations, matches, interactions, chat
 from app.utils.validation_errors import validation_exception_handler
 
 # Configurar logging
@@ -61,6 +61,8 @@ app.include_router(quotations.router)
 app.include_router(matches.router)
 # Rotas de interações do usuário
 app.include_router(interactions.router)
+# Rotas de chat
+app.include_router(chat.router)
 
 
 @app.get("/")

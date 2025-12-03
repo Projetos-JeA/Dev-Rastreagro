@@ -10,6 +10,8 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.quotation import Quotation, QuotationStatus, QuotationCategory
 from app.models.match import Match, MatchStatus
 from app.models.user_interaction import UserInteraction, InteractionType
+from app.models.conversation import Conversation
+from app.models.message import Message
 
 __all__ = [
     "User",
@@ -30,4 +32,6 @@ __all__ = [
     "MatchStatus",
     "UserInteraction",
     "InteractionType",
+    "Conversation",
+    "Message",
 ]

@@ -49,10 +49,20 @@ export default function HomeScreen() {
     router.push('/(tabs)/profile');
   }
 
-  const isProducer = user?.role === 'seller';
+  function handleMessages() {
+    router.push('/(tabs)/messages');
+  }
+
+  function handleIndicators() {
+    router.push('/(tabs)/indicators');
+  }
+
+  const isProducer = user?.role === 'buyer';
   const isPecuarista = user?.producer_type === 'pecuarista' || user?.producer_type === 'ambos';
   const showHerdControl = isProducer && isPecuarista;
-  const canCreateQuotations = user?.role === 'seller' || user?.role === 'service_provider';
+
+  const newQuotationText = isProducer ? 'Nova\nCotação' : 'Nova\nOferta';
+  const myQuotationsText = isProducer ? 'Minhas\nCotações' : 'Minhas\nOfertas';
 
   return (
     <ImageBackground
@@ -126,60 +136,50 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {canCreateQuotations ? (
-          <>
-            <View style={styles.navigationSection}>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCreateQuotation}>
-                <Ionicons name="add-circle-outline" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Nova{'\n'}Cotação</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMyQuotations}>
-                <Ionicons name="checkmark-circle-outline" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Minhas{'\n'}Cotações</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCart}>
-                <Ionicons name="cart-outline" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Carrinho</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.navigationSection}>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCreateQuotation}>
+            <Ionicons name="add-circle-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>{newQuotationText}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMyQuotations}>
+            <Ionicons name="checkmark-circle-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>{myQuotationsText}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCart}>
+            <Ionicons name="cart-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Carrinho</Text>
+          </TouchableOpacity>
+        </View>
 
-            <View style={styles.navigationSection}>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleTrackOrder}>
-                <Ionicons name="cube-outline" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleSocial}>
-                <FontAwesome5 name="handshake" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
-              </TouchableOpacity>
-              {showHerdControl ? (
-                <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleHerdControl}>
-                  <Ionicons name="stats-chart-outline" size={40} color={colors.white} />
-                  <Text style={[styles.navButtonText, { color: colors.white }]}>Controle de{'\n'}Rebanho</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.navButton} />
-              )}
-            </View>
-          </>
-        ) : (
-          <>
-            <View style={styles.navigationSection}>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCart}>
-                <Ionicons name="cart-outline" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Carrinho</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleTrackOrder}>
-                <Ionicons name="cube-outline" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleSocial}>
-                <FontAwesome5 name="handshake" size={40} color={colors.white} />
-                <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+        <View style={styles.navigationSection}>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleTrackOrder}>
+            <Ionicons name="cube-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMessages}>
+            <Ionicons name="chatbubbles-outline" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Mensagens</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleSocial}>
+            <FontAwesome5 name="handshake" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.navigationSection}>
+          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleIndicators}>
+            <Ionicons name="trending-up" size={40} color={colors.white} />
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Indicadores</Text>
+          </TouchableOpacity>
+          {showHerdControl && (
+            <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleHerdControl}>
+              <Ionicons name="stats-chart-outline" size={40} color={colors.white} />
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Controle de{'\n'}Rebanho</Text>
+            </TouchableOpacity>
+          )}
+          {!showHerdControl && <View style={styles.navButton} />}
+          <View style={styles.navButton} />
+        </View>
       </ScrollView>
     </ImageBackground>
   );
