@@ -112,6 +112,12 @@ class MatchingService:
                 profile["state"] = buyer_profile.estado
             if not profile["city"]:
                 profile["city"] = buyer_profile.cidade
+            
+            # Se não tem company mas tem buyer_profile, assume categorias genéricas
+            # (produtor geralmente trabalha com agricultura e pecuária)
+            if not profile["categories"]:
+                # Produtor puro: assume interesse em agricultura e pecuária
+                profile["categories"] = ["agriculture", "livestock", "both"]
         
         # Remove duplicatas
         profile["categories"] = list(set(profile["categories"]))

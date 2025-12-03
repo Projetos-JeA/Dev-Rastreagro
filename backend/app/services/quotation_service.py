@@ -174,7 +174,8 @@ class QuotationService:
 
         result = high_relevance[:high_limit] + medium_relevance[:medium_limit]
         
-        # Remove scores baixos (menor que 50)
+        # Remove scores muito baixos (menor que 50)
+        # Score mínimo para aparecer na lista relevante
         result = [q for q in result if q["score"] >= 50]
 
         # Retorna apenas as cotações (sem score) para manter compatibilidade

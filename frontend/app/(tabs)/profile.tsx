@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { ProfileType } from '../../src/components/ProfileSelector';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
+import { userService } from '../../src/services/userService';
 import Input from '../../src/components/Input';
 import Select from '../../src/components/Select';
 import MultiSelect from '../../src/components/MultiSelect';
@@ -72,12 +73,12 @@ const activityOptions = [
 ];
 
 const categoryOptions = [
-  { label: 'Bovinos (bois)', value: 'bovinos' },
-  { label: 'Suínos (porcos)', value: 'suinos' },
-  { label: 'Ovinos (ovelhas)', value: 'ovinos' },
-  { label: 'Caprinos (cabras)', value: 'caprinos' },
-  { label: 'Equinos (cavalos)', value: 'equinos' },
-  { label: 'Bufalinos (búfalos)', value: 'bufalinos' },
+  { label: 'Bovinos', value: 'bovinos' },
+  { label: 'Suínos', value: 'suinos' },
+  { label: 'Ovinos', value: 'ovinos' },
+  { label: 'Caprinos', value: 'caprinos' },
+  { label: 'Equinos', value: 'equinos' },
+  { label: 'Bufalinos', value: 'bufalinos' },
   { label: 'Aves', value: 'aves' },
 ];
 
@@ -439,29 +440,31 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, profileImage, updateProfileImage, currentRoleLabel } = useAuth();
 
-  const [fullName, setFullName] = useState('João da Silva');
-  const [nickname, setNickname] = useState('João');
-  const [birthDate, setBirthDate] = useState('15/05/1985');
-  const [cpf, setCpf] = useState('123.456.789-00');
-  const [identity, setIdentity] = useState('12.345.678-9');
-  const [maritalStatus, setMaritalStatus] = useState('Solteiro');
-  const [nationality, setNationality] = useState('São Paulo, SP');
-  const [email, setEmail] = useState(user?.email || 'joao.silva@email.com');
-  const [phone, setPhone] = useState('+55 11 9 8765-4321');
+  const [fullName, setFullName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [identity, setIdentity] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('');
+  const [nationality, setNationality] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState('');
 
-  const [cnpj, setCnpj] = useState('12.345.678/0001-90');
-  const [companyName, setCompanyName] = useState('Fazenda Silva Ltda');
-  const [tradeName, setTradeName] = useState('Fazenda Silva');
-  const [stateRegistration, setStateRegistration] = useState('123.456.789.012');
-  const [startDate, setStartDate] = useState('01/01/2020');
-  const [businessActivity, setBusinessActivity] = useState('Agropecuária');
-  const [cnaes, setCnaes] = useState('0111-3/01, 0121-1/01');
-  const [address, setAddress] = useState('Rua Principal, 123');
-  const [cep, setCep] = useState('12345-678');
-  const [city, setCity] = useState('São Paulo');
-  const [state, setState] = useState('SP');
-  const [neighborhood, setNeighborhood] = useState('Centro');
-  const [profileTypes, setProfileTypes] = useState<ProfileType[]>(['producer']);
+  const [cnpj, setCnpj] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [tradeName, setTradeName] = useState('');
+  const [stateRegistration, setStateRegistration] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [businessActivity, setBusinessActivity] = useState('');
+  const [cnaes, setCnaes] = useState('');
+  const [address, setAddress] = useState('');
+  const [cep, setCep] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [profileTypes, setProfileTypes] = useState<ProfileType[]>([]);
+  const [companyActivities, setCompanyActivities] = useState<any[]>([]);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const [producerType, setProducerType] = useState<string>('pecuarista');
   const [supplierType, setSupplierType] = useState<string>('');
@@ -507,6 +510,76 @@ export default function ProfileScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>({});
+
+  // Carrega dados do perfil ao montar o componente
+  React.useEffect(() => {
+    loadProfileData();
+  }, [user]);
+
+  const loadProfileData = async () => {
+    try {
+      setIsLoadingProfile(true);
+      const profileData = await userService.me();
+      
+      // Dados pessoais
+      if (profileData.buyer_profile) {
+        setFullName(profileData.buyer_profile.nome_completo || '');
+        setBirthDate(profileData.buyer_profile.data_nascimento ? 
+          new Date(profileData.buyer_profile.data_nascimento).toLocaleDateString('pt-BR') : '');
+        setCpf(profileData.buyer_profile.cpf || '');
+        setIdentity(profileData.buyer_profile.identidade || '');
+        setMaritalStatus(profileData.buyer_profile.estado_civil || '');
+        setNationality(profileData.buyer_profile.naturalidade || '');
+        setAddress(profileData.buyer_profile.endereco || '');
+        setCep(profileData.buyer_profile.cep || '');
+        setCity(profileData.buyer_profile.cidade || '');
+        setState(profileData.buyer_profile.estado || '');
+        setNeighborhood(profileData.buyer_profile.bairro || '');
+      }
+      
+      // Dados da empresa
+      if (profileData.company) {
+        setCompanyName(profileData.company.nome_propriedade || '');
+        setCnpj(profileData.company.cnpj_cpf || '');
+        setStateRegistration(profileData.company.insc_est_identidade || '');
+        setStartDate(profileData.company.inicio_atividades ? 
+          new Date(profileData.company.inicio_atividades).toLocaleDateString('pt-BR') : '');
+        setBusinessActivity(profileData.company.ramo_atividade || '');
+        setCnaes(profileData.company.cnaes || '');
+        setAddress(profileData.company.endereco || address);
+        setCep(profileData.company.cep || cep);
+        setCity(profileData.company.cidade || city);
+        setState(profileData.company.estado || state);
+        setNeighborhood(profileData.company.bairro || neighborhood);
+        
+        // Atividades da empresa
+        if (profileData.company.activities) {
+          console.log('📋 Atividades carregadas:', profileData.company.activities);
+          setCompanyActivities(profileData.company.activities);
+        } else {
+          console.log('⚠️ Nenhuma atividade encontrada na empresa');
+          setCompanyActivities([]);
+        }
+      }
+      
+      // Nickname e email
+      setNickname(profileData.nickname || '');
+      setEmail(profileData.email || '');
+      
+      // Perfis disponíveis
+      if (profileData.roles) {
+        const types: ProfileType[] = [];
+        if (profileData.roles.includes('buyer')) types.push('producer');
+        if (profileData.roles.includes('seller')) types.push('supplier');
+        setProfileTypes(types);
+      }
+      
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -1069,6 +1142,32 @@ export default function ProfileScreen() {
                     </View>
                   )}
                 </View>
+
+                {/* Seção de Atividades - Sempre exibir se houver atividades */}
+                {companyActivities && companyActivities.length > 0 ? (
+                  <View style={[styles.infoContainer, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      Atividades Cadastradas
+                    </Text>
+                    {companyActivities.map((activity, index) => (
+                      <View key={index} style={styles.infoItem}>
+                        <Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />
+                        <View style={styles.infoTextContainer}>
+                          <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                            {activity.category_name || 'Categoria'}
+                          </Text>
+                          <Text style={[styles.infoValue, { color: colors.text }]}>
+                            {[
+                              activity.category_name,
+                              activity.group_name,
+                              activity.item_name
+                            ].filter(Boolean).join(' > ')}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
 
                 {profileTypes.includes('producer') && producerType === 'pecuarista' && (
                   <View style={[styles.infoContainer, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>

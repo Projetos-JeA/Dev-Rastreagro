@@ -33,6 +33,24 @@ class UserService:
         buyer_obj = self.buyer_profile_repo.get_by_user_id(user.id)
 
         if company_obj:
+            # Busca atividades da empresa
+            activities_list = []
+            for activity in company_obj.activities:
+                activity_dict = {
+                    "id": activity.id,
+                    "category_id": activity.category_id,
+                    "group_id": activity.group_id,
+                    "item_id": activity.item_id,
+                }
+                # Adiciona nomes se disponíveis
+                if activity.category:
+                    activity_dict["category_name"] = activity.category.name
+                if activity.group:
+                    activity_dict["group_name"] = activity.group.name
+                if activity.item:
+                    activity_dict["item_name"] = activity.item.name
+                activities_list.append(activity_dict)
+            
             # Converte objeto SQLAlchemy para dict
             company = {
                 "id": company_obj.id,
@@ -46,6 +64,10 @@ class UserService:
                 "cidade": company_obj.cidade,
                 "estado": company_obj.estado,
                 "email": company_obj.email,
+                "inicio_atividades": company_obj.inicio_atividades.isoformat() if company_obj.inicio_atividades else None,
+                "ramo_atividade": company_obj.ramo_atividade,
+                "cnaes": company_obj.cnaes,
+                "activities": activities_list,  # Lista de atividades
             }
 
         if service_obj:

@@ -155,7 +155,13 @@ class OllamaMatchingService(BaseMatchingService):
         profile_score = self._calculate_profile_score(buyer_profile, quotation_data)
         
         # 3. Combina os scores
-        final_score = (behavior_score * 0.7) + (profile_score * 0.3)
+        # Ajustado: quando não tem interações, dá mais peso ao perfil
+        if behavior_score < 30:  # Sem histórico de interações
+            # 50% comportamento + 50% perfil (mais peso no perfil)
+            final_score = (behavior_score * 0.5) + (profile_score * 0.5)
+        else:
+            # 70% comportamento + 30% perfil (comportamento tem mais peso)
+            final_score = (behavior_score * 0.7) + (profile_score * 0.3)
         
         return round(final_score, 2)
 
@@ -168,10 +174,10 @@ class OllamaMatchingService(BaseMatchingService):
         Calcula score baseado em comportamento do usuário
         
         Se o usuário interagiu com cotações similares → score alto (90-100)
-        Se não tem histórico → score baixo (0-30)
+        Se não tem histórico → score base (50) para permitir descoberta
         """
         if not user_interactions:
-            return 0.0  # Sem histórico = score baixo
+            return 50.0  # Sem histórico = score base (permite descoberta)
         
         # Gera embedding da cotação atual
         quotation_text = self._build_quotation_text(quotation_data)
@@ -224,43 +230,44 @@ class OllamaMatchingService(BaseMatchingService):
         
         Considera:
         - Atividades do perfil
-        - Localização
         - Categoria
+        - Tipo de produto (similaridade semântica)
+        
+        NOTA: Localização ignorada por enquanto
         """
         score = 0.0
         max_score = 100.0
         
-        # 1. Match de categoria (40 pontos)
+        # 1. Match de categoria (60 pontos) - Principal critério
         profile_categories = buyer_profile.get("categories", [])
         quotation_category = quotation_data.get("category", "").lower()
         
         if quotation_category in profile_categories:
-            score += 40.0
+            score += 60.0
         elif "both" in profile_categories and quotation_category in ["agriculture", "livestock"]:
-            score += 30.0
+            score += 50.0
+        elif not profile_categories:
+            # Se não tem categorias definidas, assume interesse geral
+            # Produtor geralmente trabalha com agricultura e pecuária
+            score += 40.0
         
-        # 2. Match de localização (30 pontos)
-        profile_state = buyer_profile.get("state", "").lower()
-        profile_city = buyer_profile.get("city", "").lower()
-        quotation_state = quotation_data.get("location_state", "").lower()
-        quotation_city = quotation_data.get("location_city", "").lower()
-        
-        if profile_state and quotation_state:
-            if profile_state == quotation_state:
-                score += 20.0
-                if profile_city and quotation_city and profile_city == quotation_city:
-                    score += 10.0  # Bônus para mesma cidade
-        
-        # 3. Match de tipo de produto (30 pontos)
-        # Usa embedding para similaridade semântica
+        # 2. Match de tipo de produto (40 pontos) - Similaridade semântica
         profile_text = self._build_profile_text(buyer_profile)
         quotation_text = self._build_quotation_text(quotation_data)
         
-        profile_embedding = self.generate_embedding(profile_text)
-        quotation_embedding = self.generate_embedding(quotation_text)
+        if profile_text and quotation_text:
+            try:
+                profile_embedding = self.generate_embedding(profile_text)
+                quotation_embedding = self.generate_embedding(quotation_text)
+                
+                similarity = self.calculate_similarity(profile_embedding, quotation_embedding)
+                score += similarity * 40.0
+            except Exception as e:
+                # Se falhar, adiciona score base
+                score += 20.0
         
-        similarity = self.calculate_similarity(profile_embedding, quotation_embedding)
-        score += similarity * 30.0
+        # Garante score mínimo de 30 para qualquer cotação
+        score = max(score, 30.0)
         
         return min(score, max_score)
 

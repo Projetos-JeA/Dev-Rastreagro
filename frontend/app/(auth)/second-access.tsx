@@ -266,40 +266,63 @@ export default function SecondAccessScreen() {
 
   function handleProfileSelect(profile: ProfileType) {
     setSelectedProfiles(prev => {
-      let newProfiles: ProfileType[];
-
+      // Se o perfil já está selecionado, remove
       if (prev.includes(profile)) {
-        newProfiles = prev.filter(p => p !== profile);
-      } else {
-        if (prev.length >= 2) {
-          setErrors(prevErrors => ({
-            ...prevErrors,
-            profile: 'Você só pode selecionar no máximo 2 perfis',
-          }));
-          return prev;
+        // Limpa erros ao desmarcar
+        if (errors.profile) {
+          setErrors(prevErrors => {
+            const { profile, ...rest } = prevErrors;
+            return rest;
+          });
         }
+        return prev.filter(p => p !== profile);
+      }
 
-        newProfiles = [...prev, profile];
+      // Se já tem 2 perfis, não permite adicionar mais
+      if (prev.length >= 2) {
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          profile: 'Você só pode selecionar no máximo 2 perfis',
+        }));
+        return prev;
+      }
 
-        if (newProfiles.length === 2) {
-          const hasProducer = newProfiles.includes('producer');
-          const hasSupplier = newProfiles.includes('supplier');
-          const hasServiceProvider = newProfiles.includes('service_provider');
+      // Simula a nova lista para validar antes de adicionar
+      const newProfiles = [...prev, profile];
 
-          const isValidCombination =
-            (hasProducer && hasSupplier) || (hasSupplier && hasServiceProvider);
+      // Se vai ter 2 perfis, valida a combinação ANTES de adicionar
+      if (newProfiles.length === 2) {
+        const hasProducer = newProfiles.includes('producer');
+        const hasSupplier = newProfiles.includes('supplier');
+        const hasServiceProvider = newProfiles.includes('service_provider');
 
-          if (!isValidCombination) {
+        // Regras de validação:
+        // ✅ Permitido: Produtor + Fornecedor
+        // ✅ Permitido: Fornecedor + Prestador de Serviço
+        // ❌ NÃO permitido: Produtor + Prestador de Serviço
+        const isValidCombination =
+          (hasProducer && hasSupplier) || (hasSupplier && hasServiceProvider);
+
+        if (!isValidCombination) {
+          // Bloqueia especificamente Produtor + Prestador de Serviço
+          if (hasProducer && hasServiceProvider) {
+            setErrors(prevErrors => ({
+              ...prevErrors,
+              profile:
+                'Combinação inválida. Não é permitido selecionar Produtor + Prestador de Serviço. Permite-se apenas: Produtor + Fornecedor ou Fornecedor + Prestador de Serviço.',
+            }));
+          } else {
             setErrors(prevErrors => ({
               ...prevErrors,
               profile:
                 'Combinação inválida. Só é permitido: Produtor + Fornecedor ou Fornecedor + Prestador de Serviço.',
             }));
-            return prev;
           }
+          return prev; // Não adiciona o perfil
         }
       }
 
+      // Limpa erros se a seleção for válida
       if (errors.profile) {
         setErrors(prevErrors => {
           const { profile, ...rest } = prevErrors;
