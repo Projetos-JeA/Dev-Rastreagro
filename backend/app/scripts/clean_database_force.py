@@ -15,6 +15,8 @@ from app.models.buyer_profile import BuyerProfile
 from app.models.service_provider import ServiceProvider
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.password_reset_token import PasswordResetToken
+from app.models.conversation import Conversation
+from app.models.message import Message
 from app.models.user import User
 
 def clean_database():
@@ -41,44 +43,52 @@ def clean_database():
             return
         
         print("🗑️  Deletando registros...\n")
-        
+
         # Deleta na ordem correta (respeitando foreign keys)
-        # 1. Interações (dependem de user e quotation)
+        # 1. Mensagens (dependem de conversation)
+        deleted_messages = db.query(Message).delete()
+        print(f"   ✅ {deleted_messages} mensagens deletadas")
+
+        # 2. Conversas (dependem de user)
+        deleted_conversations = db.query(Conversation).delete()
+        print(f"   ✅ {deleted_conversations} conversas deletadas")
+
+        # 3. Interações (dependem de user e quotation)
         deleted_interactions = db.query(UserInteraction).delete()
         print(f"   ✅ {deleted_interactions} interações deletadas")
-        
-        # 2. Matches (dependem de user e quotation)
+
+        # 4. Matches (dependem de user e quotation)
         deleted_matches = db.query(Match).delete()
         print(f"   ✅ {deleted_matches} matches deletados")
-        
-        # 3. Cotações (dependem de user)
+
+        # 5. Cotações (dependem de user)
         deleted_quotations = db.query(Quotation).delete()
         print(f"   ✅ {deleted_quotations} cotações deletadas")
-        
-        # 4. Company Activities (dependem de company)
+
+        # 6. Company Activities (dependem de company)
         deleted_activities = db.query(CompanyActivity).delete()
         print(f"   ✅ {deleted_activities} atividades de empresas deletadas")
-        
-        # 5. Companies (dependem de user)
+
+        # 7. Companies (dependem de user)
         deleted_companies = db.query(Company).delete()
         print(f"   ✅ {deleted_companies} empresas deletadas")
-        
-        # 6. Service Providers (dependem de user)
+
+        # 8. Service Providers (dependem de user)
         deleted_services = db.query(ServiceProvider).delete()
         print(f"   ✅ {deleted_services} prestadores de serviço deletados")
-        
-        # 7. Buyer Profiles (dependem de user)
+
+        # 9. Buyer Profiles (dependem de user)
         deleted_buyers = db.query(BuyerProfile).delete()
         print(f"   ✅ {deleted_buyers} perfis de comprador deletados")
-        
-        # 8. Tokens (dependem de user)
+
+        # 10. Tokens (dependem de user)
         deleted_email_tokens = db.query(EmailVerificationToken).delete()
         print(f"   ✅ {deleted_email_tokens} tokens de verificação deletados")
-        
+
         deleted_password_tokens = db.query(PasswordResetToken).delete()
         print(f"   ✅ {deleted_password_tokens} tokens de reset de senha deletados")
-        
-        # 9. Users (último, pois outros dependem dele)
+
+        # 11. Users (último, pois outros dependem dele)
         deleted_users = db.query(User).delete()
         print(f"   ✅ {deleted_users} usuários deletados")
         

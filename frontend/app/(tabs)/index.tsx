@@ -7,6 +7,7 @@ import {
   ImageBackground,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -54,7 +55,11 @@ export default function HomeScreen() {
   }
 
   function handleIndicators() {
-    router.push('/(tabs)/indicators');
+    Alert.alert(
+      'Em Desenvolvimento',
+      'A funcionalidade de Indicadores será disponibilizada na versão 2.0 do aplicativo.',
+      [{ text: 'OK' }]
+    );
   }
 
   const isProducer = user?.role === 'buyer';
@@ -154,7 +159,7 @@ export default function HomeScreen() {
         <View style={styles.navigationSection}>
           <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleTrackOrder}>
             <Ionicons name="cube-outline" size={40} color={colors.white} />
-            <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedido</Text>
+            <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedidos</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMessages}>
             <Ionicons name="chatbubbles-outline" size={40} color={colors.white} />
