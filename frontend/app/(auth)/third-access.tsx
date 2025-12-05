@@ -18,6 +18,7 @@ import MultiSelect from '../../src/components/MultiSelect';
 import { ProfileType } from '../../src/components/ProfileSelector';
 import Select from '../../src/components/Select';
 import StepIndicator from '../../src/components/StepIndicator';
+import ProductDiagramModal from '../../src/components/ProductDiagramModal';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
 import { 
@@ -1581,15 +1582,35 @@ export default function ThirdAccessScreen() {
                     </Text>
                   )}
 
-                  <Select
-                    label="Tipo de produtor"
-                    required
-                    value={producerType}
-                    onValueChange={handleProducerTypeChange}
-                    options={producerTypes}
-                    placeholder="Selecione o tipo de produtor"
-                    error={errors.producerType}
-                  />
+                  <View>
+                    <View style={styles.labelWithIcon}>
+                      <Text style={[styles.labelText, { color: colors.text }]}>
+                        Tipo de produtor <Text style={{ color: colors.error }}>*</Text>
+                      </Text>
+                      {producerType && (
+                        <View style={styles.iconWrapper}>
+                          <ProductDiagramModal
+                            profileType={
+                              producerType === 'pecuarista'
+                                ? 'pecuarista'
+                                : producerType === 'agricultor'
+                                  ? 'agricultor'
+                                  : 'ambos'
+                            }
+                          />
+                        </View>
+                      )}
+                    </View>
+                    <Select
+                      label=""
+                      required={false}
+                      value={producerType}
+                      onValueChange={handleProducerTypeChange}
+                      options={producerTypes}
+                      placeholder="Selecione o tipo de produtor"
+                      error={errors.producerType}
+                    />
+                  </View>
 
                   {(producerType === 'pecuarista' || producerType === 'ambos') && (
                     <>
@@ -2481,23 +2502,33 @@ export default function ThirdAccessScreen() {
                     </Text>
                   )}
 
-                  <MultiSelect
-                    label="Segmentos de Serviço"
-                    required
-                    options={serviceSegmentOptions}
-                    selectedValues={selectedServiceSegments}
-                    onToggle={toggleServiceSegment}
-                    error={errors.serviceSegments}
-                    allowCustom
-                    customValues={serviceSegmentsCustom}
-                    onAddCustom={value =>
-                      addCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)
-                    }
-                    onRemoveCustom={value =>
-                      removeCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)
-                    }
-                    itemsPerRow={2}
-                  />
+                  <View>
+                    <View style={styles.labelWithIcon}>
+                      <Text style={[styles.labelText, { color: colors.text }]}>
+                        Segmentos de Serviço <Text style={{ color: colors.error }}>*</Text>
+                      </Text>
+                      <View style={styles.iconWrapper}>
+                        <ProductDiagramModal profileType="prestador" />
+                      </View>
+                    </View>
+                    <MultiSelect
+                      label=""
+                      required={false}
+                      options={serviceSegmentOptions}
+                      selectedValues={selectedServiceSegments}
+                      onToggle={toggleServiceSegment}
+                      error={errors.serviceSegments}
+                      allowCustom
+                      customValues={serviceSegmentsCustom}
+                      onAddCustom={value =>
+                        addCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)
+                      }
+                      onRemoveCustom={value =>
+                        removeCustomValue(setServiceSegmentsCustom, serviceSegmentsCustom, value)
+                      }
+                      itemsPerRow={2}
+                    />
+                  </View>
 
                   {selectedServiceSegments.map(segment => (
                     <View key={segment} style={styles.segmentDataContainer}>
@@ -2587,6 +2618,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 15,
     marginTop: 20,
+  },
+  labelWithIcon: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  labelText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  iconWrapper: {
+    marginLeft: 8,
   },
   segmentDataContainer: {
     marginTop: 5,
