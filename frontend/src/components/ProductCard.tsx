@@ -62,7 +62,7 @@ export default function ProductCard({
               styles.typeBadge,
               {
                 backgroundColor:
-                  product.type === 'offer' ? colors.success + 'E6' : colors.warning + 'E6',
+                  product.type === 'offer' ? '#8B5CF6' : colors.warning + 'E6',
               },
             ]}
           >
@@ -70,7 +70,7 @@ export default function ProductCard({
               style={[
                 styles.typeBadgeText,
                 {
-                  color: product.type === 'offer' ? colors.success : colors.warning,
+                  color: product.type === 'offer' ? '#FFFFFF' : colors.warning,
                 },
               ]}
             >
