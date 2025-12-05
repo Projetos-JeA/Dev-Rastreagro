@@ -37,22 +37,22 @@ export default function MyQuotationsScreen() {
   const categoryLabel: Record<string, { label: string; color: string; icon: any }> = {
     agriculture: {
       label: 'Agricultura',
-      color: '#4CAF50',
+      color: colors.success,
       icon: 'leaf-outline'
     },
     livestock: {
       label: 'Pecuária',
-      color: '#FF9800',
+      color: colors.warning,
       icon: 'paw-outline'
     },
     service: {
       label: 'Serviços',
-      color: '#2196F3',
+      color: colors.blue,
       icon: 'build-outline'
     },
     both: {
       label: 'Agro + Pecuária',
-      color: '#9C27B0',
+      color: colors.purple2,
       icon: 'layers-outline'
     },
   };
@@ -208,7 +208,7 @@ export default function MyQuotationsScreen() {
             {quotations.map((quotation) => (
               <View
                 key={quotation.id}
-                style={[styles.quotationCard, { backgroundColor: colors.cardBackground }]}
+                style={[styles.quotationCard, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.cardHeaderLeft}>
@@ -293,7 +293,7 @@ export default function MyQuotationsScreen() {
                   )}
                 </View>
 
-                <View style={styles.footerRow}>
+                <View style={[styles.footerRow, { borderTopColor: colors.blackTransparent05 }]}>
                   <View style={styles.footerLeft}>
                     {quotation.location_city && (
                       <View style={styles.locationRow}>
@@ -406,7 +406,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -508,7 +507,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   footerLeft: {
     flex: 1,

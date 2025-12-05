@@ -919,10 +919,10 @@ export default function ProfileScreen() {
                       <Ionicons name="person-circle" size={120} color={colors.primary} />
                     )}
                     <TouchableOpacity
-                      style={[styles.editImageButton, { backgroundColor: colors.primary }]}
+                      style={[styles.editImageButton, { backgroundColor: colors.primary, borderColor: colors.white }]}
                       onPress={pickImage}
                     >
-                      <Ionicons name="camera" size={20} color="#fff" />
+                      <Ionicons name="camera" size={20} color={colors.white} />
                     </TouchableOpacity>
                   </View>
                   <Text style={[styles.userName, { color: colors.text }]}>
@@ -2160,7 +2160,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#fff',
   },
   userName: {
     fontSize: 24,

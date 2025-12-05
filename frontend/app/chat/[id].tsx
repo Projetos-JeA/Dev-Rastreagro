@@ -124,7 +124,7 @@ export default function ChatScreen() {
           <Text
             style={[
               styles.messageText,
-              { color: isMyMessage ? '#FFF' : colors.text },
+              { color: isMyMessage ? colors.white : colors.text },
             ]}
           >
             {item.content}
@@ -132,7 +132,7 @@ export default function ChatScreen() {
           <Text
             style={[
               styles.messageTime,
-              { color: isMyMessage ? 'rgba(255,255,255,0.8)' : colors.textSecondary },
+              { color: isMyMessage ? colors.whiteTransparent80 : colors.textSecondary },
             ]}
           >
             {formatMessageTime(item.created_at)}
@@ -235,9 +235,9 @@ export default function ChatScreen() {
             disabled={!newMessage.trim() || sending}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="#FFF" />
+              <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Ionicons name="send" size={20} color="#FFF" />
+              <Ionicons name="send" size={20} color={colors.white} />
             )}
           </TouchableOpacity>
         </View>

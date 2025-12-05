@@ -14,7 +14,7 @@ interface Product {
   installmentValue: number;
   freeShipping: boolean;
   category: string;
-  type?: 'offer' | 'quotation'; // 'offer' = oferta, 'quotation' = cotação
+  type?: 'offer' | 'quotation';
   sellerInfo?: {
     id: string;
     name: string;
@@ -54,15 +54,15 @@ export default function ProductCard({
       activeOpacity={0.8}
     >
       <View style={styles.imageContainer}>
-        <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
-        {/* Badge de tipo (Oferta ou Cotação) */}
+        <Image source={{ uri: product.image }} style={[styles.image, { backgroundColor: colors.lightGray }]} resizeMode="cover" />
         {product.type && (
           <View
             style={[
               styles.typeBadge,
               {
                 backgroundColor:
-                  product.type === 'offer' ? '#8B5CF6' : colors.warning + 'E6',
+                  product.type === 'offer' ? colors.purple : colors.warning + 'E6',
+                borderColor: colors.whiteTransparent30,
               },
             ]}
           >
@@ -70,7 +70,7 @@ export default function ProductCard({
               style={[
                 styles.typeBadgeText,
                 {
-                  color: product.type === 'offer' ? '#FFFFFF' : colors.warning,
+                  color: product.type === 'offer' ? colors.white : colors.warning,
                 },
               ]}
             >
@@ -123,9 +123,8 @@ export default function ProductCard({
           </View>
         )}
 
-        {/* Mostra quem está ofertando ou cotando */}
         {(product.sellerInfo || product.buyerInfo) && (
-          <View style={styles.userInfoContainer}>
+          <View style={[styles.userInfoContainer, { borderTopColor: colors.blackTransparent10 }]}>
             <Ionicons name="person-circle-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.userInfoText, { color: colors.textSecondary }]}>
               {product.type === 'offer'
@@ -173,7 +172,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 140,
-    backgroundColor: '#f0f0f0',
   },
   typeBadge: {
     position: 'absolute',
@@ -183,7 +181,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   typeBadgeText: {
     fontSize: 11,
@@ -280,7 +277,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   userInfoText: {
     fontSize: 11,

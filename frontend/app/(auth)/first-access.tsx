@@ -33,7 +33,6 @@ export default function FirstAccessScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Carrega dados salvos ao montar o componente
   useEffect(() => {
     async function loadSavedData() {
       const saved = await getStep1Data();
@@ -47,8 +46,7 @@ export default function FirstAccessScreen() {
   async function updateField(field: string, value: string) {
     const updated = { ...formData, [field]: value };
     setFormData(updated);
-    
-    // Salva automaticamente após um pequeno delay
+
     setTimeout(async () => {
       await saveStep1Data(updated);
     }, 300);
@@ -128,7 +126,6 @@ export default function FirstAccessScreen() {
         return;
       }
 
-      // Salva os dados antes de navegar
       await saveStep1Data(formData);
       
       router.push({

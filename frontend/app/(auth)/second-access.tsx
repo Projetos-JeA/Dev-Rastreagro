@@ -700,7 +700,7 @@ export default function SecondAccessScreen() {
                             style={styles.radioOption}
                             onPress={() => updateField('serviceDocumentType', 'cpf')}
                           >
-                            <View style={[styles.radioCircle, { borderColor: '#ccc' }]}>
+                            <View style={[styles.radioCircle, { borderColor: colors.borderGray }]}>
                               {formData.serviceDocumentType === 'cpf' && (
                                 <View
                                   style={[styles.radioInner, { backgroundColor: colors.primary }]}
@@ -713,7 +713,7 @@ export default function SecondAccessScreen() {
                             style={styles.radioOption}
                             onPress={() => updateField('serviceDocumentType', 'cnpj')}
                           >
-                            <View style={[styles.radioCircle, { borderColor: '#ccc' }]}>
+                            <View style={[styles.radioCircle, { borderColor: colors.borderGray }]}>
                               {formData.serviceDocumentType === 'cnpj' && (
                                 <View
                                   style={[styles.radioInner, { backgroundColor: colors.primary }]}
@@ -1071,7 +1071,6 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',
   },

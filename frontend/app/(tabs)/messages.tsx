@@ -87,13 +87,13 @@ export default function MessagesScreen() {
       >
         <View style={styles.avatarContainer}>
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>
+            <Text style={[styles.avatarText, { color: colors.white }]}>
               {(item.other_user.nickname || item.other_user.email)[0].toUpperCase()}
             </Text>
           </View>
           {item.unread_count > 0 && (
-            <View style={[styles.unreadBadge, { backgroundColor: colors.error }]}>
-              <Text style={styles.unreadText}>{item.unread_count}</Text>
+            <View style={[styles.unreadBadge, { backgroundColor: colors.error, borderColor: colors.white }]}>
+              <Text style={[styles.unreadText, { color: colors.white }]}>{item.unread_count}</Text>
             </View>
           )}
         </View>
@@ -252,7 +252,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   avatarText: {
-    color: '#FFF',
     fontSize: 22,
     fontWeight: 'bold',
   },
@@ -267,10 +266,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 6,
     borderWidth: 2,
-    borderColor: '#FFF',
   },
   unreadText: {
-    color: '#FFF',
     fontSize: 11,
     fontWeight: 'bold',
   },

@@ -224,7 +224,7 @@ export default function CartScreen() {
               key={item.id}
               style={[styles.cartItem, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}
             >
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              <Image source={{ uri: item.image }} style={[styles.itemImage, { backgroundColor: colors.lightGray }]} />
 
               <View style={styles.itemDetails}>
                 <View style={styles.itemHeader}>
@@ -449,7 +449,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
   },
   itemDetails: {
     flex: 1,

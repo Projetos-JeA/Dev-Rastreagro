@@ -229,7 +229,7 @@ export default function CreateQuotationScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-        <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+        <View style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>
           <View style={styles.headerSection}>
             <Ionicons name="add-circle" size={40} color={colors.primary} />
             <Text style={[styles.cardTitle, { color: colors.text }]}>
@@ -455,7 +455,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,

@@ -240,9 +240,9 @@ export default function ProductDiagramModal({ profileType }: ProductDiagramModal
         transparent={true}
         onRequestClose={() => setVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay }]}>
           <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {diagramData.title}
               </Text>
@@ -339,7 +339,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -354,7 +353,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   modalTitle: {
     fontSize: 20,

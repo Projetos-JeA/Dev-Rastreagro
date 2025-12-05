@@ -38,6 +38,15 @@ export interface ThemeColors {
   shadowColor: string;
   white: string;
   modalOverlay: string;
+  purple: string;
+  purple2: string;
+  lightGray: string;
+  borderGray: string;
+  black: string;
+  whiteTransparent80: string;
+  whiteTransparent30: string;
+  blackTransparent10: string;
+  blackTransparent05: string;
 }
 
 export const lightTheme: ThemeColors = {
@@ -80,6 +89,15 @@ export const lightTheme: ThemeColors = {
   shadowColor: '#000',
   white: '#FFFFFF',
   modalOverlay: 'rgba(0, 0, 0, 0.5)',
+  purple: '#8B5CF6',
+  purple2: '#9C27B0',
+  lightGray: '#f0f0f0',
+  borderGray: '#cccccc',
+  black: '#000000',
+  whiteTransparent80: 'rgba(255, 255, 255, 0.8)',
+  whiteTransparent30: 'rgba(255, 255, 255, 0.3)',
+  blackTransparent10: 'rgba(0, 0, 0, 0.1)',
+  blackTransparent05: 'rgba(0, 0, 0, 0.05)',
 };
 
 export const darkTheme: ThemeColors = {
@@ -122,4 +140,13 @@ export const darkTheme: ThemeColors = {
   shadowColor: '#000',
   white: '#FFFFFF',
   modalOverlay: 'rgba(0, 0, 0, 0.7)',
+  purple: '#A78BFA',
+  purple2: '#BA68C8',
+  lightGray: '#2A2A2A',
+  borderGray: '#555555',
+  black: '#000000',
+  whiteTransparent80: 'rgba(255, 255, 255, 0.8)',
+  whiteTransparent30: 'rgba(255, 255, 255, 0.3)',
+  blackTransparent10: 'rgba(255, 255, 255, 0.1)',
+  blackTransparent05: 'rgba(255, 255, 255, 0.05)',
 };
