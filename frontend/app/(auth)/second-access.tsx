@@ -194,25 +194,25 @@ export default function SecondAccessScreen() {
 
     // Valida campos de empresa se for Fornecedor (com ou sem Produtor)
     if (isProducerAndSupplier || isSupplierOnly) {
-      if (!formData.cnpj.trim()) {
-        newErrors.cnpj = 'CNPJ é obrigatório';
-      } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
-        newErrors.cnpj = 'CNPJ inválido';
-      }
+    if (!formData.cnpj.trim()) {
+      newErrors.cnpj = 'CNPJ é obrigatório';
+    } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
+      newErrors.cnpj = 'CNPJ inválido';
+    }
 
-      if (!formData.companyName.trim()) {
-        newErrors.companyName = 'Razão social é obrigatória';
-      }
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = 'Razão social é obrigatória';
+    }
 
-      if (!formData.tradeName.trim()) {
-        newErrors.tradeName = 'Nome fantasia é obrigatório';
-      }
+    if (!formData.tradeName.trim()) {
+      newErrors.tradeName = 'Nome fantasia é obrigatório';
+    }
 
       if (
         formData.stateRegistration.trim() &&
         formData.stateRegistration.replace(/\D/g, '').length !== 12
       ) {
-        newErrors.stateRegistration = 'Inscrição estadual inválida';
+      newErrors.stateRegistration = 'Inscrição estadual inválida';
       }
     } else {
       // Se for apenas Produtor (sem Fornecedor)
@@ -374,15 +374,15 @@ export default function SecondAccessScreen() {
       selectedProfiles: selectedProfiles,
     });
 
-    router.push({
-      pathname: '/(auth)/third-access',
-      params: {
-        ...params,
-        ...formData,
-        profileTypes: JSON.stringify(selectedProfiles),
-      },
-    });
-  }
+      router.push({
+        pathname: '/(auth)/third-access',
+        params: {
+          ...params,
+          ...formData,
+          profileTypes: JSON.stringify(selectedProfiles),
+        },
+      });
+    }
 
   function handleLoginRedirect() {
     router.push('/(auth)/login');
@@ -403,45 +403,36 @@ export default function SecondAccessScreen() {
       }
 
       // Se já tem 2 perfis, não permite adicionar mais
-      if (prev.length >= 2) {
+        if (prev.length >= 2) {
         setErrors(prevErrors => ({
-          ...prevErrors,
-          profile: 'Você só pode selecionar no máximo 2 perfis',
-        }));
-        return prev;
-      }
+            ...prevErrors,
+            profile: 'Você só pode selecionar no máximo 2 perfis',
+          }));
+          return prev;
+        }
 
       // Simula a nova lista para validar antes de adicionar
       const newProfiles = [...prev, profile];
 
       // Se vai ter 2 perfis, valida a combinação ANTES de adicionar
-      if (newProfiles.length === 2) {
-        const hasProducer = newProfiles.includes('producer');
-        const hasSupplier = newProfiles.includes('supplier');
-        const hasServiceProvider = newProfiles.includes('service_provider');
+        if (newProfiles.length === 2) {
+          const hasProducer = newProfiles.includes('producer');
+          const hasSupplier = newProfiles.includes('supplier');
+          const hasServiceProvider = newProfiles.includes('service_provider');
 
         // Regras de validação:
         // ✅ Permitido: Produtor + Fornecedor
+        // ✅ Permitido: Produtor + Prestador de Serviço (NOVO)
         // ✅ Permitido: Fornecedor + Prestador de Serviço
-        // ❌ NÃO permitido: Produtor + Prestador de Serviço
-        const isValidCombination =
-          (hasProducer && hasSupplier) || (hasSupplier && hasServiceProvider);
+        // Qualquer combinação de 2 perfis é permitida
+          const isValidCombination = true; // Todas as combinações de 2 perfis são válidas
 
-        if (!isValidCombination) {
-          // Bloqueia especificamente Produtor + Prestador de Serviço
-          if (hasProducer && hasServiceProvider) {
+          if (!isValidCombination) {
             setErrors(prevErrors => ({
               ...prevErrors,
               profile:
-                'Combinação inválida. Não é permitido selecionar Produtor + Prestador de Serviço. Permite-se apenas: Produtor + Fornecedor ou Fornecedor + Prestador de Serviço.',
+                'Combinação inválida. Você pode selecionar no máximo 2 perfis.',
             }));
-          } else {
-            setErrors(prevErrors => ({
-              ...prevErrors,
-              profile:
-                'Combinação inválida. Só é permitido: Produtor + Fornecedor ou Fornecedor + Prestador de Serviço.',
-            }));
-          }
           return prev; // Não adiciona o perfil
         }
       }
@@ -513,16 +504,16 @@ export default function SecondAccessScreen() {
                       <>
                         <View style={styles.cnpjContainer}>
                           <View style={styles.cnpjInputContainer}>
-                            <Input
-                              label="CNPJ"
-                              required
-                              value={formData.cnpj}
+                <Input
+                  label="CNPJ"
+                  required
+                  value={formData.cnpj}
                               onChangeText={text => updateField('cnpj', text)}
-                              error={errors.cnpj}
-                              placeholder="xx.xxx.xxx/xxxx-xx"
-                              mask="cnpj"
-                              maxLength={18}
-                            />
+                  error={errors.cnpj}
+                  placeholder="xx.xxx.xxx/xxxx-xx"
+                  mask="cnpj"
+                  maxLength={18}
+                />
                           </View>
                           <TouchableOpacity
                             style={[styles.cnpjButton, { backgroundColor: colors.primary }]}
@@ -539,34 +530,34 @@ export default function SecondAccessScreen() {
                           </TouchableOpacity>
                         </View>
 
-                        <Input
-                          label="Razão social"
-                          required
-                          value={formData.companyName}
+                <Input
+                  label="Razão social"
+                  required
+                  value={formData.companyName}
                           onChangeText={text => updateField('companyName', text)}
-                          error={errors.companyName}
+                  error={errors.companyName}
                           placeholder="Digite sua razão social"
-                          autoCapitalize="words"
-                        />
+                  autoCapitalize="words"
+                />
 
-                        <Input
-                          label="Nome Fantasia"
-                          required
-                          value={formData.tradeName}
+                <Input
+                  label="Nome Fantasia"
+                  required
+                  value={formData.tradeName}
                           onChangeText={text => updateField('tradeName', text)}
-                          error={errors.tradeName}
+                  error={errors.tradeName}
                           placeholder="Digite seu nome fantasia"
-                          autoCapitalize="words"
-                        />
+                  autoCapitalize="words"
+                />
 
-                        <Input
-                          label="Inscrição estadual"
-                          value={formData.stateRegistration}
+                <Input
+                  label="Inscrição estadual"
+                  value={formData.stateRegistration}
                           onChangeText={text => updateField('stateRegistration', text)}
-                          error={errors.stateRegistration}
+                  error={errors.stateRegistration}
                           placeholder="xxx.xxx.xxx.xxx (opcional)"
-                          mask="ie"
-                          maxLength={15}
+                  mask="ie"
+                  maxLength={15}
                         />
                       </>
                     );
@@ -922,9 +913,9 @@ export default function SecondAccessScreen() {
                 {isCheckingAvailability ? (
                   <ActivityIndicator color={colors.buttonText} />
                 ) : (
-                  <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
-                    Continuar
-                  </Text>
+                <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
+                  Continuar
+                </Text>
                 )}
               </TouchableOpacity>
 

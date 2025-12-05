@@ -23,7 +23,17 @@ export default function HomeScreen() {
   const router = useRouter();
 
   function handleCreateQuotation() {
-    router.push('/(tabs)/create-quotation');
+    router.push({
+      pathname: '/(tabs)/create-quotation',
+      params: { quotation_type: 'quotation' },
+    });
+  }
+
+  function handleCreateOffer() {
+    router.push({
+      pathname: '/(tabs)/create-quotation',
+      params: { quotation_type: 'offer' },
+    });
   }
 
   function handleMyQuotations() {
@@ -62,12 +72,16 @@ export default function HomeScreen() {
     );
   }
 
-  const isProducer = user?.role === 'buyer';
+  const { availableRoles } = useAuth();
+  const isProducer = availableRoles?.includes('buyer') || false;
   const isPecuarista = user?.producer_type === 'pecuarista' || user?.producer_type === 'ambos';
   const showHerdControl = isProducer && isPecuarista;
 
-  const newQuotationText = isProducer ? 'Nova\nCotação' : 'Nova\nOferta';
-  const myQuotationsText = isProducer ? 'Minhas\nCotações' : 'Minhas\nOfertas';
+  // Todos podem criar cotações e ofertas agora
+  const showCreateQuotation = true; // Todos podem criar cotação
+  const showCreateOffer = true; // Todos podem criar oferta
+  const showMyQuotations = true; // Todos podem ver suas cotações
+  const showMyOffers = true; // Todos podem ver suas ofertas
 
   return (
     <ImageBackground
@@ -142,14 +156,24 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.navigationSection}>
-          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCreateQuotation}>
-            <Ionicons name="add-circle-outline" size={40} color={colors.white} />
-            <Text style={[styles.navButtonText, { color: colors.white }]}>{newQuotationText}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMyQuotations}>
-            <Ionicons name="checkmark-circle-outline" size={40} color={colors.white} />
-            <Text style={[styles.navButtonText, { color: colors.white }]}>{myQuotationsText}</Text>
-          </TouchableOpacity>
+          {showCreateQuotation && (
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.gray }]}
+              onPress={handleCreateQuotation}
+            >
+              <Ionicons name="document-text-outline" size={40} color={colors.white} />
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Nova{'\n'}Cotações</Text>
+            </TouchableOpacity>
+          )}
+          {showCreateOffer && (
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.gray }]}
+              onPress={handleCreateOffer}
+            >
+              <Ionicons name="add-circle-outline" size={40} color={colors.white} />
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Criar{'\n'}Oferta</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleCart}>
             <Ionicons name="cart-outline" size={40} color={colors.white} />
             <Text style={[styles.navButtonText, { color: colors.white }]}>Carrinho</Text>
@@ -157,10 +181,31 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.navigationSection}>
+          {showMyQuotations && (
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.gray }]}
+              onPress={handleMyQuotations}
+            >
+              <Ionicons name="checkmark-circle-outline" size={40} color={colors.white} />
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Minhas{'\n'}Cotações</Text>
+            </TouchableOpacity>
+          )}
+          {showMyOffers && (
+            <TouchableOpacity
+              style={[styles.navButton, { backgroundColor: colors.gray }]}
+              onPress={handleMyQuotations}
+            >
+              <Ionicons name="briefcase-outline" size={40} color={colors.white} />
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Minhas{'\n'}Ofertas</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleTrackOrder}>
             <Ionicons name="cube-outline" size={40} color={colors.white} />
             <Text style={[styles.navButtonText, { color: colors.white }]}>Acompanhar{'\n'}Pedidos</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.navigationSection}>
           <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleMessages}>
             <Ionicons name="chatbubbles-outline" size={40} color={colors.white} />
             <Text style={[styles.navButtonText, { color: colors.white }]}>Mensagens</Text>
@@ -169,6 +214,7 @@ export default function HomeScreen() {
             <FontAwesome5 name="handshake" size={40} color={colors.white} />
             <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
           </TouchableOpacity>
+          <View style={styles.navButton} />
         </View>
 
         <View style={styles.navigationSection}>

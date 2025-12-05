@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,7 +24,16 @@ export default function CreateQuotationScreen() {
   const { colors } = useTheme();
   const { user, profileImage, currentRoleLabel } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const quotationType = (params.quotation_type as string) || 'offer'; // 'quotation' ou 'offer'
   const [loading, setLoading] = useState(false);
+  
+  const isQuotation = quotationType === 'quotation';
+  const screenTitle = isQuotation ? 'Nova Cotação' : 'Criar Oferta';
+  const cardTitle = isQuotation ? 'Criar Nova Cotação' : 'Criar Nova Oferta';
+  const cardSubtitle = isQuotation 
+    ? 'Preencha os dados do produto ou serviço que você está procurando'
+    : 'Preencha os dados do produto ou serviço que deseja oferecer';
 
   const [formData, setFormData] = useState<QuotationCreateRequest>({
     title: '',
@@ -111,10 +120,13 @@ export default function CreateQuotationScreen() {
 
   async function handleSubmit() {
     if (!validateForm()) {
+      console.log('❌ Validação do formulário falhou');
       return;
     }
 
     setLoading(true);
+    console.log('🚀 Criando cotação...');
+    console.log('📋 Dados do formulário:', formData);
 
     try {
       const payload: QuotationCreateRequest = {
@@ -132,20 +144,32 @@ export default function CreateQuotationScreen() {
         discount_percentage: formData.discount_percentage || undefined,
         installments: formData.installments || 1,
         stock: formData.stock || undefined,
+        quotation_type: quotationType, // Adiciona o tipo (quotation ou offer)
       };
 
-      await quotationService.createQuotation(payload);
+      console.log('📤 Enviando payload para API:', payload);
+      const createdQuotation = await quotationService.createQuotation(payload);
+      console.log('✅ Cotação criada com sucesso!', createdQuotation);
+      console.log('📊 ID da cotação criada:', createdQuotation.id);
 
+      const successMessage = isQuotation
+        ? `Sua cotação "${createdQuotation.title}" foi criada com sucesso!`
+        : `Sua oferta "${createdQuotation.title}" foi criada com sucesso e já está disponível no Deu Agro!`;
+      
       Alert.alert(
-        'Sucesso!',
-        'Sua cotação foi criada com sucesso e já está disponível no Deu Agro!',
+        '✅ Sucesso!',
+        successMessage,
         [
           {
             text: 'Ver no Deu Agro',
             onPress: () => router.push('/(tabs)/deu-agro'),
           },
           {
-            text: 'Voltar',
+            text: isQuotation ? 'Ver Minhas Cotações' : 'Ver Minhas Ofertas',
+            onPress: () => router.push('/(tabs)/my-quotations'),
+          },
+          {
+            text: 'OK',
             onPress: () => router.back(),
           },
         ]
@@ -168,10 +192,12 @@ export default function CreateQuotationScreen() {
         stock: undefined,
       });
     } catch (error: any) {
-      console.error('Erro ao criar cotação:', error);
+      console.error('❌ Erro ao criar cotação:', error);
+      console.error('❌ Detalhes do erro:', error.response?.data || error.message);
+      console.error('❌ Status do erro:', error.response?.status);
       Alert.alert(
-        'Erro',
-        error.response?.data?.detail || 'Não foi possível criar a cotação. Tente novamente.'
+        '❌ Erro',
+        error.response?.data?.detail || error.message || 'Não foi possível criar a cotação. Tente novamente.'
       );
     } finally {
       setLoading(false);
@@ -189,7 +215,7 @@ export default function CreateQuotationScreen() {
         userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
-        screenTitle="Nova Cotação"
+        screenTitle={screenTitle}
         onBackPress={handleBack}
         onProfilePress={handleProfile}
       />
@@ -207,16 +233,16 @@ export default function CreateQuotationScreen() {
           <View style={styles.headerSection}>
             <Ionicons name="add-circle" size={40} color={colors.primary} />
             <Text style={[styles.cardTitle, { color: colors.text }]}>
-              Criar Nova Cotação
+              {cardTitle}
             </Text>
             <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-              Preencha os dados do produto ou serviço que deseja oferecer
+              {cardSubtitle}
             </Text>
           </View>
 
             <View style={styles.formSection}>
               <Input
-                label="Título da Cotação"
+                label={isQuotation ? "Título da Cotação" : "Título da Oferta"}
                 required
                 placeholder="Ex: Boi Nelore, Sementes de Soja, etc."
                 value={formData.title}
@@ -403,7 +429,7 @@ export default function CreateQuotationScreen() {
                 <>
                   <Ionicons name="checkmark-circle" size={24} color={colors.white} />
                   <Text style={[styles.submitButtonText, { color: colors.white }]}>
-                    Publicar Cotação
+                    {isQuotation ? 'Publicar Cotação' : 'Publicar Oferta'}
                   </Text>
                 </>
               )}

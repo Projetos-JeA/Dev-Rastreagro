@@ -41,7 +41,18 @@ interface Product {
   installmentValue: number;
   freeShipping: boolean;
   category: string;
+  type?: 'offer' | 'quotation';
   seller: Seller;
+  sellerInfo?: {
+    id: string;
+    name: string;
+    nickname: string;
+  };
+  buyerInfo?: {
+    id: string;
+    name: string;
+    nickname: string;
+  };
   description: string;
   specifications?: { label: string; value: string }[];
   stock: number;
@@ -70,67 +81,137 @@ export default function DeuAgroScreen() {
 
   // Função para converter QuotationResponse para Product
   function quotationToProduct(quotation: QuotationResponse): Product {
-    const originalPrice = quotation.price ? Math.round(quotation.price * 100) : 0;
-    const price = quotation.discount_percentage
-      ? Math.round(originalPrice * (1 - quotation.discount_percentage / 100))
-      : originalPrice;
-    const discount = quotation.discount_percentage || 0;
-    const installments = quotation.installments || 1;
-    const installmentValue = Math.round(price / installments);
+    try {
+      const originalPrice = quotation.price ? Math.round(quotation.price * 100) : 0;
+      const price = quotation.discount_percentage
+        ? Math.round(originalPrice * (1 - quotation.discount_percentage / 100))
+        : originalPrice;
+      const discount = quotation.discount_percentage || 0;
+      const installments = quotation.installments || 1;
+      const installmentValue = Math.round(price / installments);
 
-    // Mapeia categoria da API para categoria do frontend
-    const categoryMap: Record<string, string> = {
-      livestock: 'Animais',
-      agriculture: 'Insumos',
-      service: 'Equipamentos',
-      both: 'Insumos',
-    };
+      // Mapeia categoria da API para categoria do frontend
+      const categoryMap: Record<string, string> = {
+        livestock: 'Animais',
+        agriculture: 'Insumos',
+        service: 'Equipamentos',
+        both: 'Insumos',
+      };
 
-    return {
-      id: String(quotation.id),
-      name: quotation.title,
-      image: quotation.image_url || 'https://via.placeholder.com/400',
-      images: quotation.images || [],
-      originalPrice,
-      price,
-      discount,
-      installments,
-      installmentValue,
-      freeShipping: quotation.free_shipping,
-      category: categoryMap[quotation.category] || 'Insumos',
-      seller: {
-        id: String(quotation.seller_id),
-        name: quotation.seller_nickname || 'Vendedor',
-        nickname: quotation.seller_nickname || 'Vendedor',
-        location: quotation.location_city
-          ? `${quotation.location_city}, ${quotation.location_state}`
-          : 'Localização não informada',
-        rating: 4.5,
-        totalSales: 0,
-      },
-      description: quotation.description || '',
-      stock: quotation.stock || 0,
-    };
+      // Garante que category seja string
+      const category = typeof quotation.category === 'string' 
+        ? quotation.category 
+        : (quotation.category as any)?.value || 'agriculture';
+
+      return {
+        id: String(quotation.id),
+        name: quotation.title,
+        image: quotation.image_url || 'https://via.placeholder.com/400',
+        images: quotation.images || [],
+        originalPrice,
+        price,
+        discount,
+        installments,
+        installmentValue,
+        freeShipping: quotation.free_shipping,
+        category: categoryMap[category] || 'Insumos',
+        type: quotation.type || 'offer', // Adiciona o tipo (oferta ou cotação)
+        seller: {
+          id: String(quotation.seller_id || quotation.buyer_id || '0'),
+          name: quotation.seller_nickname || quotation.buyer_nickname || 'Usuário',
+          nickname: quotation.seller_nickname || quotation.buyer_nickname || 'Usuário',
+          location: quotation.location_city
+            ? `${quotation.location_city}, ${quotation.location_state}`
+            : 'Localização não informada',
+          rating: 4.5,
+          totalSales: 0,
+        },
+        // Informações do vendedor/comprador para exibição no card
+        sellerInfo: quotation.seller_nickname
+          ? {
+              id: String(quotation.seller_id || '0'),
+              name: quotation.seller_nickname,
+              nickname: quotation.seller_nickname,
+            }
+          : undefined,
+        buyerInfo: quotation.buyer_nickname
+          ? {
+              id: String(quotation.buyer_id || '0'),
+              name: quotation.buyer_nickname,
+              nickname: quotation.buyer_nickname,
+            }
+          : undefined,
+        description: quotation.description || '',
+        stock: quotation.stock || 0,
+      };
+    } catch (error) {
+      console.error('❌ [deu-agro] Erro ao converter cotação para produto:', error);
+      console.error('❌ [deu-agro] Cotação que causou erro:', quotation);
+      // Retorna um produto vazio para não quebrar o map
+      return {
+        id: String(quotation.id || '0'),
+        name: quotation.title || 'Produto sem nome',
+        image: 'https://via.placeholder.com/400',
+        images: [],
+        originalPrice: 0,
+        price: 0,
+        discount: 0,
+        installments: 1,
+        installmentValue: 0,
+        freeShipping: false,
+        category: 'Insumos',
+        type: quotation.type || 'offer',
+        seller: {
+          id: '0',
+          name: 'Usuário',
+          nickname: 'Usuário',
+          location: 'Localização não informada',
+          rating: 0,
+          totalSales: 0,
+        },
+        description: '',
+        stock: 0,
+      };
+    }
   }
 
   // Busca cotações da API
   useEffect(() => {
     async function loadQuotations() {
-      if (!user) return;
+      if (!user) {
+        console.log('⚠️ [deu-agro] Usuário não encontrado');
+        return;
+      }
 
       setLoading(true);
       try {
+        console.log('📋 [deu-agro] Carregando cotações relevantes...');
         let quotations: QuotationResponse[];
         if (showRelevantOnly) {
+          console.log('🔍 [deu-agro] Buscando apenas relevantes (com IA)');
           quotations = await quotationService.getRelevantQuotations();
         } else {
+          console.log('📦 [deu-agro] Buscando todas as cotações');
           quotations = await quotationService.getAllQuotations();
         }
 
+        console.log(`✅ [deu-agro] Recebidas ${quotations.length} cotações/ofertas`);
+        console.log('📊 [deu-agro] Dados completos:', JSON.stringify(quotations, null, 2));
+
+        if (quotations.length === 0) {
+          console.warn('⚠️ [deu-agro] Nenhuma cotação/oferta recebida!');
+          setProducts([]);
+          return;
+        }
+
         const convertedProducts = quotations.map(quotationToProduct);
+        console.log(`🔄 [deu-agro] Convertidos ${convertedProducts.length} produtos`);
+        console.log('📦 [deu-agro] Primeiro produto convertido:', convertedProducts[0]);
         setProducts(convertedProducts);
       } catch (error: any) {
-        console.error('Erro ao carregar cotações:', error);
+        console.error('❌ [deu-agro] Erro ao carregar cotações:', error);
+        console.error('❌ [deu-agro] Response:', error.response?.data);
+        console.error('❌ [deu-agro] Status:', error.response?.status);
         setProducts([]);
       } finally {
         setLoading(false);

@@ -28,7 +28,10 @@ class QuotationBase(BaseModel):
 
 
 class QuotationCreate(QuotationBase):
-    pass
+    quotation_type: Optional[str] = Field(
+        default="offer",
+        description="Tipo: 'offer' (oferta - todos criam) ou 'quotation' (cotação - apenas compradores)"
+    )
 
 
 class QuotationUpdate(BaseModel):
@@ -53,12 +56,15 @@ class QuotationUpdate(BaseModel):
 
 class QuotationResponse(QuotationBase):
     id: int
-    seller_id: int
-    seller_type: str
+    type: str  # "quotation" ou "offer"
+    seller_id: Optional[int] = None  # NULL se for cotação
+    buyer_id: Optional[int] = None  # NULL se for oferta
+    seller_type: Optional[str] = None  # NULL se for cotação
     status: QuotationStatus
     created_at: datetime
     updated_at: datetime
-    seller_nickname: Optional[str] = None  # Para exibição
+    seller_nickname: Optional[str] = None  # Para exibição (se for oferta)
+    buyer_nickname: Optional[str] = None  # Para exibição (se for cotação)
 
     class Config:
         from_attributes = True

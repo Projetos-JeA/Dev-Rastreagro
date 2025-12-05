@@ -2,8 +2,10 @@ import api from '../config/api';
 
 export interface QuotationResponse {
   id: number;
-  seller_id: number;
-  seller_type: string;
+  type?: 'offer' | 'quotation'; // 'offer' = oferta, 'quotation' = cotação
+  seller_id?: number;
+  buyer_id?: number;
+  seller_type?: string;
   title: string;
   description?: string;
   category: 'agriculture' | 'livestock' | 'service' | 'both';
@@ -24,6 +26,7 @@ export interface QuotationResponse {
   created_at: string;
   updated_at: string;
   seller_nickname?: string;
+  buyer_nickname?: string;
 }
 
 export interface QuotationCreateRequest {
@@ -43,6 +46,7 @@ export interface QuotationCreateRequest {
   discount_percentage?: number;
   installments?: number;
   stock?: number;
+  quotation_type?: 'quotation' | 'offer'; // Tipo: 'quotation' (cotação) ou 'offer' (oferta)
 }
 
 export const quotationService = {
@@ -65,10 +69,25 @@ export const quotationService = {
    */
   async getRelevantQuotations(): Promise<QuotationResponse[]> {
     try {
+      console.log('🔵 [quotationService] Fazendo requisição GET /quotations/relevant');
       const response = await api.get<QuotationResponse[]>('/quotations/relevant');
+      console.log('✅ [quotationService] Resposta recebida:', {
+        status: response.status,
+        dataLength: response.data?.length || 0,
+        data: response.data
+      });
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        console.error('❌ [quotationService] Resposta inválida:', response.data);
+        return [];
+      }
+      
       return response.data;
     } catch (error: any) {
-      console.error('Erro ao buscar cotações relevantes:', error);
+      console.error('❌ [quotationService] Erro ao buscar cotações relevantes:', error);
+      console.error('❌ [quotationService] Response:', error.response?.data);
+      console.error('❌ [quotationService] Status:', error.response?.status);
+      console.error('❌ [quotationService] Message:', error.message);
       throw error;
     }
   },
@@ -104,10 +123,18 @@ export const quotationService = {
    */
   async getMyQuotations(): Promise<QuotationResponse[]> {
     try {
+      console.log('🔵 [quotationService] Fazendo requisição GET /quotations/my');
       const response = await api.get<QuotationResponse[]>('/quotations/my');
+      console.log('✅ [quotationService] Resposta recebida:', {
+        status: response.status,
+        dataLength: response.data?.length || 0,
+        data: response.data
+      });
       return response.data;
     } catch (error: any) {
-      console.error('Erro ao buscar minhas cotações:', error);
+      console.error('❌ [quotationService] Erro ao buscar minhas cotações:', error);
+      console.error('❌ [quotationService] Response:', error.response?.data);
+      console.error('❌ [quotationService] Status:', error.response?.status);
       throw error;
     }
   },

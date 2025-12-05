@@ -14,6 +14,17 @@ interface Product {
   installmentValue: number;
   freeShipping: boolean;
   category: string;
+  type?: 'offer' | 'quotation'; // 'offer' = oferta, 'quotation' = cotação
+  sellerInfo?: {
+    id: string;
+    name: string;
+    nickname: string;
+  };
+  buyerInfo?: {
+    id: string;
+    name: string;
+    nickname: string;
+  };
 }
 
 interface ProductCardProps {
@@ -44,6 +55,29 @@ export default function ProductCard({
     >
       <View style={styles.imageContainer}>
         <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
+        {/* Badge de tipo (Oferta ou Cotação) */}
+        {product.type && (
+          <View
+            style={[
+              styles.typeBadge,
+              {
+                backgroundColor:
+                  product.type === 'offer' ? colors.success + 'E6' : colors.warning + 'E6',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.typeBadgeText,
+                {
+                  color: product.type === 'offer' ? colors.success : colors.warning,
+                },
+              ]}
+            >
+              {product.type === 'offer' ? 'Oferta' : 'Cotação'}
+            </Text>
+          </View>
+        )}
         {onAddToCart && (
           <TouchableOpacity
             style={[styles.cartButton, { backgroundColor: colors.primary }]}
@@ -89,6 +123,18 @@ export default function ProductCard({
           </View>
         )}
 
+        {/* Mostra quem está ofertando ou cotando */}
+        {(product.sellerInfo || product.buyerInfo) && (
+          <View style={styles.userInfoContainer}>
+            <Ionicons name="person-circle-outline" size={14} color={colors.textSecondary} />
+            <Text style={[styles.userInfoText, { color: colors.textSecondary }]}>
+              {product.type === 'offer'
+                ? `Ofertado por: ${product.sellerInfo?.nickname || product.sellerInfo?.name || 'Usuário'}`
+                : `Cotado por: ${product.buyerInfo?.nickname || product.buyerInfo?.name || 'Usuário'}`}
+            </Text>
+          </View>
+        )}
+
         {onAddToCart && (
           <TouchableOpacity
             style={[styles.addToCartButton, { backgroundColor: colors.primary }]}
@@ -128,6 +174,21 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     backgroundColor: '#f0f0f0',
+  },
+  typeBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  typeBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
   cartButton: {
     position: 'absolute',
@@ -211,5 +272,18 @@ const styles = StyleSheet.create({
   addToCartText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  userInfoText: {
+    fontSize: 11,
+    fontStyle: 'italic',
   },
 });

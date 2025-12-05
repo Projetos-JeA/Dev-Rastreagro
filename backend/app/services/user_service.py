@@ -1,3 +1,5 @@
+import re
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -109,17 +111,40 @@ class UserService:
 
         # Determina perfis disponíveis baseado nos dados existentes
         # IMPORTANTE: Verifica se os perfis EXISTEM no banco, não apenas o role principal
+        # REGRA: Produtor com CPF = apenas BUYER, Produtor com CNPJ = pode ser SELLER
         available_roles = []
         if buyer_obj:
             available_roles.append("buyer")
+        
+        # Verifica se company tem CNPJ (14 dígitos) ou CPF (11 dígitos)
+        # Apenas empresas com CNPJ podem ser "seller"
         if company_obj:
-            available_roles.append("seller")
+            cnpj_cpf_clean = re.sub(r"[^0-9]", "", company_obj.cnpj_cpf or "")
+            # Se tem 14 dígitos = CNPJ = pode fornecer (seller)
+            # Se tem 11 dígitos = CPF = apenas comprador (buyer), não pode fornecer
+            if len(cnpj_cpf_clean) == 14:
+                # É CNPJ, pode ser seller
+                available_roles.append("seller")
+            elif len(cnpj_cpf_clean) == 11:
+                # É CPF, não pode ser seller (apenas buyer)
+                # Não adiciona "seller" aos roles
+                pass
+            else:
+                # Tamanho inválido, assume que pode ser seller (comportamento antigo)
+                # Mas adiciona log de warning
+                print(f"⚠️  [WARNING] Company {company_obj.id} tem cnpj_cpf com tamanho inválido: {len(cnpj_cpf_clean)} dígitos")
+                available_roles.append("seller")
+        
         if service_obj:
             available_roles.append("service_provider")
         
-        # Log para debug (pode remover depois)
+        # Log para debug
         if len(available_roles) > 1:
             print(f"🔍 [DEBUG] Usuário {user.email} tem {len(available_roles)} perfis: {available_roles}")
+        elif company_obj:
+            cnpj_cpf_clean = re.sub(r"[^0-9]", "", company_obj.cnpj_cpf or "")
+            if len(cnpj_cpf_clean) == 11:
+                print(f"✅ [DEBUG] Usuário {user.email} tem Company com CPF (não CNPJ), então é apenas BUYER")
         
         # Se não encontrou nenhum perfil, usa o role principal como fallback
         # (caso raro, mas pode acontecer)

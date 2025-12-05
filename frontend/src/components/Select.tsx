@@ -7,9 +7,12 @@ import {
   Modal,
   FlatList,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface SelectProps {
   label: string;
@@ -164,6 +167,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
+    width: SCREEN_WIDTH,
+    maxWidth: '100%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',

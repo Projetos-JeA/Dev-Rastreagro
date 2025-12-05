@@ -98,6 +98,7 @@ async function _addActiveRoleHeader(config: RetryAxiosRequestConfig): Promise<vo
     if (userId) {
       const activeRole = await storage.getItem(`@activeRole_${userId}`);
       if (activeRole) {
+        console.log(`🔵 Adicionando X-Active-Role: ${activeRole} para usuário ${userId}`);
         const headers = config.headers ?? new AxiosHeaders();
         if (headers instanceof AxiosHeaders) {
           headers.set('X-Active-Role', activeRole);
@@ -105,7 +106,11 @@ async function _addActiveRoleHeader(config: RetryAxiosRequestConfig): Promise<vo
           (headers as Record<string, string>)['X-Active-Role'] = activeRole;
         }
         config.headers = headers;
+      } else {
+        console.warn(`⚠️ Perfil ativo não encontrado para usuário ${userId}`);
       }
+    } else {
+      console.warn('⚠️ User ID não encontrado no storage');
     }
   } catch (error) {
     // Ignora erros ao buscar perfil ativo (não é crítico)

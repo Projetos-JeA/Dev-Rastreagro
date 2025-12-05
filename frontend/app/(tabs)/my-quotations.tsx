@@ -60,102 +60,18 @@ export default function MyQuotationsScreen() {
   async function loadQuotations() {
     try {
       setLoading(true);
-
-      const mockData: QuotationResponse[] = [
-        {
-          id: 1,
-          seller_id: 1,
-          seller_type: 'seller',
-          title: 'Soja de Alta Qualidade',
-          description: 'Soja livre de transgênicos, cultivada de forma sustentável. Ideal para alimentação animal e produção de óleo.',
-          category: 'agriculture',
-          product_type: 'Grãos',
-          location_city: 'Dourados',
-          location_state: 'MS',
-          price: 145.50,
-          quantity: 5000,
-          unit: 'kg',
-          expires_at: '2025-12-31',
-          free_shipping: false,
-          discount_percentage: 10,
-          installments: 3,
-          stock: 5000,
-          status: 'active',
-          created_at: '2025-11-15T10:00:00Z',
-          updated_at: '2025-11-15T10:00:00Z',
-          seller_nickname: 'João Silva',
-        },
-        {
-          id: 2,
-          seller_id: 1,
-          seller_type: 'seller',
-          title: 'Gado Nelore Para Engorda',
-          description: 'Lote de 50 cabeças de gado Nelore, idade entre 18-24 meses. Animais vacinados e com atestado sanitário.',
-          category: 'livestock',
-          product_type: 'Bovinos',
-          location_city: 'Aquidauana',
-          location_state: 'MS',
-          price: 8500.00,
-          quantity: 50,
-          unit: 'cabeça',
-          expires_at: '2025-12-20',
-          free_shipping: false,
-          stock: 50,
-          status: 'sold',
-          created_at: '2025-10-25T08:00:00Z',
-          updated_at: '2025-11-25T16:45:00Z',
-          seller_nickname: 'João Silva',
-        },
-        {
-          id: 5,
-          seller_id: 1,
-          seller_type: 'seller',
-          title: 'Sementes de Girassol Certificadas',
-          description: 'Sementes de girassol certificadas, com alta taxa de germinação (98%). Variedade resistente à seca.',
-          category: 'agriculture',
-          product_type: 'Sementes',
-          location_city: 'Maracaju',
-          location_state: 'MS',
-          price: 35.00,
-          quantity: 500,
-          unit: 'kg',
-          expires_at: '2025-11-30',
-          free_shipping: true,
-          stock: 500,
-          status: 'expired',
-          created_at: '2025-09-15T07:00:00Z',
-          updated_at: '2025-11-30T23:59:00Z',
-          seller_nickname: 'João Silva',
-        },
-        {
-          id: 6,
-          seller_id: 1,
-          seller_type: 'seller',
-          title: 'Adubo Orgânico Compostado',
-          description: 'Adubo orgânico de alta qualidade, produzido através de compostagem controlada. Rico em nutrientes.',
-          category: 'agriculture',
-          product_type: 'Insumos',
-          location_city: 'Ponta Porã',
-          location_state: 'MS',
-          price: 45.00,
-          quantity: 2000,
-          unit: 'kg',
-          expires_at: '2026-06-30',
-          free_shipping: false,
-          discount_percentage: 20,
-          installments: 5,
-          stock: 2000,
-          status: 'active',
-          created_at: '2025-11-18T13:00:00Z',
-          updated_at: '2025-11-18T13:00:00Z',
-          seller_nickname: 'João Silva',
-        },
-      ];
-
-      setQuotations(mockData);
+      console.log('📋 Carregando minhas cotações...');
+      
+      const data = await quotationService.getMyQuotations();
+      console.log('✅ Cotações carregadas:', data.length, 'cotações encontradas');
+      console.log('📊 Dados:', data);
+      
+      setQuotations(data);
     } catch (error: any) {
-      console.error('Erro ao carregar cotações:', error);
+      console.error('❌ Erro ao carregar cotações:', error);
+      console.error('❌ Detalhes do erro:', error.response?.data || error.message);
       Alert.alert('Erro', 'Não foi possível carregar suas cotações. Tente novamente.');
+      setQuotations([]);
     } finally {
       setLoading(false);
     }
@@ -232,7 +148,7 @@ export default function MyQuotationsScreen() {
         userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
-        screenTitle="Minhas Cotações"
+        screenTitle="Minhas Cotações e Ofertas"
         onBackPress={handleBack}
         onProfilePress={handleProfile}
       />
@@ -259,10 +175,10 @@ export default function MyQuotationsScreen() {
           <View style={[styles.emptyContainer, { backgroundColor: colors.cardBackground }]}>
             <Ionicons name="file-tray-outline" size={80} color={colors.textSecondary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Nenhuma Cotação Criada
+              Nenhuma Cotação ou Oferta Criada
             </Text>
             <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-              Você ainda não criou nenhuma cotação. Comece agora a oferecer seus produtos e serviços!
+              Você ainda não criou nenhuma cotação ou oferta. Comece agora a oferecer seus produtos e serviços!
             </Text>
             <TouchableOpacity
               style={[styles.createButton, { backgroundColor: colors.primary }]}
@@ -278,7 +194,7 @@ export default function MyQuotationsScreen() {
           <>
             <View style={styles.headerRow}>
               <Text style={[styles.totalText, { color: colors.text }]}>
-                {quotations.length} {quotations.length === 1 ? 'cotação' : 'cotações'}
+                {quotations.length} {quotations.length === 1 ? 'item' : 'itens'} (cotações e ofertas)
               </Text>
               <TouchableOpacity
                 style={[styles.addButton, { backgroundColor: colors.primary }]}
@@ -509,10 +425,27 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
   quotationTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    flex: 1,
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  typeBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
   metaRow: {
     flexDirection: 'row',

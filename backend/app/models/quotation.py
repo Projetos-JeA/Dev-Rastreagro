@@ -35,12 +35,24 @@ class QuotationCategory(str, Enum):
     BOTH = "both"  # Agricultura e pecuária
 
 
+class QuotationType(str, Enum):
+    QUOTATION = "quotation"  # Cotação criada por COMPRADOR (o que ele precisa)
+    OFFER = "offer"  # Oferta criada por VENDEDOR (o que ele tem para vender)
+
+
 class Quotation(Base):
     __tablename__ = "quotations"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    seller_id = Column(BigInteger, ForeignKey("users.id"), nullable=False, index=True)
-    seller_type = Column(String(50), nullable=False)  # "company" ou "service_provider"
+    type = Column(
+        String(20), 
+        default=QuotationType.OFFER.value, 
+        nullable=False,
+        index=True
+    )  # "quotation" (comprador) ou "offer" (vendedor) - String para compatibilidade com SQL Server
+    seller_id = Column(BigInteger, ForeignKey("users.id"), nullable=True, index=True)  # NULL se for cotação
+    buyer_id = Column(BigInteger, ForeignKey("users.id"), nullable=True, index=True)  # NULL se for oferta
+    seller_type = Column(String(50), nullable=True)  # "company" ou "service_provider" (apenas para ofertas)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     category = Column(SQLEnum(QuotationCategory, name="quotation_category"), nullable=False)
@@ -65,6 +77,7 @@ class Quotation(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    seller = relationship("User", backref="quotations")
+    seller = relationship("User", foreign_keys=[seller_id], backref="seller_quotations")
+    buyer = relationship("User", foreign_keys=[buyer_id], backref="buyer_quotations")
     matches = relationship("Match", back_populates="quotation", cascade="all, delete-orphan")
 
