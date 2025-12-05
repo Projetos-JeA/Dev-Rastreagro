@@ -126,12 +126,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = await getStoredAccessToken();
       if (token) {
-        await loadUser();
+        try {
+          await loadUser();
+        } catch (error) {
+          // Token inválido ou expirado
+          console.log('Token inválido, limpando...');
+          await clearStoredTokens();
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       } else {
         setIsAuthenticated(false);
         setUser(null);
       }
     } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
       await clearStoredTokens();
       setIsAuthenticated(false);
       setUser(null);

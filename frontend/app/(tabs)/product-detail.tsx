@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAuth } from '../../src/context/AuthContext';
+import { useCart } from '../../src/context/CartContext';
 import Header from '../../src/components/Header';
 
 const { width } = Dimensions.get('window');
@@ -227,11 +228,49 @@ const mockProducts: Product[] = [
 export default function ProductDetailScreen() {
   const { colors } = useTheme();
   const { user, profileImage, currentRoleLabel } = useAuth();
+  const { addItem } = useCart();
   const router = useRouter();
   const params = useLocalSearchParams();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const foundProduct = mockProducts.find((p) => p.id === params.productId);
+  // Tenta buscar o produto dos parâmetros primeiro (dados reais)
+  let foundProduct: Product | undefined;
+  
+  if (params.productData) {
+    try {
+      const productData = JSON.parse(params.productData as string);
+      // Converte o produto da API para o formato esperado
+      foundProduct = {
+        id: productData.id,
+        name: productData.name,
+        image: productData.image,
+        originalPrice: productData.originalPrice || productData.price * 1.2,
+        price: productData.price,
+        discount: productData.discount || 0,
+        installments: productData.installments || 1,
+        installmentValue: productData.installmentValue || productData.price / (productData.installments || 1),
+        freeShipping: productData.freeShipping,
+        category: productData.category || 'Produto',
+        seller: productData.seller || {
+          id: 'unknown',
+          name: 'Vendedor',
+          nickname: 'Vendedor',
+          location: 'Localização não informada',
+          rating: 4.5,
+          totalSales: 0,
+        },
+        description: productData.description || 'Descrição não disponível',
+        stock: productData.stock || 0,
+      };
+    } catch (error) {
+      console.error('Erro ao parsear dados do produto:', error);
+    }
+  }
+  
+  // Se não encontrou nos parâmetros, tenta nos mocks (fallback)
+  if (!foundProduct) {
+    foundProduct = mockProducts.find((p) => p.id === params.productId);
+  }
 
   if (!foundProduct) {
     return (
@@ -280,7 +319,21 @@ export default function ProductDetailScreen() {
   }
 
   function handleAddToCart() {
-    Alert.alert('Sucesso', 'Produto adicionado ao carrinho!', [{ text: 'OK' }]);
+    if (!foundProduct) {
+      Alert.alert('Erro', 'Produto não encontrado');
+      return;
+    }
+    
+    addItem({
+      id: foundProduct.id.toString(),
+      name: foundProduct.name,
+      image: foundProduct.image,
+      price: foundProduct.price,
+      stock: foundProduct.stock,
+      freeShipping: foundProduct.freeShipping,
+    });
+    
+    Alert.alert('✅ Item adicionado', `${foundProduct.name} foi adicionado ao carrinho!`, [{ text: 'OK' }]);
   }
 
   function handleContactSeller() {
@@ -327,7 +380,7 @@ export default function ProductDetailScreen() {
     >
       <Header
         userName={user?.nickname}
-        userRole={userRole}
+        userRole={currentRoleLabel}
         profileImage={profileImage}
         showBackButton={true}
         screenTitle={'Detalhes'}

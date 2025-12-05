@@ -1,35 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider } from '../src/context/ThemeContext';
 import { CartProvider } from '../src/context/CartContext';
 import * as SplashScreen from 'expo-splash-screen';
-import CustomSplashScreen from '../src/components/SplashScreen';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading, needsProfileSelection } = useAuth();
-  const [appReady, setAppReady] = useState(false);
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading) {
-      const timer = setTimeout(() => {
-        setAppReady(true);
-      }, 3000);
-
-      return () => clearTimeout(timer);
+    if (isLoading) {
+      return;
     }
-  }, [isLoading]);
-
-  useEffect(() => {
-    if (!appReady) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inSelectProfile = segments[0] === '(tabs)' && segments[1] === 'select-profile';
@@ -45,22 +31,26 @@ function RootLayoutNav() {
     } else if (isAuthenticated && needsProfileSelection && !inSelectProfile) {
       router.replace('/(tabs)/select-profile');
     }
-  }, [isAuthenticated, appReady, segments, needsProfileSelection]);
+  }, [isAuthenticated, isLoading, segments, needsProfileSelection]);
 
-  if (!appReady) {
-    return <CustomSplashScreen />;
-  }
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
 
-  return <Slot />;
+  return (
+    <CartProvider>
+      <Slot />
+    </CartProvider>
+  );
 }
 
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <CartProvider>
-          <RootLayoutNav />
-        </CartProvider>
+        <RootLayoutNav />
       </AuthProvider>
     </ThemeProvider>
   );

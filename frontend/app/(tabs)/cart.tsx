@@ -52,38 +52,76 @@ export default function CartScreen() {
   }
 
   function handleDecreaseQuantity(itemId: string, currentQuantity: number) {
+    const item = items.find(i => i.id === itemId);
+    const itemName = item?.name || 'Item';
+    
     if (currentQuantity > 1) {
       updateQuantity(itemId, currentQuantity - 1);
     } else {
       Alert.alert(
         'Remover item',
-        'Deseja remover este item do carrinho?',
+        `Deseja remover "${itemName}" do carrinho?`,
         [
           { text: 'Cancelar', style: 'cancel' },
-          { text: 'Remover', style: 'destructive', onPress: () => removeItem(itemId) },
+          { 
+            text: 'Remover', 
+            style: 'destructive', 
+          onPress: () => {
+            removeItem(itemId);
+            // Remove o alerta duplicado - o estado já atualiza a UI
+            // Alert.alert('✅ Item removido', `${itemName} foi removido do carrinho.`, [{ text: 'OK' }]);
+          }
+          },
         ]
       );
     }
   }
 
   function handleRemoveItem(itemId: string) {
+    const item = items.find(i => i.id === itemId);
+    const itemName = item?.name || 'Item';
+    
+    console.log('🗑️ Tentando remover item:', itemId);
     Alert.alert(
       'Remover item',
-      'Deseja remover este item do carrinho?',
+      `Deseja remover "${itemName}" do carrinho?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Remover', style: 'destructive', onPress: () => removeItem(itemId) },
+        { 
+          text: 'Remover', 
+          style: 'destructive', 
+          onPress: () => {
+            console.log('✅ Confirmado: removendo item', itemId);
+            removeItem(itemId);
+            // Remove o alerta duplicado - o estado já atualiza a UI
+            // Alert.alert('✅ Item removido', `${itemName} foi removido do carrinho.`, [{ text: 'OK' }]);
+          }
+        },
       ]
     );
   }
 
   function handleClearCart() {
+    console.log('🗑️ Tentando limpar carrinho. Itens atuais:', items.length);
+    if (items.length === 0) {
+      Alert.alert('Carrinho vazio', 'Não há itens para remover.');
+      return;
+    }
     Alert.alert(
       'Limpar carrinho',
-      'Deseja remover todos os itens do carrinho?',
+      `Deseja remover todos os ${items.length} itens do carrinho?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Limpar', style: 'destructive', onPress: clearCart },
+        { 
+          text: 'Limpar', 
+          style: 'destructive', 
+          onPress: () => {
+            console.log('✅ Confirmado: limpando carrinho');
+            clearCart();
+            // Remove o alerta duplicado - o estado já atualiza a UI
+            // Alert.alert('✅ Carrinho limpo', 'Todos os itens foram removidos do carrinho.', [{ text: 'OK' }]);
+          }
+        },
       ]
     );
   }
@@ -167,7 +205,11 @@ export default function CartScreen() {
           </View>
           <TouchableOpacity
             style={[styles.clearCartButton, { backgroundColor: colors.error }]}
-            onPress={handleClearCart}
+            onPress={() => {
+              console.log('🗑️ Botão limpar carrinho clicado');
+              handleClearCart();
+            }}
+            activeOpacity={0.7}
           >
             <Ionicons name="trash-outline" size={16} color={colors.white} />
             <Text style={[styles.clearCartText, { color: colors.white }]}>
@@ -190,8 +232,12 @@ export default function CartScreen() {
                     {item.name}
                   </Text>
                   <TouchableOpacity
-                    onPress={() => handleRemoveItem(item.id)}
+                    onPress={() => {
+                      console.log('🗑️ Lixeira clicada para item:', item.id);
+                      handleRemoveItem(item.id);
+                    }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
                   >
                     <Ionicons name="trash-outline" size={20} color={colors.error} />
                   </TouchableOpacity>

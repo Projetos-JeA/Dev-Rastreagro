@@ -111,7 +111,8 @@ def validate_cep(cep: str) -> tuple[bool, str]:
 
 def validate_nome_completo(nome: str) -> tuple[bool, str]:
     """
-    Valida nome completo (apenas letras, acentos e espaços)
+    Valida nome completo (letras, números, acentos, espaços, hífen e ponto - sem caracteres especiais)
+    Permite ponto (.) porque é comum em nomes de empresas da Receita Federal (ex: "Empresa Ltda.")
 
     Args:
         nome: Nome completo a validar
@@ -125,11 +126,14 @@ def validate_nome_completo(nome: str) -> tuple[bool, str]:
     # Remove espaços extras e verifica se há caracteres inválidos
     nome_normalized = nome.strip()
 
-    # Verifica se contém apenas letras (incluindo acentos), espaços e hífen
-    # isalpha() retorna True para letras incluindo acentos unicode
-    for char in nome_normalized:
-        if not (char.isalpha() or char.isspace() or char == "-"):
-            return False, "O campo 'nome' só pode conter letras e espaços"
+    # Verifica se contém apenas letras (incluindo acentos), números, espaços, hífen e ponto
+    # Permite caracteres alfanuméricos, acentos, espaços, hífen e ponto - bloqueia apenas caracteres especiais perigosos
+    # Ponto é permitido porque é comum em nomes de empresas da Receita Federal (ex: "Empresa Ltda.")
+    import re
+    # Permite letras (incluindo acentos), números, espaços, hífen e ponto
+    pattern = r'^[a-zA-ZÀ-ÿ0-9\s\-\.]+$'
+    if not re.match(pattern, nome_normalized):
+        return False, "O campo 'nome' não pode conter caracteres especiais"
 
     # Verifica se tem pelo menos 2 caracteres
     if len(nome_normalized) < 2:

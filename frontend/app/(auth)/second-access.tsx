@@ -18,10 +18,15 @@ import PasswordRequirements from '../../src/components/PasswordRequirements';
 import ProfileSelector, { ProfileType } from '../../src/components/ProfileSelector';
 import StepIndicator from '../../src/components/StepIndicator';
 import { useTheme } from '../../src/context/ThemeContext';
-import { buscarCep } from '../../src/services/viacepService';
-import { buscarCnpj } from '../../src/services/cnpjService';
 import { authService } from '../../src/services/authService';
-import { validatePassword, getPasswordRequirements, PasswordRequirement } from '../../src/utils/validators';
+import { buscarCnpj } from '../../src/services/cnpjService';
+import { saveStep2Data } from '../../src/services/registrationStorage';
+import { buscarCep } from '../../src/services/viacepService';
+import {
+  getPasswordRequirements,
+  PasswordRequirement,
+  validatePassword,
+} from '../../src/utils/validators';
 
 export default function SecondAccessScreen() {
   const { colors } = useTheme();
@@ -30,6 +35,9 @@ export default function SecondAccessScreen() {
 
   const [formData, setFormData] = useState({
     cnpj: '',
+    cpf: '',
+    documentType: 'cpf' as 'cpf' | 'cnpj', // Tipo de documento para Produtor
+    serviceDocumentType: 'cpf' as 'cpf' | 'cnpj', // Tipo de documento para Prestador de Serviço
     companyName: '',
     tradeName: '',
     stateRegistration: '',
@@ -49,8 +57,18 @@ export default function SecondAccessScreen() {
   const [loadingCnpj, setLoadingCnpj] = useState(false);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
-  function updateField(field: string, value: string) {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  async function updateField(field: string, value: string) {
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+
+    // Salva automaticamente após um pequeno delay
+    setTimeout(async () => {
+      await saveStep2Data({
+        ...updated,
+        selectedProfiles: selectedProfiles,
+      });
+    }, 300);
+
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -59,6 +77,21 @@ export default function SecondAccessScreen() {
       });
     }
   }
+
+  // Salva automaticamente quando selectedProfiles ou formData mudam
+  useEffect(() => {
+    async function saveData() {
+      await saveStep2Data({
+        ...formData,
+        selectedProfiles: selectedProfiles,
+      });
+    }
+    // Salva após um pequeno delay para evitar muitas chamadas
+    const timeoutId = setTimeout(() => {
+      saveData();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData, selectedProfiles]);
 
   useEffect(() => {
     if (formData.password && formData.confirmPassword) {
@@ -154,9 +187,13 @@ export default function SecondAccessScreen() {
   function validateForm(): boolean {
     const newErrors: Record<string, string> = {};
 
-    const isProducerAndSupplier = selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
+    const isProducerAndSupplier =
+      selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
+    const isSupplierOnly =
+      selectedProfiles.includes('supplier') && !selectedProfiles.includes('producer');
 
-    if (isProducerAndSupplier) {
+    // Valida campos de empresa se for Fornecedor (com ou sem Produtor)
+    if (isProducerAndSupplier || isSupplierOnly) {
       if (!formData.cnpj.trim()) {
         newErrors.cnpj = 'CNPJ é obrigatório';
       } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
@@ -171,12 +208,67 @@ export default function SecondAccessScreen() {
         newErrors.tradeName = 'Nome fantasia é obrigatório';
       }
 
-      if (formData.stateRegistration.trim() && formData.stateRegistration.replace(/\D/g, '').length !== 12) {
+      if (
+        formData.stateRegistration.trim() &&
+        formData.stateRegistration.replace(/\D/g, '').length !== 12
+      ) {
         newErrors.stateRegistration = 'Inscrição estadual inválida';
       }
     } else {
-      if (!formData.companyName.trim() && !formData.tradeName.trim()) {
-        newErrors.companyName = 'Nome da propriedade é obrigatório';
+      // Se for apenas Produtor (sem Fornecedor)
+      const isProducerOnly =
+        selectedProfiles.includes('producer') && !selectedProfiles.includes('supplier');
+
+      if (isProducerOnly) {
+        if (!formData.companyName.trim() && !formData.tradeName.trim()) {
+          newErrors.companyName = 'Nome da propriedade é obrigatório';
+        }
+
+        // Valida documento (CPF ou CNPJ) para Produtor
+        if (formData.documentType === 'cpf') {
+          if (!formData.cpf.trim()) {
+            newErrors.cpf = 'CPF é obrigatório';
+          } else if (formData.cpf.replace(/\D/g, '').length !== 11) {
+            newErrors.cpf = 'CPF inválido';
+          }
+        } else if (formData.documentType === 'cnpj') {
+          if (!formData.cnpj.trim()) {
+            newErrors.cnpj = 'CNPJ é obrigatório';
+          } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
+            newErrors.cnpj = 'CNPJ inválido';
+          }
+        }
+      } else {
+        // Se for Prestador de Serviço
+        const isServiceProviderOnly =
+          selectedProfiles.includes('service_provider') &&
+          !selectedProfiles.includes('supplier') &&
+          !selectedProfiles.includes('producer');
+
+        if (isServiceProviderOnly) {
+          // Valida documento (CPF ou CNPJ) para Prestador de Serviço
+          if (formData.serviceDocumentType === 'cpf') {
+            if (!formData.cpf.trim()) {
+              newErrors.cpf = 'CPF é obrigatório';
+            } else if (formData.cpf.replace(/\D/g, '').length !== 11) {
+              newErrors.cpf = 'CPF inválido';
+            }
+          } else if (formData.serviceDocumentType === 'cnpj') {
+            if (!formData.cnpj.trim()) {
+              newErrors.cnpj = 'CNPJ é obrigatório';
+            } else if (formData.cnpj.replace(/\D/g, '').length !== 14) {
+              newErrors.cnpj = 'CNPJ inválido';
+            }
+          }
+
+          // Para Prestador de Serviço, nome da propriedade/serviço é opcional na etapa 2
+          // Será preenchido na etapa 3, então não validamos aqui
+        } else {
+          // Outros casos (sem Produtor, sem Fornecedor e sem Prestador)
+          if (!formData.companyName.trim() && !formData.tradeName.trim()) {
+            newErrors.companyName = 'Nome da propriedade é obrigatório';
+          }
+        }
       }
     }
 
@@ -220,18 +312,40 @@ export default function SecondAccessScreen() {
     }
 
     setErrors(newErrors);
+
+    // Debug: mostra erros no console para facilitar diagnóstico
+    if (Object.keys(newErrors).length > 0) {
+      console.log('🔴 Erros de validação:', newErrors);
+    }
+
     return Object.keys(newErrors).length === 0;
   }
 
   async function handleContinue() {
+    console.log('🔵 Iniciando validação do formulário...');
+    console.log('🔵 Perfis selecionados:', selectedProfiles);
+    console.log('🔵 Dados do formulário:', formData);
+
     if (!validateForm()) {
+      console.log('🔴 Validação falhou. Verifique os erros acima.');
       return;
     }
 
+    console.log('✅ Validação passou. Continuando...');
+
+    // Verifica CNPJ apenas se for Fornecedor ou se Prestador escolheu CNPJ
+    const isServiceProviderOnly =
+      selectedProfiles.includes('service_provider') &&
+      !selectedProfiles.includes('supplier') &&
+      !selectedProfiles.includes('producer');
+
     const cnpjDigits = (formData.cnpj || '').replace(/\D/g, '');
-    const needsCnpjCheck = cnpjDigits.length === 14;
+    const needsCnpjCheck =
+      cnpjDigits.length === 14 &&
+      (isServiceProviderOnly ? formData.serviceDocumentType === 'cnpj' : true);
 
     if (needsCnpjCheck) {
+      console.log('🔵 Verificando disponibilidade do CNPJ...');
       setIsCheckingAvailability(true);
       try {
         const availability = await authService.checkAvailability({
@@ -240,15 +354,25 @@ export default function SecondAccessScreen() {
 
         if (availability.cnpj_available === false) {
           setErrors(prev => ({ ...prev, cnpj: 'Este CNPJ já está cadastrado' }));
+          setIsCheckingAvailability(false);
           return;
         }
+        console.log('✅ CNPJ disponível');
       } catch (error) {
+        console.error('❌ Erro ao verificar CNPJ:', error);
         Alert.alert('Erro', 'Não foi possível verificar o CNPJ. Tente novamente.');
+        setIsCheckingAvailability(false);
         return;
       } finally {
         setIsCheckingAvailability(false);
       }
     }
+
+    // Salva os dados antes de navegar
+    await saveStep2Data({
+      ...formData,
+      selectedProfiles: selectedProfiles,
+    });
 
     router.push({
       pathname: '/(auth)/third-access',
@@ -264,7 +388,7 @@ export default function SecondAccessScreen() {
     router.push('/(auth)/login');
   }
 
-  function handleProfileSelect(profile: ProfileType) {
+  async function handleProfileSelect(profile: ProfileType) {
     setSelectedProfiles(prev => {
       // Se o perfil já está selecionado, remove
       if (prev.includes(profile)) {
@@ -335,10 +459,7 @@ export default function SecondAccessScreen() {
   }
 
   return (
-    <ImageBackground
-      source={require('../../assets/background.png')}
-      style={styles.backgroundImage}
-    >
+    <ImageBackground source={require('../../assets/background.png')} style={styles.backgroundImage}>
       <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -373,15 +494,21 @@ export default function SecondAccessScreen() {
                 onSelectProfile={handleProfileSelect}
                 required
               />
-              {errors.profile && <Text style={[styles.profileError, { color: colors.error }]}>{errors.profile}</Text>}
+              {errors.profile && (
+                <Text style={[styles.profileError, { color: colors.error }]}>{errors.profile}</Text>
+              )}
 
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Dados da Empresa</Text>
 
               <View>
                 {(() => {
-                  const isProducerAndSupplier = selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
+                  const isProducerAndSupplier =
+                    selectedProfiles.includes('producer') && selectedProfiles.includes('supplier');
+                  const isSupplierOnly =
+                    selectedProfiles.includes('supplier') && !selectedProfiles.includes('producer');
 
-                  if (isProducerAndSupplier) {
+                  // Mostra campos de empresa se for Fornecedor (com ou sem Produtor)
+                  if (isProducerAndSupplier || isSupplierOnly) {
                     return (
                       <>
                         <View style={styles.cnpjContainer}>
@@ -405,7 +532,9 @@ export default function SecondAccessScreen() {
                             {loadingCnpj ? (
                               <ActivityIndicator size="small" color={colors.white} />
                             ) : (
-                              <Text style={[styles.cnpjButtonText, { color: colors.white }]}>Buscar</Text>
+                              <Text style={[styles.cnpjButtonText, { color: colors.white }]}>
+                                Buscar
+                              </Text>
                             )}
                           </TouchableOpacity>
                         </View>
@@ -443,20 +572,237 @@ export default function SecondAccessScreen() {
                     );
                   }
 
-                  return (
-                    <Input
-                      label="Nome da Propriedade"
-                      required
-                      value={formData.companyName || formData.tradeName}
-                      onChangeText={text => {
-                        updateField('companyName', text);
-                        updateField('tradeName', text);
-                      }}
-                      error={errors.companyName}
-                      placeholder="Digite o nome da sua propriedade"
-                      autoCapitalize="words"
-                    />
-                  );
+                  // Se for apenas Produtor (sem Fornecedor), mostra seletor de tipo de documento
+                  const isProducerOnly =
+                    selectedProfiles.includes('producer') && !selectedProfiles.includes('supplier');
+
+                  if (isProducerOnly) {
+                    return (
+                      <>
+                        <Text style={[styles.label, { color: colors.text, marginBottom: 10 }]}>
+                          Tipo de Documento *
+                        </Text>
+                        <View style={styles.radioContainer}>
+                          <TouchableOpacity
+                            style={styles.radioOption}
+                            onPress={() => updateField('documentType', 'cpf')}
+                          >
+                            <View style={styles.radioCircle}>
+                              {formData.documentType === 'cpf' && (
+                                <View
+                                  style={[styles.radioInner, { backgroundColor: colors.primary }]}
+                                />
+                              )}
+                            </View>
+                            <Text style={[styles.radioLabel, { color: colors.text }]}>CPF</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.radioOption}
+                            onPress={() => updateField('documentType', 'cnpj')}
+                          >
+                            <View style={styles.radioCircle}>
+                              {formData.documentType === 'cnpj' && (
+                                <View
+                                  style={[styles.radioInner, { backgroundColor: colors.primary }]}
+                                />
+                              )}
+                            </View>
+                            <Text style={[styles.radioLabel, { color: colors.text }]}>
+                              CNPJ (MEI)
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <Input
+                          label="Nome da Propriedade"
+                          required
+                          value={formData.companyName || formData.tradeName}
+                          onChangeText={text => {
+                            updateField('companyName', text);
+                            updateField('tradeName', text);
+                          }}
+                          error={errors.companyName}
+                          placeholder="Digite o nome da sua propriedade"
+                          autoCapitalize="words"
+                        />
+
+                        {formData.documentType === 'cpf' ? (
+                          <Input
+                            label="CPF"
+                            required
+                            value={formData.cpf}
+                            onChangeText={text => updateField('cpf', text)}
+                            error={errors.cpf}
+                            placeholder="xxx.xxx.xxx-xx"
+                            mask="cpf"
+                            maxLength={14}
+                          />
+                        ) : (
+                          <>
+                            <View style={styles.cnpjContainer}>
+                              <View style={styles.cnpjInputContainer}>
+                                <Input
+                                  label="CNPJ"
+                                  required
+                                  value={formData.cnpj}
+                                  onChangeText={text => updateField('cnpj', text)}
+                                  error={errors.cnpj}
+                                  placeholder="xx.xxx.xxx/xxxx-xx"
+                                  mask="cnpj"
+                                  maxLength={18}
+                                />
+                              </View>
+                              <TouchableOpacity
+                                style={[styles.cnpjButton, { backgroundColor: colors.primary }]}
+                                onPress={handleBuscarCnpj}
+                                disabled={loadingCnpj || !formData.cnpj}
+                              >
+                                {loadingCnpj ? (
+                                  <ActivityIndicator size="small" color={colors.white} />
+                                ) : (
+                                  <Text style={[styles.cnpjButtonText, { color: colors.white }]}>
+                                    Buscar
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
+                            </View>
+                            {formData.cnpj && (
+                              <>
+                                <Input
+                                  label="Razão social"
+                                  value={formData.companyName}
+                                  onChangeText={text => updateField('companyName', text)}
+                                  error={errors.companyName}
+                                  placeholder="Digite sua razão social"
+                                  autoCapitalize="words"
+                                />
+                                <Input
+                                  label="Nome Fantasia"
+                                  value={formData.tradeName}
+                                  onChangeText={text => updateField('tradeName', text)}
+                                  error={errors.tradeName}
+                                  placeholder="Digite seu nome fantasia"
+                                  autoCapitalize="words"
+                                />
+                              </>
+                            )}
+                          </>
+                        )}
+                      </>
+                    );
+                  }
+
+                  // Se for Prestador de Serviço, mostra seletor de tipo de documento
+                  const isServiceProviderOnly =
+                    selectedProfiles.includes('service_provider') &&
+                    !selectedProfiles.includes('supplier') &&
+                    !selectedProfiles.includes('producer');
+
+                  if (isServiceProviderOnly) {
+                    return (
+                      <>
+                        <Text style={[styles.label, { color: colors.text, marginBottom: 10 }]}>
+                          Tipo de Documento *
+                        </Text>
+                        <View style={styles.radioContainer}>
+                          <TouchableOpacity
+                            style={styles.radioOption}
+                            onPress={() => updateField('serviceDocumentType', 'cpf')}
+                          >
+                            <View style={[styles.radioCircle, { borderColor: '#ccc' }]}>
+                              {formData.serviceDocumentType === 'cpf' && (
+                                <View
+                                  style={[styles.radioInner, { backgroundColor: colors.primary }]}
+                                />
+                              )}
+                            </View>
+                            <Text style={[styles.radioLabel, { color: colors.text }]}>CPF</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.radioOption}
+                            onPress={() => updateField('serviceDocumentType', 'cnpj')}
+                          >
+                            <View style={[styles.radioCircle, { borderColor: '#ccc' }]}>
+                              {formData.serviceDocumentType === 'cnpj' && (
+                                <View
+                                  style={[styles.radioInner, { backgroundColor: colors.primary }]}
+                                />
+                              )}
+                            </View>
+                            <Text style={[styles.radioLabel, { color: colors.text }]}>
+                              CNPJ (MEI)
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        {formData.serviceDocumentType === 'cpf' ? (
+                          <Input
+                            label="CPF"
+                            required
+                            value={formData.cpf}
+                            onChangeText={text => updateField('cpf', text)}
+                            error={errors.cpf}
+                            placeholder="xxx.xxx.xxx-xx"
+                            mask="cpf"
+                            maxLength={14}
+                          />
+                        ) : (
+                          <>
+                            <View style={styles.cnpjContainer}>
+                              <View style={styles.cnpjInputContainer}>
+                                <Input
+                                  label="CNPJ"
+                                  required
+                                  value={formData.cnpj}
+                                  onChangeText={text => updateField('cnpj', text)}
+                                  error={errors.cnpj}
+                                  placeholder="xx.xxx.xxx/xxxx-xx"
+                                  mask="cnpj"
+                                  maxLength={18}
+                                />
+                              </View>
+                              <TouchableOpacity
+                                style={[styles.cnpjButton, { backgroundColor: colors.primary }]}
+                                onPress={handleBuscarCnpj}
+                                disabled={loadingCnpj || !formData.cnpj}
+                              >
+                                {loadingCnpj ? (
+                                  <ActivityIndicator size="small" color={colors.white} />
+                                ) : (
+                                  <Text style={[styles.cnpjButtonText, { color: colors.white }]}>
+                                    Buscar
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
+                            </View>
+                            {formData.cnpj && (
+                              <>
+                                <Input
+                                  label="Razão social"
+                                  value={formData.companyName}
+                                  onChangeText={text => updateField('companyName', text)}
+                                  error={errors.companyName}
+                                  placeholder="Digite sua razão social"
+                                  autoCapitalize="words"
+                                />
+                                <Input
+                                  label="Nome Fantasia"
+                                  value={formData.tradeName}
+                                  onChangeText={text => updateField('tradeName', text)}
+                                  error={errors.tradeName}
+                                  placeholder="Digite seu nome fantasia"
+                                  autoCapitalize="words"
+                                />
+                              </>
+                            )}
+                          </>
+                        )}
+                      </>
+                    );
+                  }
+
+                  // Se não for nenhum dos casos acima, não mostra nada
+                  return null;
                 })()}
 
                 <View style={styles.cepContainer}>
@@ -565,7 +911,10 @@ export default function SecondAccessScreen() {
               </Text>
 
               <TouchableOpacity
-                style={[styles.continueButton, { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor }]}
+                style={[
+                  styles.continueButton,
+                  { backgroundColor: colors.buttonBackground, shadowColor: colors.shadowColor },
+                ]}
                 onPress={handleContinue}
                 activeOpacity={0.8}
                 disabled={isCheckingAvailability}
@@ -710,5 +1059,37 @@ const styles = StyleSheet.create({
   },
   stateInput: {
     flex: 1,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  radioContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 20,
+  },
+  radioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  radioLabel: {
+    fontSize: 14,
   },
 });

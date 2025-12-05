@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import Input from '../../src/components/Input';
 import StepIndicator from '../../src/components/StepIndicator';
 import { authService } from '../../src/services/authService';
+import { saveStep1Data, getStep1Data } from '../../src/services/registrationStorage';
 
 export default function FirstAccessScreen() {
   const { colors } = useTheme();
@@ -32,8 +33,26 @@ export default function FirstAccessScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  function updateField(field: string, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Carrega dados salvos ao montar o componente
+  useEffect(() => {
+    async function loadSavedData() {
+      const saved = await getStep1Data();
+      if (saved) {
+        setFormData(saved);
+      }
+    }
+    loadSavedData();
+  }, []);
+
+  async function updateField(field: string, value: string) {
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+    
+    // Salva automaticamente após um pequeno delay
+    setTimeout(async () => {
+      await saveStep1Data(updated);
+    }, 300);
+    
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -109,6 +128,9 @@ export default function FirstAccessScreen() {
         return;
       }
 
+      // Salva os dados antes de navegar
+      await saveStep1Data(formData);
+      
       router.push({
         pathname: '/(auth)/second-access',
         params: formData,

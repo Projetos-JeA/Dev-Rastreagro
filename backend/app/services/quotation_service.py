@@ -131,33 +131,50 @@ class QuotationService:
         - Ordena por score de relevância (maior primeiro)
         - 90% das cotações com score >= 90 aparecem primeiro
         - 10% das cotações com score 50-89 aparecem depois
+        
+        Otimização: Limita processamento a 200 cotações para evitar timeout
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         user = self.user_repo.get_by_id(buyer_id)
         if not user:
+            logger.warning(f"Usuário {buyer_id} não encontrado")
             return []
 
-        # Busca todas as cotações ativas
-        all_quotations = self.quotation_repo.list_active(limit=1000, offset=0)
+        # OTIMIZAÇÃO: Limita a 50 cotações para processamento rápido
+        # Processa apenas as mais recentes primeiro
+        all_quotations = self.quotation_repo.list_active(limit=50, offset=0)
         
         if not all_quotations:
+            logger.info(f"Nenhuma cotação ativa encontrada")
             return []
 
-        # Calcula score para cada cotação usando IA
+        logger.info(f"Processando {len(all_quotations)} cotações para comprador {buyer_id}...")
+
+        # OTIMIZAÇÃO: Usa score rápido baseado apenas em perfil (sem IA pesada)
+        # Para melhor performance, calcula score simplificado primeiro
+        buyer_profile = self.matching_service._build_buyer_profile(buyer_id)
+        
         quotations_with_scores = []
-        for quotation in all_quotations:
+        for i, quotation in enumerate(all_quotations):
             try:
-                score = self.matching_service.calculate_relevance_score(buyer_id, quotation)
+                # Score rápido baseado apenas em categoria e tipo (sem embeddings pesados)
+                score = self._calculate_fast_score(buyer_profile, quotation)
                 quotations_with_scores.append({
                     "quotation": quotation,
                     "score": score
                 })
             except Exception as e:
-                # Em caso de erro, usa score mínimo
-                print(f"Erro ao calcular score para cotação {quotation.id}: {e}")
+                # Em caso de erro, usa score baseado em categoria
+                logger.warning(f"Erro ao calcular score para cotação {quotation.id}: {e}")
+                score = self._calculate_category_score(buyer_profile, quotation)
                 quotations_with_scores.append({
                     "quotation": quotation,
-                    "score": 0.0
+                    "score": score
                 })
+
+        logger.info(f"Scores calculados para {len(quotations_with_scores)} cotações")
 
         # Ordena por score (maior primeiro)
         quotations_with_scores.sort(key=lambda x: x["score"], reverse=True)
@@ -166,6 +183,8 @@ class QuotationService:
         high_relevance = [q for q in quotations_with_scores if q["score"] >= 90]
         medium_relevance = [q for q in quotations_with_scores if 50 <= q["score"] < 90]
         low_relevance = [q for q in quotations_with_scores if q["score"] < 50]
+
+        logger.info(f"Relevância: {len(high_relevance)} alta, {len(medium_relevance)} média, {len(low_relevance)} baixa")
 
         # Combina: 90% relevantes primeiro, depois 10% menos relevantes
         # Limita a 90% de high_relevance + 10% de medium_relevance
@@ -178,8 +197,57 @@ class QuotationService:
         # Score mínimo para aparecer na lista relevante
         result = [q for q in result if q["score"] >= 50]
 
+        logger.info(f"Retornando {len(result)} cotações relevantes")
+
         # Retorna apenas as cotações (sem score) para manter compatibilidade
         return [q["quotation"] for q in result[:limit]]
+    
+    def _calculate_fast_score(self, buyer_profile: dict, quotation: Quotation) -> float:
+        """
+        Calcula score rápido baseado apenas em regras (sem IA pesada)
+        Usado para performance inicial
+        """
+        score = 0.0
+        
+        # 1. Match de categoria (60 pontos)
+        profile_categories = buyer_profile.get("categories", [])
+        quotation_category = quotation.category.value.lower() if quotation.category else ""
+        
+        if quotation_category in profile_categories:
+            score += 60.0
+        elif "both" in profile_categories and quotation_category in ["agriculture", "livestock"]:
+            score += 50.0
+        elif not profile_categories:
+            # Se não tem categorias, assume interesse geral
+            score += 40.0
+        
+        # 2. Match básico de tipo de produto (20 pontos)
+        if quotation.product_type:
+            product_lower = quotation.product_type.lower()
+            # Palavras-chave comuns
+            if any(keyword in product_lower for keyword in ["ração", "sal", "mineral", "suplemento"]):
+                if "livestock" in profile_categories or "both" in profile_categories:
+                    score += 20.0
+            elif any(keyword in product_lower for keyword in ["semente", "fertilizante", "defensivo"]):
+                if "agriculture" in profile_categories or "both" in profile_categories:
+                    score += 20.0
+        
+        # 3. Score base mínimo (20 pontos)
+        score += 20.0
+        
+        return min(score, 100.0)
+    
+    def _calculate_category_score(self, buyer_profile: dict, quotation: Quotation) -> float:
+        """Score mínimo baseado apenas em categoria"""
+        profile_categories = buyer_profile.get("categories", [])
+        quotation_category = quotation.category.value.lower() if quotation.category else ""
+        
+        if quotation_category in profile_categories:
+            return 50.0
+        elif "both" in profile_categories:
+            return 40.0
+        else:
+            return 30.0
 
     def to_response(self, quotation: Quotation, include_seller: bool = True) -> QuotationResponse:
         """Converte Quotation para QuotationResponse"""

@@ -11,7 +11,7 @@ type RetryAxiosRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 60000, // 60 segundos para endpoints com IA
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,7 +19,7 @@ const api = axios.create({
 
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000, // 30 segundos para refresh token
   headers: {
     'Content-Type': 'application/json',
   },

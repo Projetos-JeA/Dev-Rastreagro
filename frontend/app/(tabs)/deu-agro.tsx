@@ -161,15 +161,28 @@ export default function DeuAgroScreen() {
   });
 
   function handleProductPress(productId: string) {
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+      Alert.alert('Erro', 'Produto não encontrado');
+      return;
+    }
+    
+    // Passa o produto completo como parâmetro
     router.push({
       pathname: '/(tabs)/product-detail',
-      params: { productId },
+      params: { 
+        productId: product.id,
+        productData: JSON.stringify(product),
+      },
     });
   }
 
   function handleAddToCart(productId: string) {
     const product = products.find(p => p.id === productId);
-    if (!product) return;
+    if (!product) {
+      Alert.alert('Erro', 'Produto não encontrado');
+      return;
+    }
 
     addItem({
       id: product.id,
@@ -180,7 +193,7 @@ export default function DeuAgroScreen() {
       freeShipping: product.freeShipping,
     });
 
-    Alert.alert('Sucesso', 'Produto adicionado ao carrinho!', [{ text: 'OK' }]);
+    Alert.alert('✅ Item adicionado', `${product.name} foi adicionado ao carrinho!`, [{ text: 'OK' }]);
   }
 
   return (

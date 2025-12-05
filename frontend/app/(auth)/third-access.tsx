@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   Image,
@@ -20,6 +20,13 @@ import Select from '../../src/components/Select';
 import StepIndicator from '../../src/components/StepIndicator';
 import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import { 
+  saveStep3Data, 
+  getStep3Data, 
+  getStep1Data, 
+  getStep2Data,
+  clearRegistrationData 
+} from '../../src/services/registrationStorage';
 
 interface Vaccine {
   id: string;
@@ -435,6 +442,33 @@ export default function ThirdAccessScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
+
+  // Carrega dados salvos ao montar o componente
+  useEffect(() => {
+    async function loadSavedData() {
+      // Carrega dados das etapas anteriores
+      const savedStep1 = await getStep1Data();
+      const savedStep2 = await getStep2Data();
+      
+      // Se não vier via params, usa os dados salvos
+      if (savedStep1) {
+        Object.keys(savedStep1).forEach(key => {
+          if (params[key] === undefined) {
+            params[key] = savedStep1[key as keyof typeof savedStep1];
+          }
+        });
+      }
+      
+      if (savedStep2) {
+        Object.keys(savedStep2).forEach(key => {
+          if (key !== 'selectedProfiles' && params[key] === undefined) {
+            params[key] = savedStep2[key as keyof typeof savedStep2];
+          }
+        });
+      }
+    }
+    loadSavedData();
+  }, []);
   const { registerSeller, registerServiceProvider, registerBuyer } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -511,16 +545,20 @@ export default function ThirdAccessScreen() {
       if (categories.length === 0) {
         newErrors.categories = 'Selecione pelo menos uma categoria';
       }
-      if (herdTypes.length === 0) {
+      // Valida tipo de rebanho: aceita valores padrão OU customizados
+      if (herdTypes.length === 0 && herdTypesCustom.length === 0) {
         newErrors.herdTypes = 'Selecione pelo menos um tipo de rebanho';
       }
-      if (preferences.length === 0) {
+      // Valida preferências: aceita valores padrão OU customizados
+      if (preferences.length === 0 && preferencesCustom.length === 0) {
         newErrors.preferences = 'Selecione pelo menos uma preferência';
       }
-      if (commonDiseases.length === 0) {
+      // Valida doenças comuns: aceita valores padrão OU customizados
+      if (commonDiseases.length === 0 && commonDiseasesCustom.length === 0) {
         newErrors.commonDiseases = 'Selecione pelo menos uma doença comum';
       }
-      if (livestockSupplies.length === 0) {
+      // Valida suprimentos: aceita valores padrão OU customizados
+      if (livestockSupplies.length === 0 && livestockSuppliesCustom.length === 0) {
         newErrors.livestockSupplies = 'Selecione pelo menos um insumo utilizado';
       }
       if (!animalQuantity || animalQuantity.trim() === '') {
@@ -692,7 +730,86 @@ export default function ThirdAccessScreen() {
       console.log('🔵 Enviando dados para o backend...');
 
       if (completeData.profileTypes.includes('producer')) {
-        console.log('📤 Cadastrando como PRODUTOR (Seller)...');
+        const isProducerAndSupplier =
+          completeData.profileTypes?.includes('producer') &&
+          completeData.profileTypes?.includes('supplier');
+        const isSupplierOnly = 
+          completeData.profileTypes?.includes('supplier') &&
+          !completeData.profileTypes?.includes('producer');
+        const isProducerOnly = 
+          completeData.profileTypes?.includes('producer') &&
+          !completeData.profileTypes?.includes('supplier');
+
+        // Se for APENAS PRODUTOR (sem fornecedor), registra como BUYER
+        if (isProducerOnly) {
+          console.log('📤 Cadastrando como PRODUTOR (Buyer)...');
+
+          if (!completeData.email || !completeData.password) {
+            Alert.alert('Erro', 'Email e senha são obrigatórios');
+            setIsSubmitting(false);
+            return;
+          }
+
+          const producerDocumentType = completeData.documentType || 'cpf';
+          const documentNumber = producerDocumentType === 'cpf'
+            ? (completeData.cpf || '').replace(/\D/g, '')
+            : (completeData.cnpj || '').replace(/\D/g, '');
+
+          if (!documentNumber) {
+            Alert.alert('Erro', `${producerDocumentType === 'cpf' ? 'CPF' : 'CNPJ'} é obrigatório`);
+            setIsSubmitting(false);
+            return;
+          }
+
+          const address = completeData.address || '';
+          const city = completeData.city || '';
+          const state = completeData.state || '';
+          const cep = completeData.cep || '';
+
+          if (!address || !city || !state || !cep) {
+            Alert.alert(
+              'Erro',
+              'Campos de endereço são obrigatórios. Por favor, preencha todos os campos.'
+            );
+            setIsSubmitting(false);
+            return;
+          }
+
+          const buyerPayload = {
+            email: completeData.email,
+            password: completeData.password,
+            nickname: completeData.nickname || completeData.fullName || 'Produtor',
+            buyer_profile: {
+              nome_completo: completeData.fullName || completeData.companyName || 'Produtor',
+              cpf: producerDocumentType === 'cpf' ? documentNumber : undefined,
+              endereco: address,
+              cep: cep,
+              cidade: city,
+              estado: state,
+            },
+          };
+
+          console.log('📤 Payload do produtor (buyer):', JSON.stringify(buyerPayload, null, 2));
+          const registerResponse = await registerBuyer(buyerPayload);
+          console.log('✅ Produtor cadastrado como BUYER com sucesso!', registerResponse);
+
+          await clearRegistrationData();
+
+          Alert.alert(
+            '✅ Cadastro realizado com sucesso!',
+            'Verifique seu email para ativar sua conta. Um link de verificação foi enviado para ' +
+              registerResponse.email,
+            [{ text: 'OK' }]
+          );
+
+          setTimeout(() => {
+            router.replace('/(auth)/login');
+          }, 2000);
+          return;
+        }
+
+        // Se for PRODUTOR + FORNECEDOR ou apenas FORNECEDOR, registra como SELLER
+        console.log('📤 Cadastrando como PRODUTOR/FORNECEDOR (Seller)...');
 
         if (!completeData.email || !completeData.password) {
           Alert.alert('Erro', 'Email e senha são obrigatórios');
@@ -706,22 +823,11 @@ export default function ThirdAccessScreen() {
           return;
         }
 
-        const isProducerAndSupplier =
-          completeData.profileTypes?.includes('producer') &&
-          completeData.profileTypes?.includes('supplier');
-
-        if (isProducerAndSupplier) {
-          if (!completeData.cnpj) {
-            Alert.alert('Erro', 'CNPJ é obrigatório');
-            setIsSubmitting(false);
-            return;
-          }
-        } else {
-          if (!completeData.cpf) {
-            Alert.alert('Erro', 'CPF é obrigatório');
-            setIsSubmitting(false);
-            return;
-          }
+        // Se for Fornecedor (com ou sem Produtor), precisa de CNPJ
+        if (!completeData.cnpj) {
+          Alert.alert('Erro', 'CNPJ é obrigatório');
+          setIsSubmitting(false);
+          return;
         }
 
         const address = completeData.address || '';
@@ -766,9 +872,9 @@ export default function ThirdAccessScreen() {
           });
         }
 
-        const documentNumber = isProducerAndSupplier
-          ? completeData.cnpj || ''
-          : completeData.cpf || '';
+        // Limpa formatação do CNPJ antes de enviar
+        // Fornecedor sempre usa CNPJ
+        const documentNumber = (completeData.cnpj || '').replace(/\D/g, '');
 
         const sellerPayload = {
           email: completeData.email,
@@ -781,7 +887,7 @@ export default function ThirdAccessScreen() {
               params.fullName ||
               'Propriedade',
             cnpj_cpf: documentNumber,
-            insc_est_identidade: isProducerAndSupplier
+            insc_est_identidade: (isProducerAndSupplier || isSupplierOnly)
               ? completeData.stateRegistration || null
               : null,
             endereco: address,
@@ -797,6 +903,9 @@ export default function ThirdAccessScreen() {
         console.log('📤 Payload do produtor (seller):', JSON.stringify(sellerPayload, null, 2));
         const registerResponse = await registerSeller(sellerPayload);
         console.log('✅ Produtor cadastrado com sucesso!', registerResponse);
+
+        // Limpa os dados temporários após cadastro bem-sucedido
+        await clearRegistrationData();
 
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
@@ -819,13 +928,16 @@ export default function ThirdAccessScreen() {
           },
         ];
 
+        // Limpa formatação do CNPJ antes de enviar
+        const cnpjClean = (completeData.cnpj || '').replace(/\D/g, '');
+
         const sellerPayload = {
           email: completeData.email,
           password: completeData.password,
           nickname: completeData.nickname || null,
           company: {
             nome_propriedade: completeData.companyName || completeData.tradeName || 'Empresa',
-            cnpj_cpf: completeData.cnpj || '',
+            cnpj_cpf: cnpjClean,
             insc_est_identidade: completeData.stateRegistration || null,
             endereco: completeData.address || '',
             bairro: completeData.neighborhood || null,
@@ -841,6 +953,9 @@ export default function ThirdAccessScreen() {
         const registerResponse = await registerSeller(sellerPayload);
         console.log('✅ Vendedor cadastrado com sucesso!', registerResponse);
 
+        // Limpa os dados temporários após cadastro bem-sucedido
+        await clearRegistrationData();
+
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
           'Verifique seu email para ativar sua conta. Um link de verificação foi enviado para ' +
@@ -853,6 +968,18 @@ export default function ThirdAccessScreen() {
         }, 2000);
       } else if (completeData.profileTypes.includes('service_provider')) {
         console.log('📤 Cadastrando como PRESTADOR DE SERVIÇO...');
+
+        // Determina qual documento usar (CPF ou CNPJ) baseado no tipo selecionado
+        const serviceDocumentType = completeData.serviceDocumentType || 'cpf';
+        const serviceDocument = serviceDocumentType === 'cpf'
+          ? (completeData.cpf || '').replace(/\D/g, '')
+          : (completeData.cnpj || '').replace(/\D/g, '');
+
+        if (!serviceDocument) {
+          Alert.alert('Erro', 'CPF ou CNPJ é obrigatório');
+          setIsSubmitting(false);
+          return;
+        }
 
         const servicePayload = {
           email: completeData.email,
@@ -867,7 +994,7 @@ export default function ThirdAccessScreen() {
             endereco: completeData.address || null,
             bairro: completeData.neighborhood || null,
             cep: completeData.cep || null,
-            cnpj_cpf: completeData.cnpj || null,
+            cnpj_cpf: serviceDocument || null,
             insc_est_identidade: completeData.stateRegistration || null,
           },
         };
@@ -875,6 +1002,9 @@ export default function ThirdAccessScreen() {
         console.log('📤 Payload do prestador:', JSON.stringify(servicePayload, null, 2));
         const registerResponse = await registerServiceProvider(servicePayload);
         console.log('✅ Prestador cadastrado com sucesso!', registerResponse);
+
+        // Limpa os dados temporários após cadastro bem-sucedido
+        await clearRegistrationData();
 
         Alert.alert(
           '✅ Cadastro realizado com sucesso!',
