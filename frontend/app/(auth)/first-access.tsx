@@ -43,14 +43,35 @@ export default function FirstAccessScreen() {
     loadSavedData();
   }, []);
 
+  function generateNickname(fullName: string): string {
+    if (!fullName.trim()) return '';
+
+    const nameParts = fullName.trim().split(' ').filter(part => part.length > 0);
+    if (nameParts.length === 0) return '';
+
+    const initials = nameParts
+      .map(part => part[0].toUpperCase())
+      .join('');
+
+    const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    return `${initials}${randomChars}`;
+  }
+
   async function updateField(field: string, value: string) {
-    const updated = { ...formData, [field]: value };
+    let updated = { ...formData, [field]: value };
+
+    if (field === 'fullName') {
+      const generatedNickname = generateNickname(value);
+      updated = { ...updated, nickname: generatedNickname };
+    }
+
     setFormData(updated);
 
     setTimeout(async () => {
       await saveStep1Data(updated);
     }, 300);
-    
+
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -190,8 +211,9 @@ export default function FirstAccessScreen() {
                   value={formData.nickname}
                   onChangeText={(text) => updateField('nickname', text)}
                   error={errors.nickname}
-                  placeholder="Como deseja ser chamado"
+                  placeholder="Gerado automaticamente"
                   autoCapitalize="words"
+                  editable={false}
                 />
 
                 <Input

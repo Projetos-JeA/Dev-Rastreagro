@@ -498,8 +498,6 @@ export default function ThirdAccessScreen() {
   const [commonDiseasesCustom, setCommonDiseasesCustom] = useState<string[]>([]);
   const [livestockSupplies, setLivestockSupplies] = useState<string[]>([]);
   const [livestockSuppliesCustom, setLivestockSuppliesCustom] = useState<string[]>([]);
-  const [animalQuantity, setAnimalQuantity] = useState<string>('');
-  const [vaccinationDate, setVaccinationDate] = useState<string>('');
 
   const [herdControl, setHerdControl] = useState<HerdAnimal[]>([]);
   const [activeAnimalTabs, setActiveAnimalTabs] = useState<Record<string, 'weight' | 'vaccine'>>(
@@ -561,14 +559,6 @@ export default function ThirdAccessScreen() {
       // Valida suprimentos: aceita valores padrão OU customizados
       if (livestockSupplies.length === 0 && livestockSuppliesCustom.length === 0) {
         newErrors.livestockSupplies = 'Selecione pelo menos um insumo utilizado';
-      }
-      if (!animalQuantity || animalQuantity.trim() === '') {
-        newErrors.animalQuantity = 'Quantidade de animais é obrigatória';
-      }
-      if (!vaccinationDate || vaccinationDate.trim() === '') {
-        newErrors.vaccinationDate = 'Data de vacinação é obrigatória';
-      } else if (vaccinationDate.length !== 10) {
-        newErrors.vaccinationDate = 'Data inválida';
       }
 
       herdControl.forEach((animal, index) => {
@@ -680,8 +670,6 @@ export default function ThirdAccessScreen() {
           commonDiseasesCustom,
           supplies: livestockSupplies,
           suppliesCustom: livestockSuppliesCustom,
-          animalQuantity,
-          vaccinationDate,
           herdControl,
         };
       }
@@ -1147,8 +1135,6 @@ export default function ThirdAccessScreen() {
     setCommonDiseasesCustom([]);
     setLivestockSupplies([]);
     setLivestockSuppliesCustom([]);
-    setAnimalQuantity('');
-    setVaccinationDate('');
     setHerdControl([]);
     setAgricultureTypes([]);
     setAgricultureTypesCustom([]);
@@ -1688,7 +1674,7 @@ export default function ThirdAccessScreen() {
                       />
 
                       <MultiSelect
-                        label="Doenças comuns no rebanho"
+                        label="Vacinas do rebanho"
                         required
                         options={commonDiseasesOptions}
                         selectedValues={commonDiseases}
@@ -1727,43 +1713,6 @@ export default function ThirdAccessScreen() {
                             value
                           )
                         }
-                      />
-
-                      <Input
-                        label="Quantidade de animais na fazenda"
-                        required
-                        value={animalQuantity}
-                        onChangeText={value => {
-                          setAnimalQuantity(value);
-                          if (errors.animalQuantity) {
-                            setErrors(prev => {
-                              const { animalQuantity, ...rest } = prev;
-                              return rest;
-                            });
-                          }
-                        }}
-                        placeholder="xxx"
-                        keyboardType="numeric"
-                        error={errors.animalQuantity}
-                      />
-
-                      <Input
-                        label="Data estipulada para vacinação"
-                        required
-                        value={vaccinationDate}
-                        onChangeText={value => {
-                          setVaccinationDate(value);
-                          if (errors.vaccinationDate) {
-                            setErrors(prev => {
-                              const { vaccinationDate, ...rest } = prev;
-                              return rest;
-                            });
-                          }
-                        }}
-                        placeholder="xx/xx/xxxx"
-                        mask="date"
-                        maxLength={10}
-                        error={errors.vaccinationDate}
                       />
 
                       {showHerdControl && (

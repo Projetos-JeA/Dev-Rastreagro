@@ -40,6 +40,13 @@ export default function HomeScreen() {
     router.push('/(tabs)/my-quotations');
   }
 
+  function handleMyOffers() {
+    router.push({
+      pathname: '/(tabs)/my-quotations',
+      params: { filter: 'offers' },
+    });
+  }
+
   function handleCart() {
     router.push('/(tabs)/cart');
   }
@@ -73,15 +80,13 @@ export default function HomeScreen() {
   }
 
   const { availableRoles } = useAuth();
-  const isProducer = availableRoles?.includes('buyer') || false;
-  const isPecuarista = user?.producer_type === 'pecuarista' || user?.producer_type === 'ambos';
-  const showHerdControl = isProducer && isPecuarista;
+  const isBuyer = availableRoles?.includes('buyer') || false;
+  const showHerdControl = isBuyer;
 
-  // Todos podem criar cotações e ofertas agora
-  const showCreateQuotation = true; // Todos podem criar cotação
-  const showCreateOffer = true; // Todos podem criar oferta
-  const showMyQuotations = true; // Todos podem ver suas cotações
-  const showMyOffers = true; // Todos podem ver suas ofertas
+  const showCreateQuotation = true;
+  const showCreateOffer = true;
+  const showMyQuotations = true;
+  const showMyOffers = true;
 
   return (
     <ImageBackground
@@ -162,7 +167,7 @@ export default function HomeScreen() {
               onPress={handleCreateQuotation}
             >
               <Ionicons name="document-text-outline" size={40} color={colors.white} />
-              <Text style={[styles.navButtonText, { color: colors.white }]}>Nova{'\n'}Cotações</Text>
+              <Text style={[styles.navButtonText, { color: colors.white }]}>Nova{'\n'}Cotação</Text>
             </TouchableOpacity>
           )}
           {showCreateOffer && (
@@ -193,7 +198,7 @@ export default function HomeScreen() {
           {showMyOffers && (
             <TouchableOpacity
               style={[styles.navButton, { backgroundColor: colors.gray }]}
-              onPress={handleMyQuotations}
+              onPress={handleMyOffers}
             >
               <Ionicons name="briefcase-outline" size={40} color={colors.white} />
               <Text style={[styles.navButtonText, { color: colors.white }]}>Minhas{'\n'}Ofertas</Text>
@@ -214,23 +219,20 @@ export default function HomeScreen() {
             <FontAwesome5 name="handshake" size={40} color={colors.white} />
             <Text style={[styles.navButtonText, { color: colors.white }]}>Deu Agro</Text>
           </TouchableOpacity>
-          <View style={styles.navButton} />
-        </View>
-
-        <View style={styles.navigationSection}>
           <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleIndicators}>
             <Ionicons name="trending-up" size={40} color={colors.white} />
             <Text style={[styles.navButtonText, { color: colors.white }]}>Indicadores</Text>
           </TouchableOpacity>
-          {showHerdControl && (
+        </View>
+
+        {showHerdControl && (
+          <View style={styles.navigationSection}>
             <TouchableOpacity style={[styles.navButton, { backgroundColor: colors.gray }]} onPress={handleHerdControl}>
-              <Ionicons name="stats-chart-outline" size={40} color={colors.white} />
+              <MaterialCommunityIcons name="cow" size={40} color={colors.white} />
               <Text style={[styles.navButtonText, { color: colors.white }]}>Controle de{'\n'}Rebanho</Text>
             </TouchableOpacity>
-          )}
-          {!showHerdControl && <View style={styles.navButton} />}
-          <View style={styles.navButton} />
-        </View>
+          </View>
+        )}
       </ScrollView>
     </ImageBackground>
   );

@@ -71,6 +71,7 @@ export default function CreateQuotationScreen() {
     { label: 'Hectare', value: 'hectare' },
     { label: 'Cabeça', value: 'cabeça' },
     { label: 'Lote', value: 'lote' },
+    { label: 'Dose', value: 'dose' },
   ];
 
   function handleBack() {
@@ -144,7 +145,7 @@ export default function CreateQuotationScreen() {
         discount_percentage: formData.discount_percentage || undefined,
         installments: formData.installments || 1,
         stock: formData.stock || undefined,
-        quotation_type: quotationType, // Adiciona o tipo (quotation ou offer)
+        quotation_type: quotationType as 'quotation' | 'offer', // Adiciona o tipo (quotation ou offer)
       };
 
       console.log('📤 Enviando payload para API:', payload);
