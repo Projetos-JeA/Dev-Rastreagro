@@ -6,15 +6,64 @@ import {
   ScrollView,
   TouchableOpacity,
   ImageBackground,
-  Platform,
+  Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../src/context/AuthContext';
 import { useTheme } from '../../src/context/ThemeContext';
+import Header from '../../src/components/Header';
 
 export default function HerdControlScreen() {
   const { colors } = useTheme();
+  const { user, profileImage, currentRoleLabel } = useAuth();
   const router = useRouter();
+
+  // Dados mockados - futuramente virão da API
+  const herdStats = {
+    total: 0,
+    categories: [
+      { name: 'Cria', count: 0, icon: 'baby-carriage' },
+      { name: 'Recria', count: 0, icon: 'cow' },
+      { name: 'Engorda', count: 0, icon: 'scale' },
+    ],
+  };
+
+  function handleAddAnimal() {
+    Alert.alert(
+      'Em Desenvolvimento',
+      'A funcionalidade de cadastro de animais será disponibilizada em breve.',
+      [{ text: 'OK' }]
+    );
+  }
+
+  function handleWeighing() {
+    Alert.alert(
+      'Em Desenvolvimento',
+      'A funcionalidade de controle de pesagem será disponibilizada em breve.',
+      [{ text: 'OK' }]
+    );
+  }
+
+  function handleVaccination() {
+    Alert.alert(
+      'Em Desenvolvimento',
+      'A funcionalidade de controle de vacinação será disponibilizada em breve.',
+      [{ text: 'OK' }]
+    );
+  }
+
+  function handleReports() {
+    Alert.alert(
+      'Em Desenvolvimento',
+      'A funcionalidade de relatórios será disponibilizada em breve.',
+      [{ text: 'OK' }]
+    );
+  }
+
+  function handleProfile() {
+    router.push('/(tabs)/profile');
+  }
 
   return (
     <ImageBackground
@@ -22,61 +71,113 @@ export default function HerdControlScreen() {
       style={styles.container}
       resizeMode="cover"
     >
-      <View style={[styles.overlay, { backgroundColor: colors.backgroundOverlay }]} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.header, { marginTop: Platform.OS === 'ios' ? 30 : 20 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={28} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerText, { color: colors.text }]}>Controle de Rebanho</Text>
-          <View style={styles.placeholder} />
+      <Header
+        userName={user?.nickname}
+        userRole={currentRoleLabel}
+        profileImage={profileImage}
+        showBackButton={true}
+        screenTitle="Controle de Rebanho"
+        onBackPress={() => router.back()}
+        onProfilePress={handleProfile}
+      />
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.summaryCard, { backgroundColor: colors.surfaceOverlay }]}>
+          <View style={styles.summaryHeader}>
+            <MaterialCommunityIcons name="cow" size={32} color={colors.white} />
+            <View style={styles.summaryInfo}>
+              <Text style={[styles.summaryTitle, { color: colors.white }]}>
+                Total de Animais
+              </Text>
+              <Text style={[styles.summaryValue, { color: colors.white }]}>
+                {herdStats.total}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.content}>
-          <View style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>
-            <Ionicons name="stats-chart" size={64} color={colors.iconHerdControl} />
-            <Text style={[styles.title, { color: colors.text }]}>
-              Gestão do Rebanho
-            </Text>
-            <Text style={[styles.description, { color: colors.textSecondary }]}>
-              Gerencie seu rebanho de forma completa, com controle de peso, vacinação e histórico de cada animal.
-            </Text>
-          </View>
+        <View style={styles.categoriesContainer}>
+          {herdStats.categories.map((category, index) => (
+            <View
+              key={index}
+              style={[styles.categoryCard, { backgroundColor: colors.gray }]}
+            >
+              <MaterialCommunityIcons
+                name={category.icon as any}
+                size={28}
+                color={colors.white}
+              />
+              <Text style={[styles.categoryCount, { color: colors.white }]}>
+                {category.count}
+              </Text>
+              <Text style={[styles.categoryName, { color: colors.white }]}>
+                {category.name}
+              </Text>
+            </View>
+          ))}
+        </View>
 
-          <View style={[styles.infoContainer, { backgroundColor: colors.cardBackground, shadowColor: colors.shadowColor }]}>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Funcionalidades em desenvolvimento:
+        <View style={styles.actionsSection}>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              onPress={handleAddAnimal}
+            >
+              <Ionicons name="add-circle-outline" size={32} color={colors.white} />
+              <Text style={[styles.actionButtonText, { color: colors.white }]}>
+                Adicionar{'\n'}Animal
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.gray }]}
+              onPress={handleWeighing}
+            >
+              <MaterialCommunityIcons name="scale" size={32} color={colors.white} />
+              <Text style={[styles.actionButtonText, { color: colors.white }]}>
+                Registrar{'\n'}Pesagem
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.gray }]}
+              onPress={handleVaccination}
+            >
+              <MaterialCommunityIcons name="needle" size={32} color={colors.white} />
+              <Text style={[styles.actionButtonText, { color: colors.white }]}>
+                Controle de{'\n'}Vacinação
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.gray }]}
+              onPress={handleReports}
+            >
+              <Ionicons name="bar-chart-outline" size={32} color={colors.white} />
+              <Text style={[styles.actionButtonText, { color: colors.white }]}>
+                Relatórios
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.infoSection}>
+          <View style={[styles.infoCard, { backgroundColor: colors.surfaceOverlay }]}>
+            <View style={styles.infoHeader}>
+              <Ionicons name="information-circle" size={24} color={colors.blue} />
+              <Text style={[styles.infoTitle, { color: colors.white }]}>
+                Sobre o Controle de Rebanho
+              </Text>
+            </View>
+            <Text style={[styles.infoText, { color: colors.white }]}>
+              Gerencie seu rebanho de forma completa: cadastre animais, controle pesagens,
+              acompanhe vacinações e tenha acesso a relatórios detalhados sobre o desempenho
+              do seu rebanho.
             </Text>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={[styles.featureText, { color: colors.text }]}>
-                Cadastro e identificação de animais
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={[styles.featureText, { color: colors.text }]}>
-                Controle de peso e ganho de peso
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={[styles.featureText, { color: colors.text }]}>
-                Registro de vacinação e histórico
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={[styles.featureText, { color: colors.text }]}>
-                Controle de suplementação alimentar
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={[styles.featureText, { color: colors.text }]}>
-                Relatórios e análises do rebanho
-              </Text>
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -88,79 +189,96 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  content: {
+    flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    padding: 20,
+    padding: 16,
+    paddingBottom: 30,
   },
-  header: {
+  summaryCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 30,
+    gap: 16,
   },
-  backButton: {
-    paddingTop: 8,
+  summaryInfo: {
+    flex: 1,
   },
-  headerText: {
-    fontSize: 20,
+  summaryTitle: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 32,
     fontWeight: 'bold',
   },
-  placeholder: {
-    width: 28,
+  categoriesContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
   },
-  content: {
-    gap: 20,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 30,
+  categoryCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    gap: 8,
   },
-  title: {
+  categoryCount: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 12,
   },
-  description: {
-    fontSize: 16,
+  categoryName: {
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 24,
   },
-  infoContainer: {
-    borderRadius: 16,
-    padding: 20,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+  actionsSection: {
+    marginBottom: 24,
   },
-  infoText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  featureItem: {
+  actionsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    flexWrap: 'wrap',
     gap: 12,
   },
-  featureText: {
-    fontSize: 15,
-    flex: 1,
+  actionButton: {
+    width: '48%',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 120,
+  },
+  actionButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  infoSection: {
+    marginBottom: 16,
+  },
+  infoCard: {
+    borderRadius: 16,
+    padding: 20,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  infoText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
